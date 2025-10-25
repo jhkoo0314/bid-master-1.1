@@ -4,6 +4,15 @@
 .env.local
 .env*.local
 
+# Google Service Account Keys (보안상 중요!)
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+!next.config.ts
+!postcss.config.mjs
+!eslint.config.mjs
+
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies

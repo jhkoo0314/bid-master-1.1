@@ -31,14 +31,16 @@ export function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
     }
 
     setIsSubmitting(true);
-    console.log("사전 알림 신청 시작:", { name, email });
+    console.log("📧 [사전 알림] 신청 시작:", { name, email });
 
     try {
+      // 서버 액션을 사용하여 데이터 저장
       const result = await submitWaitlist(name.trim(), email.trim());
+      console.log("📧 [사전 알림] 신청 결과:", result);
+
       setSubmitResult(result);
-      console.log("사전 알림 신청 결과:", result);
     } catch (error) {
-      console.error("사전 알림 신청 오류:", error);
+      console.error("❌ [사전 알림] 신청 오류:", error);
       setSubmitResult({
         success: false,
         message: "신청 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",

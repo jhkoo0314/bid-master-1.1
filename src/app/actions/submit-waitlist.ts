@@ -34,34 +34,93 @@ export async function submitWaitlist(
       throw new Error("올바른 이메일 형식이 아닙니다.");
     }
 
-    // Google Sheets API를 사용하여 데이터 저장
+    // 1단계: 구글 시트에 데이터 저장 시도
     console.log("📊 [Google Sheets] 데이터 저장 시도...");
+    let googleSheetsSuccess = false;
+    let googleSheetsMessage = "";
 
     try {
-      // 실제 구글 시트에 데이터 저장
-      const sheetResult = await addWaitlistToSheet(name, email);
-
-      if (!sheetResult.success) {
-        throw new Error(sheetResult.message);
+      const googleResult = await addWaitlistToSheet(name, email);
+      if (googleResult.success) {
+        googleSheetsSuccess = true;
+        googleSheetsMessage = googleResult.message;
+        console.log("✅ [Google Sheets] 데이터 저장 성공");
+        console.log(`  - 메시지: ${googleSheetsMessage}`);
+      } else {
+        console.log("❌ [Google Sheets] 데이터 저장 실패");
+        console.log(`  - 오류: ${googleResult.message}`);
       }
+    } catch (googleError) {
+      console.error("❌ [Google Sheets] 저장 중 오류 발생:", googleError);
+      googleSheetsMessage = "구글 시트 저장 중 오류가 발생했습니다.";
+    }
 
-      console.log("✅ [Google Sheets] 데이터 저장 완료");
-      console.log(`  - 결과: ${sheetResult.message}`);
-    } catch (sheetError) {
-      console.error("❌ [Google Sheets] 저장 실패:", sheetError);
-      throw new Error("데이터 저장 중 오류가 발생했습니다.");
+    // 2단계: 구글 시트 저장 실패 시 로컬 파일에 백업 저장
+    if (!googleSheetsSuccess) {
+      console.log("📊 [백업 저장] 로컬 파일에 데이터 저장 시도...");
+
+      try {
+        const fs = require("fs");
+        const path = require("path");
+
+        const data = {
+          name,
+          email,
+          timestamp: new Date().toISOString(),
+        };
+
+        const filePath = path.join(process.cwd(), "waitlist-data.json");
+
+        // 기존 데이터 읽기
+        let existingData = [];
+        try {
+          const fileContent = fs.readFileSync(filePath, "utf8");
+          existingData = JSON.parse(fileContent);
+        } catch (error) {
+          // 파일이 없으면 빈 배열로 시작
+          existingData = [];
+        }
+
+        // 새 데이터 추가
+        existingData.push(data);
+
+        // 파일에 저장
+        fs.writeFileSync(filePath, JSON.stringify(existingData, null, 2));
+
+        console.log("✅ [백업 저장] 로컬 파일 저장 완료");
+        console.log(`  - 총 레코드 수: ${existingData.length}`);
+      } catch (backupError) {
+        console.error("❌ [백업 저장] 로컬 파일 저장 실패:", backupError);
+        throw new Error(
+          "데이터 저장에 실패했습니다. 잠시 후 다시 시도해주세요."
+        );
+      }
     }
 
     // TODO: Gmail API를 사용하여 확인 메일 발송
     console.log("📧 [Gmail] 확인 메일 발송 시도...");
     console.log("  ⚠️ Gmail API가 설정되지 않았습니다. 로그만 기록합니다.");
 
-    console.log("✅ [사전 알림] 신청 완료 (시뮬레이션)");
+    // 최종 결과 로그
+    if (googleSheetsSuccess) {
+      console.log("✅ [사전 알림] 신청 완료 (구글 시트 저장)");
+    } else {
+      console.log("⚠️ [사전 알림] 신청 완료 (로컬 백업 저장)");
+    }
+
+    // 사용자에게 보여줄 메시지 결정
+    let userMessage;
+    if (googleSheetsSuccess) {
+      userMessage =
+        "사전 알림 신청이 완료되었습니다! 정식 출시되면 이메일로 알려드리겠습니다.";
+    } else {
+      userMessage =
+        "사전 알림 신청이 완료되었습니다! (임시 저장) 정식 출시되면 이메일로 알려드리겠습니다.";
+    }
 
     return {
       success: true,
-      message:
-        "사전 알림 신청이 완료되었습니다! 정식 출시되면 이메일로 알려드리겠습니다.",
+      message: userMessage,
     };
   } catch (error) {
     console.error("❌ [사전 알림] 신청 실패:", error);
