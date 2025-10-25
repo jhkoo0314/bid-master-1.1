@@ -55,7 +55,7 @@
 
 - **OpenAI API** (GPT-4o)
 - **Google Sheets API** (사전 알림 신청)
-- **Gmail API** (확인 메일 발송)
+- **Gmail SMTP** (확인 메일 발송)
 
 ### Animation & Charts
 
@@ -93,14 +93,32 @@ OPENAI_API_KEY=sk-proj-...
 # Google Sheets API (사전 알림 신청용)
 GOOGLE_SHEETS_SPREADSHEET_ID=your-spreadsheet-id
 
-# Gmail API (확인 메일 발송용)
+# Gmail SMTP (확인 메일 발송용)
+GMAIL_USER=your-email@gmail.com
+GMAIL_APP_PASSWORD=your-16-digit-app-password
 GMAIL_FROM_EMAIL=your-email@gmail.com
 
 # 개발 모드 (선택)
 NEXT_PUBLIC_DEV_MODE=false
 ```
 
-### 4. 개발 서버 실행
+### 4. Gmail SMTP 설정 (이메일 발송용)
+
+Gmail 앱 비밀번호 생성:
+
+1. **Google 계정 설정**: https://myaccount.google.com/
+2. **보안 → 2단계 인증 활성화** (필수)
+3. **보안 → 앱 비밀번호 생성**: https://myaccount.google.com/apppasswords
+4. **"메일" 선택 후 "기타(맞춤 이름)" 입력** (예: "Bid Master AI")
+5. **생성된 16자리 비밀번호를 `.env.local`에 설정**
+
+```env
+GMAIL_USER=your-email@gmail.com
+GMAIL_APP_PASSWORD=your-16-digit-app-password
+GMAIL_FROM_EMAIL=your-email@gmail.com
+```
+
+### 5. 개발 서버 실행
 
 ```bash
 npm run dev
@@ -165,6 +183,8 @@ bid-master-ai/
 
 - [ ] `OPENAI_API_KEY`
 - [ ] `GOOGLE_SHEETS_SPREADSHEET_ID`
+- [ ] `GMAIL_USER`
+- [ ] `GMAIL_APP_PASSWORD`
 - [ ] `GMAIL_FROM_EMAIL`
 
 ## 📊 MVP 성공 지표

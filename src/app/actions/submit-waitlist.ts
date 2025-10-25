@@ -5,6 +5,7 @@
 "use server";
 
 import { addWaitlistToSheet } from "@/lib/google-sheets";
+import { sendWaitlistConfirmationEmail } from "@/lib/gmail-client";
 
 /**
  * 사전 알림 신청을 처리합니다.
@@ -97,9 +98,26 @@ export async function submitWaitlist(
       }
     }
 
-    // TODO: Gmail API를 사용하여 확인 메일 발송
+    // 3단계: Gmail API를 사용하여 확인 메일 발송
     console.log("📧 [Gmail] 확인 메일 발송 시도...");
-    console.log("  ⚠️ Gmail API가 설정되지 않았습니다. 로그만 기록합니다.");
+    let emailSent = false;
+    let emailMessage = "";
+
+    try {
+      const emailResult = await sendWaitlistConfirmationEmail(name, email);
+      if (emailResult.success) {
+        emailSent = true;
+        emailMessage = emailResult.message;
+        console.log("✅ [Gmail] 확인 메일 발송 성공");
+        console.log(`  - 메시지: ${emailMessage}`);
+      } else {
+        console.log("❌ [Gmail] 확인 메일 발송 실패");
+        console.log(`  - 오류: ${emailResult.message}`);
+      }
+    } catch (emailError) {
+      console.error("❌ [Gmail] 메일 발송 중 오류 발생:", emailError);
+      emailMessage = "이메일 발송 중 오류가 발생했습니다.";
+    }
 
     // 최종 결과 로그
     if (googleSheetsSuccess) {
@@ -108,14 +126,26 @@ export async function submitWaitlist(
       console.log("⚠️ [사전 알림] 신청 완료 (로컬 백업 저장)");
     }
 
+    if (emailSent) {
+      console.log("✅ [사전 알림] 확인 메일 발송 완료");
+    } else {
+      console.log("⚠️ [사전 알림] 확인 메일 발송 실패");
+    }
+
     // 사용자에게 보여줄 메시지 결정
     let userMessage;
-    if (googleSheetsSuccess) {
+    if (googleSheetsSuccess && emailSent) {
       userMessage =
-        "사전 알림 신청이 완료되었습니다! 정식 출시되면 이메일로 알려드리겠습니다.";
+        "사전 알림 신청이 완료되었습니다! 확인 메일을 발송했습니다. 정식 출시되면 이메일로 알려드리겠습니다.";
+    } else if (googleSheetsSuccess) {
+      userMessage =
+        "사전 알림 신청이 완료되었습니다! (이메일 발송 실패) 정식 출시되면 이메일로 알려드리겠습니다.";
+    } else if (emailSent) {
+      userMessage =
+        "사전 알림 신청이 완료되었습니다! 확인 메일을 발송했습니다. (임시 저장) 정식 출시되면 이메일로 알려드리겠습니다.";
     } else {
       userMessage =
-        "사전 알림 신청이 완료되었습니다! (임시 저장) 정식 출시되면 이메일로 알려드리겠습니다.";
+        "사전 알림 신청이 완료되었습니다! (임시 저장, 이메일 발송 실패) 정식 출시되면 이메일로 알려드리겠습니다.";
     }
 
     return {

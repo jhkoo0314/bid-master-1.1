@@ -48,9 +48,17 @@ bid-master-ai/
 │   │   │   ├── generate-property.ts      # 매물 생성
 │   │   │   ├── generate-simulation.ts    # 시뮬레이션 생성
 │   │   │   └── submit-waitlist.ts        # 사전 알림 신청
+│   │   ├── api/                # API 엔드포인트
+│   │   │   ├── sheets/write/            # 구글 시트 쓰기
+│   │   │   ├── test-read/route.ts       # 데이터 읽기 테스트
+│   │   │   ├── test-sheets/route.ts     # 구글 시트 연결 테스트
+│   │   │   ├── test-simple/route.ts     # 로컬 파일 저장 테스트
+│   │   │   └── test-waitlist/route.ts   # 사전 알림 테스트
 │   │   ├── calculator/         # 수익 계산기 페이지
 │   │   ├── property/[id]/      # 매물 상세 페이지
 │   │   ├── simulation/[id]/    # 시뮬레이션 페이지
+│   │   ├── test-sheets/        # 구글 시트 테스트 페이지
+│   │   ├── test-simple/        # 간단한 테스트 페이지
 │   │   ├── layout.tsx          # 루트 레이아웃
 │   │   └── page.tsx            # 메인 페이지
 │   ├── components/             # UI 컴포넌트
@@ -63,6 +71,7 @@ bid-master-ai/
 │   │   └── WaitlistModal.tsx             # 사전 알림 모달
 │   ├── lib/                    # 핵심 로직
 │   │   ├── format-utils.ts     # 포맷 유틸리티
+│   │   ├── google-sheets.ts   # 구글 시트 연동
 │   │   ├── openai-client.ts    # AI 매물 생성
 │   │   ├── profit-calculator.ts # 수익 계산
 │   │   ├── regional-analysis.ts # 지역분석
@@ -74,6 +83,8 @@ bid-master-ai/
 ├── docs/                       # 미래 계획 문서
 │   ├── future-supabase-schema.md
 │   └── future-clerk-integration.md
+├── bid-master-v1-sheet-mcp.json # 구글 서비스 계정 키
+├── waitlist-data.json         # 사전 알림 데이터 (로컬)
 └── README.md
 ```
 
@@ -107,6 +118,20 @@ bid-master-ai/
 
 - 일반 모드: 매물 생성 10회 제한
 - 개발자 모드: 무제한 생성 + 디버그 정보 표시
+
+### 5. 사전 알림 시스템
+
+- **Google Sheets 연동**: 사전 알림 신청 데이터를 구글 시트에 자동 저장
+- **로컬 백업**: 구글 시트 연결 실패 시 로컬 파일(`waitlist-data.json`)에 백업 저장
+- **이메일 확인**: Gmail API를 통한 신청 확인 메일 발송
+- **테스트 페이지**: 개발자용 테스트 페이지로 시스템 검증 가능
+
+### 6. 테스트 및 디버깅 도구
+
+- **구글 시트 테스트**: `/test-sheets` - 구글 시트 연결 상태 확인
+- **로컬 저장 테스트**: `/test-simple` - 로컬 파일 저장 기능 테스트
+- **API 테스트**: 각종 API 엔드포인트별 개별 테스트 가능
+- **실시간 로그**: 모든 핵심 기능에 상세한 로그 기록
 
 ## 📊 핵심 컴포넌트 분석
 
@@ -156,6 +181,23 @@ interface SimulationStore {
 - 용어 설명 툴팁 (호버 시 법률 용어 설명 표시)
 - 입찰 모달 연동
 
+### 5. Google Sheets 연동 (`src/lib/google-sheets.ts`)
+
+핵심 기능:
+
+- **서비스 계정 인증**: JSON 키 파일을 통한 구글 API 인증
+- **자동 시트 생성**: 사전 알림 데이터용 시트 자동 생성
+- **데이터 저장**: 이름, 이메일, 타임스탬프를 구글 시트에 저장
+- **에러 처리**: 연결 실패 시 로컬 파일로 백업 저장
+- **로깅**: 모든 작업에 상세한 로그 기록
+
+### 6. 사전 알림 시스템 (`src/app/actions/submit-waitlist.ts`)
+
+- **이중 저장**: 구글 시트 + 로컬 파일 동시 저장
+- **이메일 발송**: Gmail API를 통한 확인 메일 자동 발송
+- **데이터 검증**: 이메일 형식 및 필수 필드 검증
+- **에러 복구**: 구글 시트 실패 시에도 로컬 저장으로 서비스 지속
+
 ## 🔍 핵심 로직
 
 ### 1. 매물 생성 프로세스
@@ -193,6 +235,25 @@ const safetyMargin = calculateSafetyMargin(analyzedRights, analyzedTenants);
 - **개발자 모드**: 무제한 생성 + 디버그 정보 표시
 - **상태 관리**: Zustand persist로 브라우저 새로고침 시에도 상태 유지
 
+### 4. 사전 알림 시스템 프로세스
+
+```typescript
+// 사전 알림 신청 플로우
+1. 사용자 정보 입력 (이름, 이메일)
+2. 데이터 검증 (이메일 형식, 필수 필드)
+3. 구글 시트 저장 시도
+4. 로컬 파일 백업 저장
+5. Gmail API로 확인 메일 발송
+6. 결과 반환 (성공/실패 상태)
+```
+
+### 5. 테스트 시스템
+
+- **구글 시트 테스트**: `/test-sheets` - 구글 시트 연결 및 데이터 저장 테스트
+- **로컬 저장 테스트**: `/test-simple` - 로컬 파일 저장 기능 테스트
+- **API 개별 테스트**: 각 엔드포인트별 독립적인 테스트 가능
+- **실시간 모니터링**: 모든 테스트에 상세한 로그 및 결과 표시
+
 ## 📈 MVP 성공 지표
 
 - **활성화 (Activation)**: 신규 방문자 중 24시간 내 시뮬레이션 1회 이상 완료
@@ -207,6 +268,10 @@ const safetyMargin = calculateSafetyMargin(analyzedRights, analyzedTenants);
 - ✅ AI 기반 교육용 매물 생성
 - ✅ 권리분석 엔진
 - ✅ 수익 계산기
+- ✅ 사전 알림 시스템 (구글 시트 + 로컬 백업)
+- ✅ 이메일 확인 시스템 (Gmail API)
+- ✅ 테스트 및 디버깅 도구
+- ✅ 상세한 로깅 시스템
 
 ### Phase 2: 사용자 인증 (Clerk)
 
@@ -249,9 +314,11 @@ const safetyMargin = calculateSafetyMargin(analyzedRights, analyzedTenants);
 
 ### 환경 변수 체크리스트
 
-- [ ] `OPENAI_API_KEY`
-- [ ] `GOOGLE_SHEETS_SPREADSHEET_ID`
-- [ ] `GMAIL_FROM_EMAIL`
+- [ ] `OPENAI_API_KEY` - OpenAI API 키 (필수)
+- [ ] `GOOGLE_SHEETS_SPREADSHEET_ID` - 구글 시트 ID (사전 알림용)
+- [ ] `GMAIL_FROM_EMAIL` - Gmail 발송자 이메일 (확인 메일용)
+- [ ] `GOOGLE_SERVICE_ACCOUNT_JSON` - 구글 서비스 계정 JSON (선택사항)
+- [ ] `NEXT_PUBLIC_DEV_MODE` - 개발자 모드 활성화 (선택사항)
 
 ## 📝 개발 가이드
 
@@ -269,6 +336,28 @@ const safetyMargin = calculateSafetyMargin(analyzedRights, analyzedTenants);
 2. **권리분석**: 말소기준권리 판단, 대항력 계산 결과
 3. **사용자 액션**: 필터 적용, 입찰 시도, 새로고침
 4. **에러 처리**: API 실패, 검증 오류, 네트워크 문제
+5. **사전 알림**: 구글 시트 저장, 로컬 백업, 이메일 발송
+6. **테스트 시스템**: 각종 API 테스트 결과 및 성능 지표
+
+### 로그 형식 예시
+
+```typescript
+// 매물 생성 로그
+console.log("🏠 [매물 생성] AI 매물 생성 시작");
+console.log("🏠 [매물 생성] 생성 완료 - 토큰 사용량: 1,250");
+
+// 권리분석 로그
+console.log("⚖️ [권리분석] 말소기준권리 판단 완료");
+console.log("⚖️ [권리분석] 대항력 계산 결과: 임차인 2명 인수");
+
+// 사전 알림 로그
+console.log("📧 [사전 알림] 구글 시트 저장 성공");
+console.log("📧 [사전 알림] 확인 메일 발송 완료");
+
+// 테스트 로그
+console.log("🧪 [테스트] 구글 시트 연결 테스트 시작");
+console.log("🧪 [테스트] 테스트 완료 - 응답시간: 2.3초");
+```
 
 ## 📧 문의
 
