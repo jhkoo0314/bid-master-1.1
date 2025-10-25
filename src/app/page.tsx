@@ -11,6 +11,7 @@ import {
   PropertyFilter,
   PropertyFilterOptions,
 } from "@/components/PropertyFilter";
+import { WaitlistModal } from "@/components/WaitlistModal";
 import { useSimulationStore } from "@/store/simulation-store";
 import { generateMultipleProperties } from "@/app/actions/generate-property";
 import { SimulationScenario, DifficultyLevel } from "@/types/simulation";
@@ -26,6 +27,7 @@ export default function HomePage() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isWaitlistModalOpen, setIsWaitlistModalOpen] = useState(false);
   const [currentFilters, setCurrentFilters] = useState<PropertyFilterOptions>({
     propertyTypes: [],
     regions: [],
@@ -143,7 +145,7 @@ export default function HomePage() {
           <p className="text-xl md:text-2xl text-blue-100 mb-8">
             로그인 없이 즉시 시작하는 경매 시뮬레이션
           </p>
-          <div className="flex justify-center gap-4">
+          <div className="flex justify-center gap-4 flex-wrap">
             <a
               href="#properties"
               className="px-8 py-3 bg-white text-blue-600 font-bold rounded-lg hover:bg-blue-50 transition-colors"
@@ -156,6 +158,15 @@ export default function HomePage() {
             >
               수익 계산하기
             </Link>
+            <button
+              onClick={() => {
+                console.log("🔔 [사전 알림] 모달 열기 요청");
+                setIsWaitlistModalOpen(true);
+              }}
+              className="px-8 py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition-colors border-2 border-white"
+            >
+              🔔 사전 알림 신청
+            </button>
           </div>
         </div>
       </section>
@@ -260,6 +271,15 @@ export default function HomePage() {
           </p>
         </div>
       </footer>
+
+      {/* 사전 알림 신청 모달 */}
+      <WaitlistModal
+        isOpen={isWaitlistModalOpen}
+        onClose={() => {
+          console.log("🔔 [사전 알림] 모달 닫기");
+          setIsWaitlistModalOpen(false);
+        }}
+      />
     </div>
   );
 }
