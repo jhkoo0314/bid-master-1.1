@@ -14,101 +14,6 @@ import { AuctionAnalysisModal } from "@/components/AuctionAnalysisModal";
 import { submitWaitlist } from "@/app/actions/submit-waitlist";
 import Link from "next/link";
 
-// 용어 설명 함수
-function getTermExplanation(term: string, keyPoints: string[] = []): string {
-  // 핵심분석 포인트들에서 해당 용어가 포함된 경우만 설명 제공
-  const isTermInKeyPoints = keyPoints.some(
-    (point) => point.includes(term) || term.includes(point.split(" ")[0])
-  );
-
-  if (!isTermInKeyPoints) {
-    return term; // 핵심분석에 없는 용어는 설명 없이 그대로 반환
-  }
-  const explanations: { [key: string]: string } = {
-    "다중 근저당권":
-      "한 부동산에 여러 개의 근저당권이 설정된 상태. 우선순위에 따라 배당받는 순서가 결정됩니다.",
-    "임차인 대항력":
-      "임차인이 경매에서 자신의 권리를 주장할 수 있는 법적 지위. 전입일과 확정일자 요건을 충족해야 합니다.",
-    소액임차인:
-      "보증금이 일정 금액 이하인 임차인. 경매에서 우선변제를 받을 수 있는 특별한 보호를 받습니다.",
-    말소기준권리:
-      "경매에서 가장 우선순위가 높은 권리. 이 권리보다 나중에 설정된 권리들은 말소됩니다.",
-    가압류:
-      "채권자가 채무자의 재산을 미리 압류해 두는 법적 조치. 경매에서 배당받을 권리가 있습니다.",
-    전세권:
-      "임대차와 유사하지만 더 강한 권리. 경매에서도 인정받을 수 있습니다.",
-    우선변제: "일반 채권자보다 먼저 변제받을 수 있는 특별한 권리입니다.",
-    배당요구종기:
-      "경매에서 권리를 주장하려면 이 날짜까지 신청해야 하는 마감일입니다.",
-    근저당권:
-      "채권 담보를 위해 부동산에 설정하는 권리. 경매에서 가장 우선적으로 배당받습니다.",
-    지상권:
-      "타인의 토지 위에 건물을 짓고 사용할 수 있는 권리. 경매에서도 인정받을 수 있습니다.",
-    유찰: "경매에서 입찰자가 없거나 최저가에 도달하지 못해 매각되지 않는 것.",
-    감정가: "부동산의 시장가치를 전문가가 평가한 금액. 경매의 기준이 됩니다.",
-    최저가:
-      "경매에서 매각할 수 있는 최소 금액. 보통 감정가의 70-80% 수준입니다.",
-    입찰보증금:
-      "경매에 참여하기 위해 미리 납부하는 보증금. 낙찰 시 계약금으로 전환됩니다.",
-    확정일자:
-      "임차인이 전입신고를 하고 받는 증명서. 대항력 인정의 중요한 요건입니다.",
-    전입신고:
-      "새로운 주소로 이사했을 때 관할 동사무소에 신고하는 것. 임차인 대항력의 첫 번째 요건입니다.",
-    인수: "경매 낙찰자가 기존 권리나 임차인을 그대로 인정하고 인수하는 것.",
-    배당: "경매 매각대금을 각 권리자들에게 우선순위에 따라 나누어 주는 것.",
-    경매: "채무를 변제하기 위해 부동산을 공개적으로 매각하는 절차.",
-    부동산임의경매:
-      "채무자가 자발적으로 부동산을 경매에 부치는 절차. 강제경매와 구분됩니다.",
-    강제경매: "채권자가 법원에 신청하여 부동산을 경매에 부치는 절차.",
-    낙찰: "경매에서 최고가로 입찰한 사람이 매물을 구매하는 것.",
-    대항력: "임차인의 권리 보호 수준 - 경매에서 임차인 권리가 보호되는 정도",
-    관리비: "공동주택의 공용시설 관리와 운영에 필요한 비용",
-    입주민규정: "아파트 입주민들이 지켜야 하는 공동생활 규칙",
-    주차장사용권: "아파트 주차장을 사용할 수 있는 권리",
-    상업용관리비: "오피스텔의 상업시설 관리에 필요한 비용",
-    용도변경제한: "상업용 부동산의 용도를 변경할 수 있는 제한사항",
-    임대수익률: "임대료 수익을 투자금액으로 나눈 비율",
-    상권: "상업 활동이 활발한 지역의 범위",
-    유동인구: "상가 주변을 지나다니는 사람들의 수",
-    임대료수준: "해당 지역 상가의 평균 임대료",
-    시장가: "부동산의 실제 거래가격. 감정가와 다를 수 있습니다.",
-    입찰시작가: "경매에서 입찰을 시작하는 최초 가격",
-    권리분석: "부동산에 설정된 각종 권리들의 우선순위와 내용을 파악하는 것",
-    "임차인 현황": "해당 부동산에 거주하는 임차인들의 보증금, 월세 등 정보",
-    "입찰가 산정": "경매에 참여할 적정 입찰가격을 계산하는 것",
-    "리스크 체크": "경매 참여 시 발생할 수 있는 위험요소들을 점검하는 것",
-    채무자: "경매 대상 부동산의 소유자이자 채무를 진 사람",
-    채권자: "채무자에게 돈을 빌려준 사람이나 기관",
-    소유자: "부동산의 법적 소유자",
-    기일입찰: "정해진 날짜와 시간에 법원에서 진행하는 입찰 방식",
-    전자입찰: "인터넷을 통해 진행하는 입찰 방식",
-    입찰: "경매에서 매물을 구매하기 위해 가격을 제시하는 행위",
-    매각: "경매를 통해 부동산을 판매하는 것",
-    매각기일: "경매가 진행되는 날짜",
-    매각기일공고: "경매 일정을 공지하는 법원 공고",
-    감정평가: "부동산의 시장가치를 전문가가 평가하는 과정",
-    감정평가서: "부동산의 시장가치를 평가한 공식 문서",
-    토지면적: "부동산의 토지 부분 면적",
-    건물면적: "부동산의 건물 부분 면적",
-    전용면적: "실제 사용할 수 있는 면적",
-    공용면적: "공동으로 사용하는 면적",
-    구조: "건물의 건축 구조 방식",
-    용도: "부동산의 사용 목적",
-    층수: "건물의 총 층수",
-    해당층: "경매 대상이 되는 층",
-    유찰횟수: "경매에서 유찰된 횟수",
-    유찰사유: "경매에서 유찰된 이유",
-    낙찰가: "경매에서 최종 낙찰된 가격",
-    낙찰자: "경매에서 최종 낙찰받은 사람",
-    계약금: "낙찰 후 계약 시 지급하는 금액",
-    잔금: "계약금을 제외한 나머지 금액",
-    인수기일: "낙찰 후 부동산을 인수하는 날짜",
-    인수조건: "부동산 인수 시 적용되는 조건들",
-  };
-
-  return explanations[term] || term;
-}
-
 // 매물별 동적 단계별 가이드 생성 함수
 function generateDynamicStepGuide(property: SimulationScenario): {
   [key: string]: string;
@@ -239,6 +144,190 @@ function generateDynamicStepGuide(property: SimulationScenario): {
   return guide;
 }
 
+// 매물별 동적 핵심분석 생성 함수
+function generateDynamicCoreAnalysis(property: SimulationScenario): {
+  keyPoints: string[];
+  risks: string[];
+} {
+  console.log("🔍 [동적 핵심분석] 매물별 핵심분석 생성:", property.id);
+
+  const { basicInfo, rights, tenants, propertyDetails } = property;
+  const hasComplexRights = rights && rights.length > 2;
+  const hasTenants = tenants && tenants.length > 0;
+  const hasSmallTenants = tenants && tenants.some((t) => t.isSmallTenant);
+  const hasMultipleMortgages =
+    rights && rights.filter((r) => r.rightType === "근저당권").length > 1;
+  const isApartment = propertyDetails?.usage === "아파트";
+  const isOffice = propertyDetails?.usage === "오피스텔";
+  const isCommercial = propertyDetails?.usage === "상가";
+  const discountRate = Math.round(
+    (1 - (basicInfo.minimumBidPrice || 0) / (basicInfo.appraisalValue || 1)) *
+      100
+  );
+
+  const keyPoints: string[] = [];
+  const risks: string[] = [];
+
+  // 매물 유형별 핵심 포인트
+  if (isApartment) {
+    keyPoints.push("아파트 경매의 안정성과 관리비 부담 검토 필요");
+    keyPoints.push("입주민 규정 및 주차장 사용권 확인 필수");
+  } else if (isOffice) {
+    keyPoints.push("오피스텔의 상업용 관리비와 용도변경 제한사항 주의");
+    keyPoints.push("임대수익률과 상권 분석이 투자 성공의 핵심");
+  } else if (isCommercial) {
+    keyPoints.push("상가의 상권 분석과 유동인구 조사가 필수");
+    keyPoints.push("임대료 수준과 용도변경 가능성 검토 필요");
+  }
+
+  // 권리구조별 핵심 포인트
+  if (hasMultipleMortgages) {
+    keyPoints.push("다중 근저당권의 배당순위와 말소기준권리 분석 중요");
+    keyPoints.push("각 근저당권의 설정일자와 청구금액 비교 필수");
+  } else if (hasComplexRights) {
+    keyPoints.push("다양한 권리 유형의 인수/소멸 여부 파악 필요");
+    keyPoints.push("권리자별 청구금액과 배당 가능성 검토");
+  } else {
+    keyPoints.push("단순한 권리구조로 상대적으로 안전한 투자");
+  }
+
+  // 임차인 관련 핵심 포인트
+  if (hasTenants) {
+    const tenantCount = tenants?.length || 0;
+    const smallTenantCount =
+      tenants?.filter((t) => t.isSmallTenant).length || 0;
+    keyPoints.push(`임차인 ${tenantCount}명의 인수 비용 고려 필요`);
+
+    if (hasSmallTenants) {
+      keyPoints.push(
+        `소액임차인 ${smallTenantCount}명의 우선변제 비용 추가 발생`
+      );
+    }
+  } else {
+    keyPoints.push("임차인 부담이 없는 깨끗한 매물");
+  }
+
+  // 할인율별 핵심 포인트
+  if (discountRate > 30) {
+    keyPoints.push("높은 할인율로 투자 기회가 좋지만 숨겨진 리스크 주의");
+  } else if (discountRate < 20) {
+    keyPoints.push("낮은 할인율로 안전하지만 수익성 제한적");
+  } else {
+    keyPoints.push("적정 할인율로 균형잡힌 투자 기회");
+  }
+
+  // 리스크 분석
+  if (hasComplexRights) {
+    risks.push("복잡한 권리구조로 인한 추가 분석 비용 발생 가능");
+  }
+  if (hasTenants) {
+    risks.push("임차인 인수 비용으로 인한 예상보다 높은 투자금 필요");
+  }
+  if (hasSmallTenants) {
+    risks.push("소액임차인 우선변제로 인한 추가 비용 발생");
+  }
+  if (discountRate > 30) {
+    risks.push("높은 할인율의 원인 파악 필요 (숨겨진 하자 등)");
+  }
+  if (discountRate < 20) {
+    risks.push("낮은 할인율로 인한 수익성 제한");
+  }
+
+  console.log("✅ [동적 핵심분석] 생성 완료:", { keyPoints, risks });
+  return { keyPoints, risks };
+}
+
+// 매물별 동적 실전팁 생성 함수
+function generateDynamicProTips(property: SimulationScenario): string[] {
+  console.log("🔍 [동적 실전팁] 매물별 실전팁 생성:", property.id);
+
+  const { basicInfo, rights, tenants, propertyDetails } = property;
+  const hasComplexRights = rights && rights.length > 2;
+  const hasTenants = tenants && tenants.length > 0;
+  const hasSmallTenants = tenants && tenants.some((t) => t.isSmallTenant);
+  const hasMultipleMortgages =
+    rights && rights.filter((r) => r.rightType === "근저당권").length > 1;
+  const isApartment = propertyDetails?.usage === "아파트";
+  const isOffice = propertyDetails?.usage === "오피스텔";
+  const isCommercial = propertyDetails?.usage === "상가";
+  const discountRate = Math.round(
+    (1 - (basicInfo.minimumBidPrice || 0) / (basicInfo.appraisalValue || 1)) *
+      100
+  );
+
+  const tips: string[] = [];
+
+  // 매물 유형별 실전팁
+  if (isApartment) {
+    tips.push("아파트는 관리비와 입주민 규정을 꼼꼼히 확인하세요");
+    tips.push("주차장 사용권과 대지권 비율을 확인하여 추가 비용을 파악하세요");
+  } else if (isOffice) {
+    tips.push(
+      "오피스텔은 상업용 관리비가 일반 아파트보다 높으니 미리 확인하세요"
+    );
+    tips.push("용도변경 제한사항을 확인하여 활용 방안을 검토하세요");
+  } else if (isCommercial) {
+    tips.push("상가는 상권 분석과 유동인구 조사가 투자 성공의 핵심입니다");
+    tips.push("임대료 수준과 용도변경 가능성을 현장에서 직접 확인하세요");
+  }
+
+  // 권리구조별 실전팁
+  if (hasMultipleMortgages) {
+    tips.push(
+      "다중 근저당권은 말소기준권리를 먼저 파악하고 배당순위를 확인하세요"
+    );
+    tips.push(
+      "각 근저당권의 설정일자와 청구금액을 비교하여 인수 여부를 결정하세요"
+    );
+  } else if (hasComplexRights) {
+    tips.push("다양한 권리 유형의 인수/소멸 여부를 명확히 파악하세요");
+    tips.push("권리분석 전문가와 상담하여 정확한 분석을 받으세요");
+  } else {
+    tips.push("단순한 권리구조이므로 상대적으로 안전한 투자가 가능합니다");
+  }
+
+  // 임차인 관련 실전팁
+  if (hasTenants) {
+    const tenantCount = tenants?.length || 0;
+    const totalDeposit = tenants?.reduce((sum, t) => sum + t.deposit, 0) || 0;
+    tips.push(
+      `임차인 ${tenantCount}명의 총 보증금 ${totalDeposit.toLocaleString(
+        "ko-KR"
+      )}원을 인수 비용으로 고려하세요`
+    );
+
+    if (hasSmallTenants) {
+      const smallTenantCount =
+        tenants?.filter((t) => t.isSmallTenant).length || 0;
+      tips.push(
+        `소액임차인 ${smallTenantCount}명의 우선변제 비용이 추가로 발생할 수 있습니다`
+      );
+    }
+  } else {
+    tips.push("임차인이 없는 깨끗한 매물로 즉시 입주 또는 재임대가 가능합니다");
+  }
+
+  // 할인율별 실전팁
+  if (discountRate > 30) {
+    tips.push("높은 할인율의 원인을 파악하여 숨겨진 하자가 없는지 확인하세요");
+    tips.push("현장 답사를 통해 매물의 실제 상태를 직접 확인하세요");
+  } else if (discountRate < 20) {
+    tips.push(
+      "낮은 할인율로 안전하지만 수익성을 고려한 입찰가 산정이 필요합니다"
+    );
+  } else {
+    tips.push("적정 할인율로 균형잡힌 투자 기회입니다");
+  }
+
+  // 일반적인 실전팁
+  tips.push("입찰 전 현장 답사를 통해 매물의 실제 상태를 확인하세요");
+  tips.push("권리분석 전문가와 상담하여 정확한 분석을 받으세요");
+  tips.push("충분한 자금을 확보하여 예상보다 높은 입찰가에 대비하세요");
+
+  console.log("✅ [동적 실전팁] 생성 완료:", tips);
+  return tips;
+}
+
 // 단계별 가이드 제목 함수
 function getStepTitle(stepKey: string): string {
   const titles: { [key: string]: string } = {
@@ -261,10 +350,10 @@ export default function PropertyDetailPage() {
   const [showProTips, setShowProTips] = useState(false);
   const [showLegalTerms, setShowLegalTerms] = useState(false);
   const [showStepGuide, setShowStepGuide] = useState(false);
-  const [showTerms, setShowTerms] = useState(false);
-  const [activeTab, setActiveTab] = useState<"education" | "report">(
-    "education"
-  );
+  const [showCoreAnalysis, setShowCoreAnalysis] = useState(false);
+  const [activeTab, setActiveTab] = useState<
+    "education" | "report" | "specification"
+  >("education");
   const [showWaitlistModal, setShowWaitlistModal] = useState(false);
   const [showAuctionAnalysisModal, setShowAuctionAnalysisModal] =
     useState(false);
@@ -1079,6 +1168,16 @@ export default function PropertyDetailPage() {
                   📚 교육 포인트
                 </button>
                 <button
+                  onClick={() => setActiveTab("specification")}
+                  className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+                    activeTab === "specification"
+                      ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
+                      : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+                  }`}
+                >
+                  📋 매각물건명세서
+                </button>
+                <button
                   onClick={() => {
                     if (devMode.isDevMode) {
                       setActiveTab("report");
@@ -1228,361 +1327,118 @@ export default function PropertyDetailPage() {
                   </div>
 
                   {/* 핵심 분석 */}
-                  {educationalContent?.coreAnalysis?.keyPoints && (
-                    <div>
-                      <h4 className="font-medium text-gray-800 mb-3">
-                        🔍 핵심 분석
-                      </h4>
-                      <div className="space-y-2">
-                        {educationalContent.coreAnalysis.keyPoints.map(
-                          (point, index) => (
-                            <div
-                              key={index}
-                              className="p-3 bg-blue-50 border-l-4 border-blue-400 rounded-r"
-                            >
-                              <p className="text-sm text-gray-700 font-medium mb-1">
-                                {point}
-                              </p>
-                              <p className="text-xs text-gray-600">
-                                {getTermExplanation(
-                                  point,
-                                  educationalContent.coreAnalysis?.keyPoints ||
-                                    []
-                                )}
-                              </p>
-                            </div>
-                          )
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* 예상 리스크 */}
-                  {educationalContent?.coreAnalysis?.risks &&
-                    educationalContent.coreAnalysis.risks.length > 0 && (
-                      <div>
-                        <button
-                          onClick={() => setShowRisks(!showRisks)}
-                          className="flex items-center justify-between w-full p-3 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
-                        >
-                          <h4 className="font-medium text-gray-800">
-                            ⚠️ 예상 리스크
-                          </h4>
-                          <span className="text-red-600">
-                            {showRisks ? "▲" : "▼"}
-                          </span>
-                        </button>
-                        {showRisks && (
-                          <div className="mt-3 space-y-2">
-                            {educationalContent.coreAnalysis.risks.map(
-                              (risk, index) => (
-                                <div
-                                  key={index}
-                                  className="p-3 bg-red-50 border-l-4 border-red-400 rounded-r"
-                                >
-                                  <p className="text-sm text-gray-700 font-medium mb-1">
-                                    {risk}
-                                  </p>
-                                  <p className="text-xs text-gray-600">
-                                    {getTermExplanation(
-                                      risk,
-                                      educationalContent.coreAnalysis
-                                        ?.keyPoints || []
-                                    )}
-                                  </p>
-                                </div>
-                              )
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                  {/* 실전 팁 */}
-                  {educationalContent?.proTips &&
-                    educationalContent.proTips.length > 0 && (
-                      <div>
-                        <button
-                          onClick={() => setShowProTips(!showProTips)}
-                          className="flex items-center justify-between w-full p-3 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors"
-                        >
-                          <h4 className="font-medium text-gray-800">
-                            🎯 실전 팁
-                          </h4>
-                          <span className="text-indigo-600">
-                            {showProTips ? "▲" : "▼"}
-                          </span>
-                        </button>
-                        {showProTips && (
-                          <div className="mt-3 space-y-2">
-                            {educationalContent.proTips.map((tip, index) => (
-                              <div
-                                key={index}
-                                className="p-3 bg-indigo-50 border-l-4 border-indigo-400 rounded-r"
-                              >
-                                <p className="text-sm text-gray-700 font-medium mb-1">
-                                  {tip}
-                                </p>
-                                <p className="text-xs text-gray-600">
-                                  {getTermExplanation(
-                                    tip,
-                                    educationalContent.coreAnalysis
-                                      ?.keyPoints || []
-                                  )}
-                                </p>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                  {/* 주요 용어 설명 */}
                   <div>
                     <button
-                      onClick={() => setShowTerms(!showTerms)}
-                      className="flex items-center justify-between w-full p-3 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors"
+                      onClick={() => setShowCoreAnalysis(!showCoreAnalysis)}
+                      className="flex items-center justify-between w-full p-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
                     >
                       <h4 className="font-medium text-gray-800">
-                        📖 주요 용어 설명
+                        🔍 핵심 분석
                       </h4>
-                      <span className="text-purple-600">
-                        {showTerms ? "▲" : "▼"}
+                      <span className="text-blue-600">
+                        {showCoreAnalysis ? "▲" : "▼"}
                       </span>
                     </button>
-                    {showTerms && (
+                    {showCoreAnalysis && (
                       <div className="mt-3 space-y-2">
-                        {/* 매물에서 발견된 용어들을 자동으로 표시 */}
-                        {property && (
-                          <>
-                            {/* 근저당권 관련 */}
-                            {property.rights?.some(
-                              (r) => r.rightType === "근저당권"
-                            ) && (
-                              <div className="p-3 bg-blue-50 border-l-4 border-blue-400 rounded-r">
-                                <p className="text-sm text-gray-700 font-medium mb-1">
-                                  근저당권
-                                </p>
-                                <p className="text-xs text-gray-600">
-                                  {getTermExplanation("근저당권")}
-                                </p>
-                              </div>
-                            )}
-
-                            {/* 다중 근저당권 */}
-                            {property.rights &&
-                              property.rights.filter(
-                                (r) => r.rightType === "근저당권"
-                              ).length > 1 && (
-                                <div className="p-3 bg-blue-50 border-l-4 border-blue-400 rounded-r">
-                                  <p className="text-sm text-gray-700 font-medium mb-1">
-                                    다중 근저당권
-                                  </p>
-                                  <p className="text-xs text-gray-600">
-                                    {getTermExplanation("다중 근저당권")}
-                                  </p>
-                                </div>
-                              )}
-
-                            {/* 임차인 관련 */}
-                            {property.tenants &&
-                              property.tenants.length > 0 && (
-                                <>
-                                  <div className="p-3 bg-green-50 border-l-4 border-green-400 rounded-r">
-                                    <p className="text-sm text-gray-700 font-medium mb-1">
-                                      임차인
-                                    </p>
-                                    <p className="text-xs text-gray-600">
-                                      부동산을 임대차 계약으로 사용하는 사람
-                                    </p>
-                                  </div>
-
-                                  {property.tenants.some(
-                                    (t) => t.hasDaehangryeok
-                                  ) && (
-                                    <div className="p-3 bg-green-50 border-l-4 border-green-400 rounded-r">
-                                      <p className="text-sm text-gray-700 font-medium mb-1">
-                                        임차인 대항력
-                                      </p>
-                                      <p className="text-xs text-gray-600">
-                                        {getTermExplanation("임차인 대항력")}
-                                      </p>
-                                    </div>
-                                  )}
-
-                                  {property.tenants.some(
-                                    (t) => t.isSmallTenant
-                                  ) && (
-                                    <div className="p-3 bg-yellow-50 border-l-4 border-yellow-400 rounded-r">
-                                      <p className="text-sm text-gray-700 font-medium mb-1">
-                                        소액임차인
-                                      </p>
-                                      <p className="text-xs text-gray-600">
-                                        {getTermExplanation("소액임차인")}
-                                      </p>
-                                    </div>
-                                  )}
-                                </>
-                              )}
-
-                            {/* 경매 관련 기본 용어 */}
-                            <div className="p-3 bg-purple-50 border-l-4 border-purple-400 rounded-r">
-                              <p className="text-sm text-gray-700 font-medium mb-1">
-                                경매
-                              </p>
-                              <p className="text-xs text-gray-600">
-                                {getTermExplanation("경매")}
-                              </p>
-                            </div>
-
-                            <div className="p-3 bg-purple-50 border-l-4 border-purple-400 rounded-r">
-                              <p className="text-sm text-gray-700 font-medium mb-1">
-                                감정가
-                              </p>
-                              <p className="text-xs text-gray-600">
-                                {getTermExplanation("감정가")}
-                              </p>
-                            </div>
-
-                            <div className="p-3 bg-purple-50 border-l-4 border-purple-400 rounded-r">
-                              <p className="text-sm text-gray-700 font-medium mb-1">
-                                최저가
-                              </p>
-                              <p className="text-xs text-gray-600">
-                                {getTermExplanation("최저가")}
-                              </p>
-                            </div>
-
-                            {/* 매물 유형별 추가 용어 */}
-                            {property.propertyDetails?.usage === "아파트" && (
-                              <>
-                                <div className="p-3 bg-indigo-50 border-l-4 border-indigo-400 rounded-r">
-                                  <p className="text-sm text-gray-700 font-medium mb-1">
-                                    관리비
-                                  </p>
-                                  <p className="text-xs text-gray-600">
-                                    {getTermExplanation("관리비")}
-                                  </p>
-                                </div>
-                                <div className="p-3 bg-indigo-50 border-l-4 border-indigo-400 rounded-r">
-                                  <p className="text-sm text-gray-700 font-medium mb-1">
-                                    입주민규정
-                                  </p>
-                                  <p className="text-xs text-gray-600">
-                                    {getTermExplanation("입주민규정")}
-                                  </p>
-                                </div>
-                              </>
-                            )}
-
-                            {property.propertyDetails?.usage === "오피스텔" && (
-                              <>
-                                <div className="p-3 bg-teal-50 border-l-4 border-teal-400 rounded-r">
-                                  <p className="text-sm text-gray-700 font-medium mb-1">
-                                    상업용관리비
-                                  </p>
-                                  <p className="text-xs text-gray-600">
-                                    {getTermExplanation("상업용관리비")}
-                                  </p>
-                                </div>
-                                <div className="p-3 bg-teal-50 border-l-4 border-teal-400 rounded-r">
-                                  <p className="text-sm text-gray-700 font-medium mb-1">
-                                    용도변경제한
-                                  </p>
-                                  <p className="text-xs text-gray-600">
-                                    {getTermExplanation("용도변경제한")}
-                                  </p>
-                                </div>
-                              </>
-                            )}
-
-                            {property.propertyDetails?.usage === "상가" && (
-                              <>
-                                <div className="p-3 bg-orange-50 border-l-4 border-orange-400 rounded-r">
-                                  <p className="text-sm text-gray-700 font-medium mb-1">
-                                    임대수익률
-                                  </p>
-                                  <p className="text-xs text-gray-600">
-                                    {getTermExplanation("임대수익률")}
-                                  </p>
-                                </div>
-                                <div className="p-3 bg-orange-50 border-l-4 border-orange-400 rounded-r">
-                                  <p className="text-sm text-gray-700 font-medium mb-1">
-                                    상권
-                                  </p>
-                                  <p className="text-xs text-gray-600">
-                                    {getTermExplanation("상권")}
-                                  </p>
-                                </div>
-                                <div className="p-3 bg-orange-50 border-l-4 border-orange-400 rounded-r">
-                                  <p className="text-sm text-gray-700 font-medium mb-1">
-                                    유동인구
-                                  </p>
-                                  <p className="text-xs text-gray-600">
-                                    {getTermExplanation("유동인구")}
-                                  </p>
-                                </div>
-                              </>
-                            )}
-
-                            {/* 권리 관련 추가 용어 */}
-                            {property.rights?.some(
-                              (r) => r.rightType === "가압류"
-                            ) && (
-                              <div className="p-3 bg-red-50 border-l-4 border-red-400 rounded-r">
-                                <p className="text-sm text-gray-700 font-medium mb-1">
-                                  가압류
-                                </p>
-                                <p className="text-xs text-gray-600">
-                                  {getTermExplanation("가압류")}
-                                </p>
-                              </div>
-                            )}
-
-                            {property.rights?.some(
-                              (r) => r.rightType === "전세권"
-                            ) && (
-                              <div className="p-3 bg-cyan-50 border-l-4 border-cyan-400 rounded-r">
-                                <p className="text-sm text-gray-700 font-medium mb-1">
-                                  전세권
-                                </p>
-                                <p className="text-xs text-gray-600">
-                                  {getTermExplanation("전세권")}
-                                </p>
-                              </div>
-                            )}
-
-                            {property.rights?.some(
-                              (r) => r.rightType === "지상권"
-                            ) && (
-                              <div className="p-3 bg-emerald-50 border-l-4 border-emerald-400 rounded-r">
-                                <p className="text-sm text-gray-700 font-medium mb-1">
-                                  지상권
-                                </p>
-                                <p className="text-xs text-gray-600">
-                                  {getTermExplanation("지상권")}
-                                </p>
-                              </div>
-                            )}
-
-                            {/* 말소기준권리 */}
-                            {property.rights?.some(
-                              (r) => r.isMalsoBaseRight
-                            ) && (
-                              <div className="p-3 bg-pink-50 border-l-4 border-pink-400 rounded-r">
-                                <p className="text-sm text-gray-700 font-medium mb-1">
-                                  말소기준권리
-                                </p>
-                                <p className="text-xs text-gray-600">
-                                  {getTermExplanation("말소기준권리")}
-                                </p>
-                              </div>
-                            )}
-                          </>
-                        )}
+                        {(
+                          educationalContent?.coreAnalysis?.keyPoints ||
+                          generateDynamicCoreAnalysis(property).keyPoints
+                        ).map((point, index) => (
+                          <div
+                            key={index}
+                            className="p-3 bg-blue-50 border-l-4 border-blue-400 rounded-r"
+                          >
+                            <p className="text-sm text-gray-700 font-medium">
+                              {point}
+                            </p>
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
+
+                  {/* 예상 리스크 */}
+                  <div>
+                    <button
+                      onClick={() => setShowRisks(!showRisks)}
+                      className="flex items-center justify-between w-full p-3 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
+                    >
+                      <h4 className="font-medium text-gray-800">
+                        ⚠️ 예상 리스크
+                      </h4>
+                      <span className="text-red-600">
+                        {showRisks ? "▲" : "▼"}
+                      </span>
+                    </button>
+                    {showRisks && (
+                      <div className="mt-3 space-y-2">
+                        {(
+                          educationalContent?.coreAnalysis?.risks ||
+                          generateDynamicCoreAnalysis(property).risks
+                        ).map((risk, index) => (
+                          <div
+                            key={index}
+                            className="p-3 bg-red-50 border-l-4 border-red-400 rounded-r"
+                          >
+                            <p className="text-sm text-gray-700 font-medium">
+                              {risk}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 실전 팁 */}
+                  <div>
+                    <button
+                      onClick={() => setShowProTips(!showProTips)}
+                      className="flex items-center justify-between w-full p-3 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors"
+                    >
+                      <h4 className="font-medium text-gray-800">🎯 실전 팁</h4>
+                      <span className="text-indigo-600">
+                        {showProTips ? "▲" : "▼"}
+                      </span>
+                    </button>
+                    {showProTips && (
+                      <div className="mt-3 space-y-2">
+                        {(
+                          educationalContent?.proTips ||
+                          generateDynamicProTips(property)
+                        ).map((tip, index) => (
+                          <div
+                            key={index}
+                            className="p-3 bg-indigo-50 border-l-4 border-indigo-400 rounded-r"
+                          >
+                            <p className="text-sm text-gray-700 font-medium">
+                              {tip}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 매각물건명세서 탭 */}
+            {activeTab === "specification" && (
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  📋 매각물건명세서
+                </h3>
+
+                <div className="text-center py-12">
+                  <div className="text-6xl mb-4">🚧</div>
+                  <h4 className="text-xl font-semibold text-gray-800 mb-2">
+                    서비스 준비중 입니다
+                  </h4>
+                  <p className="text-gray-600">
+                    매각물건명세서 기능은 현재 개발 중입니다.
+                    <br />곧 만나보실 수 있습니다.
+                  </p>
                 </div>
               </div>
             )}

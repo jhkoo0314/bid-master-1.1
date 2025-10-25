@@ -12,6 +12,7 @@ import {
   PropertyFilterOptions,
 } from "@/components/PropertyFilter";
 import { WaitlistModal } from "@/components/WaitlistModal";
+import { AuctionTermsModal } from "@/components/AuctionTermsModal";
 import { useSimulationStore } from "@/store/simulation-store";
 import { generateMultipleProperties } from "@/app/actions/generate-property";
 import { SimulationScenario, DifficultyLevel } from "@/types/simulation";
@@ -28,6 +29,7 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isWaitlistModalOpen, setIsWaitlistModalOpen] = useState(false);
+  const [isAuctionTermsModalOpen, setIsAuctionTermsModalOpen] = useState(false);
   const [currentFilters, setCurrentFilters] = useState<PropertyFilterOptions>({
     propertyTypes: [],
     regions: [],
@@ -152,6 +154,15 @@ export default function HomePage() {
             >
               매물 보러가기
             </a>
+            <button
+              onClick={() => {
+                console.log("📚 [주요경매용어] 모달 열기 요청");
+                setIsAuctionTermsModalOpen(true);
+              }}
+              className="px-8 py-3 bg-purple-600 text-white font-bold rounded-lg hover:bg-purple-700 transition-colors border-2 border-white"
+            >
+              📚 주요 경매용어
+            </button>
             <Link
               href="/calculator"
               className="px-8 py-3 bg-blue-700 text-white font-bold rounded-lg hover:bg-blue-600 transition-colors border-2 border-white"
@@ -249,7 +260,7 @@ export default function HomePage() {
               <div className="text-6xl mb-4">📦</div>
               <p className="text-gray-600 mb-4">아직 생성된 매물이 없습니다.</p>
               <button
-                onClick={loadInitialProperties}
+                onClick={() => loadInitialProperties()}
                 className="px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors"
               >
                 매물 생성하기
@@ -278,6 +289,15 @@ export default function HomePage() {
         onClose={() => {
           console.log("🔔 [사전 알림] 모달 닫기");
           setIsWaitlistModalOpen(false);
+        }}
+      />
+
+      {/* 주요 경매용어 모달 */}
+      <AuctionTermsModal
+        isOpen={isAuctionTermsModalOpen}
+        onClose={() => {
+          console.log("📚 [주요경매용어] 모달 닫기");
+          setIsAuctionTermsModalOpen(false);
         }}
       />
     </div>
