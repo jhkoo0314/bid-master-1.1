@@ -1,5 +1,5 @@
 /**
- * Bid Master AI - 사전 알림 신청 모달
+ * Bid Master AI - 사전 알림 신청 모달 컴포넌트
  */
 
 "use client";
@@ -16,119 +16,166 @@ export function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [message, setMessage] = useState<{
-    type: "success" | "error";
-    text: string;
+  const [submitResult, setSubmitResult] = useState<{
+    success: boolean;
+    message: string;
   } | null>(null);
 
+  // 폼 제출 핸들러
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!name.trim() || !email.trim()) {
+      alert("이름과 이메일을 모두 입력해주세요.");
+      return;
+    }
+
     setIsSubmitting(true);
-    setMessage(null);
+    console.log("사전 알림 신청 시작:", { name, email });
 
     try {
-      const result = await submitWaitlist(name, email);
-
-      if (result.success) {
-        setMessage({ type: "success", text: result.message });
-        setName("");
-        setEmail("");
-
-        // 3초 후 모달 닫기
-        setTimeout(() => {
-          onClose();
-          setMessage(null);
-        }, 3000);
-      } else {
-        setMessage({ type: "error", text: result.message });
-      }
+      const result = await submitWaitlist(name.trim(), email.trim());
+      setSubmitResult(result);
+      console.log("사전 알림 신청 결과:", result);
     } catch (error) {
-      setMessage({
-        type: "error",
-        text: "신청 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
+      console.error("사전 알림 신청 오류:", error);
+      setSubmitResult({
+        success: false,
+        message: "신청 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
       });
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // 모달 닫기
+  const handleClose = () => {
+    setName("");
+    setEmail("");
+    setSubmitResult(null);
+    onClose();
+  };
+
+  // ESC 키로 모달 닫기
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Escape") {
+      handleClose();
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-gray-900">사전 알림 신청</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+      <div
+        className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4"
+        onKeyDown={handleKeyDown}
+      >
+        {/* 헤더 */}
+        <div className="flex items-center justify-between p-6 border-b">
+          <h2 className="text-xl font-bold text-gray-900">사전 알림 신청</h2>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="text-gray-400 hover:text-gray-600 text-2xl"
           >
             ×
           </button>
         </div>
 
-        <p className="text-gray-600 mb-6">
-          정식 출시되면 이메일로 알려드립니다. 더 상세한 분석 리포트와 함께
-          돌아올게요!
-        </p>
+        {/* 내용 */}
+        <div className="p-6">
+          {!submitResult ? (
+            // 신청 폼
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  이름 *
+                </label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="이름을 입력하세요"
+                  required
+                />
+              </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label
-              htmlFor="name"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
-              이름
-            </label>
-            <input
-              type="text"
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="홍길동"
-            />
-          </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  이메일 *
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="이메일을 입력하세요"
+                  required
+                />
+              </div>
 
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
-              이메일
-            </label>
-            <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="example@email.com"
-            />
-          </div>
+              <div className="text-sm text-gray-600">
+                <p>• 정식 출시 시 이메일로 알려드립니다</p>
+                <p>• 개인정보는 서비스 알림 목적으로만 사용됩니다</p>
+              </div>
 
-          {message && (
-            <div
-              className={`p-4 rounded-lg ${
-                message.type === "success"
-                  ? "bg-green-50 text-green-800 border border-green-200"
-                  : "bg-red-50 text-red-800 border border-red-200"
-              }`}
-            >
-              {message.text}
+              {/* 버튼들 */}
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                >
+                  취소
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      신청 중...
+                    </>
+                  ) : (
+                    "신청하기"
+                  )}
+                </button>
+              </div>
+            </form>
+          ) : (
+            // 신청 결과
+            <div className="text-center space-y-4">
+              <div
+                className={`text-4xl ${
+                  submitResult.success ? "text-green-500" : "text-red-500"
+                }`}
+              >
+                {submitResult.success ? "✅" : "❌"}
+              </div>
+
+              <div>
+                <h3
+                  className={`text-lg font-semibold ${
+                    submitResult.success ? "text-green-800" : "text-red-800"
+                  }`}
+                >
+                  {submitResult.success ? "신청 완료!" : "신청 실패"}
+                </h3>
+                <p className="text-gray-600 mt-2">{submitResult.message}</p>
+              </div>
+
+              <button
+                onClick={handleClose}
+                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                확인
+              </button>
             </div>
           )}
-
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-          >
-            {isSubmitting ? "신청 중..." : "신청하기"}
-          </button>
-        </form>
+        </div>
       </div>
     </div>
   );

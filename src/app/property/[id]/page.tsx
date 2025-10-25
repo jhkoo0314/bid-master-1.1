@@ -11,6 +11,7 @@ import { useSimulationStore } from "@/store/simulation-store";
 import { generateProperty } from "@/app/actions/generate-property";
 import { analyzeRights } from "@/lib/rights-analysis-engine";
 import { AuctionAnalysisModal } from "@/components/AuctionAnalysisModal";
+import { submitWaitlist } from "@/app/actions/submit-waitlist";
 import Link from "next/link";
 
 // 용어 설명 함수
@@ -280,15 +281,25 @@ export default function PropertyDetailPage() {
     setIsSubmitting(true);
 
     try {
-      console.log("대기자 명단 제출:", waitlistForm);
-      // TODO: 실제 API 호출로 대체
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // 시뮬레이션
+      console.log("📧 [경매리포트] 대기자 명단 제출:", waitlistForm);
 
-      alert("서비스가 정식출시되면 알려드리겠습니다. 감사합니다");
-      setShowWaitlistModal(false);
-      setWaitlistForm({ name: "", email: "" });
+      // submitWaitlist 함수를 사용하여 구글 시트에 저장
+      const result = await submitWaitlist(
+        waitlistForm.name,
+        waitlistForm.email
+      );
+
+      if (result.success) {
+        console.log("✅ [경매리포트] 구글 시트 저장 성공");
+        alert("서비스가 정식출시되면 알려드리겠습니다. 감사합니다");
+        setShowWaitlistModal(false);
+        setWaitlistForm({ name: "", email: "" });
+      } else {
+        console.error("❌ [경매리포트] 구글 시트 저장 실패:", result.message);
+        alert("제출 중 오류가 발생했습니다. 다시 시도해주세요.");
+      }
     } catch (error) {
-      console.error("대기자 명단 제출 실패:", error);
+      console.error("❌ [경매리포트] 대기자 명단 제출 실패:", error);
       alert("제출 중 오류가 발생했습니다. 다시 시도해주세요.");
     } finally {
       setIsSubmitting(false);

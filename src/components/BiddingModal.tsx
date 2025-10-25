@@ -6,6 +6,7 @@
 
 import { useState, useEffect } from "react";
 import { SimulationScenario } from "@/types/simulation";
+import { WaitlistModal } from "./WaitlistModal";
 
 interface BiddingModalProps {
   property: SimulationScenario;
@@ -50,6 +51,9 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
   const [biddingResult, setBiddingResult] = useState<BiddingResult | null>(
     null
   );
+  const [showRightsAnalysis, setShowRightsAnalysis] = useState(false);
+  const [showProfitAnalysis, setShowProfitAnalysis] = useState(false);
+  const [showWaitlistModal, setShowWaitlistModal] = useState(false);
 
   // 숫자 포맷팅 함수
   const formatNumber = (value: number): string => {
@@ -206,7 +210,28 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
     setBidPriceDisplay(
       property.basicInfo.minimumBidPrice.toLocaleString("ko-KR")
     );
+    setShowRightsAnalysis(false);
+    setShowProfitAnalysis(false);
+    setShowWaitlistModal(false);
     onClose();
+  };
+
+  // 권리 분석 리포트 클릭 핸들러
+  const handleRightsAnalysisClick = () => {
+    setShowRightsAnalysis(true);
+    console.log("권리 분석 리포트 클릭됨");
+  };
+
+  // 수익 분석 클릭 핸들러
+  const handleProfitAnalysisClick = () => {
+    setShowProfitAnalysis(true);
+    console.log("수익 분석 클릭됨");
+  };
+
+  // 사전 알림 신청 핸들러
+  const handleWaitlistSignup = () => {
+    console.log("사전 알림 신청 모달 열기");
+    setShowWaitlistModal(true);
   };
 
   // ESC 키로 모달 닫기
@@ -403,91 +428,58 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
 
               {/* 권리분석 리포트 */}
               <div>
-                <h4 className="font-semibold text-gray-900 mb-3">
-                  권리분석 리포트
-                </h4>
-                <div className="bg-blue-50 p-4 rounded-lg space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">
-                      인수 권리 총액:
-                    </span>
-                    <span className="text-sm font-semibold">
-                      {formatNumber(
-                        biddingResult.rightsAnalysis.totalAssumedAmount
-                      )}
-                      원
-                    </span>
+                <button
+                  onClick={handleRightsAnalysisClick}
+                  className="w-full text-left p-4 bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200 transition-colors"
+                >
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-semibold text-gray-900">
+                      권리분석 리포트
+                    </h4>
+                    <span className="text-blue-600 text-sm">클릭하여 보기</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">안전 마진:</span>
-                    <span className="text-sm font-semibold">
-                      {formatNumber(biddingResult.rightsAnalysis.safetyMargin)}
-                      원
-                    </span>
+                </button>
+
+                {showRightsAnalysis && (
+                  <div className="mt-3 p-4 bg-gray-50 rounded-lg border">
+                    <p className="text-center text-gray-600">
+                      정식 출시가 되면 알려드리겠습니다
+                    </p>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">
-                      권장 입찰 범위:
-                    </span>
-                    <span className="text-sm font-semibold">
-                      {formatNumber(
-                        biddingResult.rightsAnalysis.recommendedRange.min
-                      )}
-                      원 ~{" "}
-                      {formatNumber(
-                        biddingResult.rightsAnalysis.recommendedRange.max
-                      )}
-                      원
-                    </span>
-                  </div>
-                </div>
+                )}
               </div>
 
               {/* 수익 분석 */}
               <div>
-                <h4 className="font-semibold text-gray-900 mb-3">수익 분석</h4>
-                <div className="bg-green-50 p-4 rounded-lg space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">총 투자금액:</span>
-                    <span className="text-sm font-semibold">
-                      {formatNumber(
-                        biddingResult.profitAnalysis.totalInvestment
-                      )}
-                      원
+                <button
+                  onClick={handleProfitAnalysisClick}
+                  className="w-full text-left p-4 bg-green-50 hover:bg-green-100 rounded-lg border border-green-200 transition-colors"
+                >
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-semibold text-gray-900">수익 분석</h4>
+                    <span className="text-green-600 text-sm">
+                      클릭하여 보기
                     </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">예상 수익:</span>
-                    <span
-                      className={`text-sm font-semibold ${
-                        biddingResult.profitAnalysis.expectedProfit >= 0
-                          ? "text-green-600"
-                          : "text-red-600"
-                      }`}
-                    >
-                      {formatNumber(
-                        biddingResult.profitAnalysis.expectedProfit
-                      )}
-                      원
-                    </span>
+                </button>
+
+                {showProfitAnalysis && (
+                  <div className="mt-3 p-4 bg-gray-50 rounded-lg border">
+                    <p className="text-center text-gray-600">
+                      정식 출시가 되면 알려드리겠습니다
+                    </p>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">투자수익률:</span>
-                    <span
-                      className={`text-sm font-semibold ${
-                        biddingResult.profitAnalysis.roi >= 0
-                          ? "text-green-600"
-                          : "text-red-600"
-                      }`}
-                    >
-                      {biddingResult.profitAnalysis.roi.toFixed(1)}%
-                    </span>
-                  </div>
-                </div>
+                )}
               </div>
 
-              {/* 닫기 버튼 */}
-              <div className="flex justify-end">
+              {/* 버튼들 */}
+              <div className="flex justify-between">
+                <button
+                  onClick={handleWaitlistSignup}
+                  className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                >
+                  사전 알림 신청
+                </button>
                 <button
                   onClick={handleClose}
                   className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -499,6 +491,12 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
           )}
         </div>
       </div>
+
+      {/* 사전 알림 신청 모달 */}
+      <WaitlistModal
+        isOpen={showWaitlistModal}
+        onClose={() => setShowWaitlistModal(false)}
+      />
     </div>
   );
 }

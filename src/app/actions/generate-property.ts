@@ -98,24 +98,57 @@ function generateRealisticPriceRanges(propertyType: string, region: string) {
   const priceRange = baseRanges[propertyType]?.[regionCategory] ||
     baseRanges[propertyType]?.["기타"] || { min: 1, max: 5 };
 
+  // 매물 유형별 시장 변동성 설정
+  const getMarketVolatility = (propertyType: string) => {
+    switch (propertyType) {
+      case "아파트":
+        return 0.2; // ±10% (안정적)
+      case "오피스텔":
+        return 0.3; // ±15% (중간)
+      case "상가":
+        return 0.4; // ±20% (변동성 높음)
+      case "단독주택":
+        return 0.25; // ±12.5% (중간)
+      case "빌라":
+        return 0.35; // ±17.5% (중간-높음)
+      case "원룸":
+        return 0.3; // ±15% (중간)
+      default:
+        return 0.25; // ±12.5% (기본값)
+    }
+  };
+
   // 5개의 다양한 가격 생성
   const priceRanges = [];
   for (let i = 0; i < 5; i++) {
-    // 랜덤 변동 추가 (±10%)
-    const randomVariation = (Math.random() - 0.5) * 0.2; // -10% ~ +10%
+    // 매물 유형별 시장 변동성 적용
+    const volatilityRange = getMarketVolatility(propertyType);
+    const marketVolatility = (Math.random() - 0.5) * volatilityRange;
     const basePrice =
       priceRange.min + (priceRange.max - priceRange.min) * Math.random();
-    const adjustedPrice = basePrice * (1 + randomVariation);
+    const adjustedPrice = basePrice * (1 + marketVolatility);
 
-    // 현실적인 가격으로 조정 (천만원 단위로 반올림)
-    const marketValue =
-      Math.round((adjustedPrice * 100000000) / 10000000) * 10000000;
-    const appraisalValue = Math.round(
-      marketValue * (0.75 + Math.random() * 0.15)
-    ); // 시장가의 75-90%
-    const claimAmount = Math.round(
-      appraisalValue * (0.4 + Math.random() * 0.3)
-    ); // 감정가의 40-70%
+    // 현실적인 가격으로 조정 (백원단위까지 반영)
+    const marketValueRaw = adjustedPrice * 100000000; // 억 단위를 원 단위로 변환
+    const marketValue = Math.round(marketValueRaw / 100) * 100; // 백원단위로 반올림
+
+    // 감정가는 시장가의 75-90% (백원단위)
+    const appraisalRatio = 0.75 + Math.random() * 0.15;
+    const appraisalValueRaw = marketValue * appraisalRatio;
+    const appraisalValue = Math.round(appraisalValueRaw / 100) * 100;
+
+    // 청구금액은 감정가의 40-70% (백원단위)
+    const claimRatio = 0.4 + Math.random() * 0.3;
+    const claimAmountRaw = appraisalValue * claimRatio;
+    const claimAmount = Math.round(claimAmountRaw / 100) * 100;
+
+    console.log(
+      `💰 [가격 생성] ${
+        i + 1
+      }번째 가격 (${propertyType}) - 시장가: ${marketValue.toLocaleString()}원, 감정가: ${appraisalValue.toLocaleString()}원, 청구금액: ${claimAmount.toLocaleString()}원 (변동성: ${(
+        volatilityRange * 100
+      ).toFixed(1)}%)`
+    );
 
     priceRanges.push({
       marketValue,
@@ -775,7 +808,6 @@ export async function generateProperty(
           { full: "서울특별시 마포구 홍대입구역 101", short: "서울 마포구" },
           { full: "경기도 성남시 분당구 판교역로 202", short: "경기 성남시" },
         ],
-        priceRanges: generateRealisticPriceRanges("아파트", "서울 강남"),
         propertyDetails: [
           {
             landArea: 85.5,
@@ -841,7 +873,6 @@ export async function generateProperty(
           },
           { full: "경기도 수원시 영통구 광교동 202-34", short: "경기 수원시" },
         ],
-        priceRanges: generateRealisticPriceRanges("오피스텔", "서울 비강남"),
         propertyDetails: [
           {
             landArea: 33.1,
@@ -904,7 +935,6 @@ export async function generateProperty(
           { full: "서울특별시 송파구 잠실동 101-23", short: "서울 송파구" },
           { full: "경기도 부천시 원미구 상동 202-34", short: "경기 부천시" },
         ],
-        priceRanges: generateRealisticPriceRanges("상가", "서울 강남"),
         propertyDetails: [
           {
             landArea: 33.1,
@@ -967,7 +997,6 @@ export async function generateProperty(
           { full: "서울특별시 마포구 상암동 101-23", short: "서울 마포구" },
           { full: "경기도 성남시 분당구 정자동 202-34", short: "경기 성남시" },
         ],
-        priceRanges: generateRealisticPriceRanges("단독주택", "서울 강남"),
         propertyDetails: [
           {
             landArea: 165.3,
@@ -1030,7 +1059,6 @@ export async function generateProperty(
           { full: "서울특별시 마포구 상암동 101-23", short: "서울 마포구" },
           { full: "경기도 성남시 분당구 정자동 202-34", short: "경기 성남시" },
         ],
-        priceRanges: generateRealisticPriceRanges("빌라", "서울 비강남"),
         propertyDetails: [
           {
             landArea: 66.1,
@@ -1093,7 +1121,6 @@ export async function generateProperty(
           { full: "서울특별시 마포구 상암동 101-23", short: "서울 마포구" },
           { full: "경기도 성남시 분당구 정자동 202-34", short: "경기 성남시" },
         ],
-        priceRanges: generateRealisticPriceRanges("원룸", "서울 비강남"),
         propertyDetails: [
           {
             landArea: 16.5,
@@ -1213,10 +1240,19 @@ export async function generateProperty(
               Math.floor(Math.random() * selectedTemplate.locations.length)
             ];
 
+      // 동적으로 가격 생성
+      console.log(
+        `💰 [가격 생성] ${selectedTemplate.propertyType} - ${selectedLocation.short} 동적 가격 생성 시작`
+      );
+      const generatedPriceRanges = generateRealisticPriceRanges(
+        selectedTemplate.propertyType,
+        selectedLocation.short
+      );
+
       // 가격 필터링
-      let availablePriceRanges = selectedTemplate.priceRanges;
+      let availablePriceRanges = generatedPriceRanges;
       if (filters?.priceRange) {
-        availablePriceRanges = selectedTemplate.priceRanges.filter(
+        availablePriceRanges = generatedPriceRanges.filter(
           (range) =>
             range.appraisalValue >= filters.priceRange!.min &&
             range.appraisalValue <= filters.priceRange!.max
@@ -1231,22 +1267,27 @@ export async function generateProperty(
           ? availablePriceRanges[
               Math.floor(Math.random() * availablePriceRanges.length)
             ]
-          : selectedTemplate.priceRanges[
-              Math.floor(Math.random() * selectedTemplate.priceRanges.length)
+          : generatedPriceRanges[
+              Math.floor(Math.random() * generatedPriceRanges.length)
             ];
       const selectedPropertyDetails =
         selectedTemplate.propertyDetails[
           Math.floor(Math.random() * selectedTemplate.propertyDetails.length)
         ];
 
-      // 가격 계산 (감정가 기준으로 최저가, 입찰시작가 계산)
-      const minimumBidPrice = Math.floor(
-        selectedPriceRange.appraisalValue * 0.8
-      ); // 감정가의 80%
-      const startingBidPrice = Math.floor(
-        selectedPriceRange.appraisalValue * 0.83
-      ); // 감정가의 83%
-      const bidDeposit = Math.floor(minimumBidPrice * 0.1); // 최저가의 10%
+      // 가격 계산 (감정가 기준으로 최저가, 입찰시작가 계산 - 백원단위)
+      const minimumBidPriceRaw = selectedPriceRange.appraisalValue * 0.8; // 감정가의 80%
+      const minimumBidPrice = Math.round(minimumBidPriceRaw / 100) * 100; // 백원단위로 반올림
+
+      const startingBidPriceRaw = selectedPriceRange.appraisalValue * 0.83; // 감정가의 83%
+      const startingBidPrice = Math.round(startingBidPriceRaw / 100) * 100; // 백원단위로 반올림
+
+      const bidDepositRaw = minimumBidPrice * 0.1; // 최저가의 10%
+      const bidDeposit = Math.round(bidDepositRaw / 100) * 100; // 백원단위로 반올림
+
+      console.log(
+        `💰 [매물 가격] 최저가: ${minimumBidPrice.toLocaleString()}원, 입찰시작가: ${startingBidPrice.toLocaleString()}원, 입찰보증금: ${bidDeposit.toLocaleString()}원`
+      );
 
       console.log(
         `🏠 [매물 생성] 선택된 매물 유형: ${selectedTemplate.propertyType}`

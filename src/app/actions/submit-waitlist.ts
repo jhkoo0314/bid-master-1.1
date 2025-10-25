@@ -4,6 +4,8 @@
 
 "use server";
 
+import { addWaitlistToSheet } from "@/lib/google-sheets";
+
 /**
  * 사전 알림 신청을 처리합니다.
  * Google Sheets API와 Gmail API를 사용하여 데이터를 저장하고 확인 메일을 발송합니다.
@@ -32,12 +34,23 @@ export async function submitWaitlist(
       throw new Error("올바른 이메일 형식이 아닙니다.");
     }
 
-    // TODO: Google Sheets MCP를 사용하여 데이터 저장
-    // 현재는 MCP가 설정되어 있지 않으므로 로그만 출력
+    // Google Sheets API를 사용하여 데이터 저장
     console.log("📊 [Google Sheets] 데이터 저장 시도...");
-    console.log(
-      "  ⚠️ Google Sheets MCP가 설정되지 않았습니다. 로그만 기록합니다."
-    );
+
+    try {
+      // 실제 구글 시트에 데이터 저장
+      const sheetResult = await addWaitlistToSheet(name, email);
+
+      if (!sheetResult.success) {
+        throw new Error(sheetResult.message);
+      }
+
+      console.log("✅ [Google Sheets] 데이터 저장 완료");
+      console.log(`  - 결과: ${sheetResult.message}`);
+    } catch (sheetError) {
+      console.error("❌ [Google Sheets] 저장 실패:", sheetError);
+      throw new Error("데이터 저장 중 오류가 발생했습니다.");
+    }
 
     // TODO: Gmail API를 사용하여 확인 메일 발송
     console.log("📧 [Gmail] 확인 메일 발송 시도...");
