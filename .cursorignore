@@ -1,0 +1,15 @@
+# ⚠️ CURSOR AI SECURITY: 이 파일들을 절대 @ 컨텍스트에 포함하지 마세요!
+# 환경 변수 파일에는 API 키와 민감한 정보가 포함되어 있습니다.
+
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*
+
+# 기타 민감한 파일
+*.pem
+*.key
+service-account.json
+
