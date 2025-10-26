@@ -34,7 +34,14 @@
 - 손익분기점 분석
 - 비용 구성 상세 표시
 
-### 4. 개발자 모드
+### 4. 매물 유형별 고유 이미지
+
+- **6가지 매물 유형**: 아파트, 오피스텔, 상가, 단독주택, 빌라, 원룸
+- **중복 방지 캐싱**: 매물 유형별로 절대 중복되지 않는 고유 이미지 보장
+- **Unsplash API**: 고품질 부동산 이미지 자동 검색
+- **지역별 맞춤**: 서울, 경기, 부산 등 지역 특성 반영
+
+### 5. 개발자 모드
 
 - 일반 모드: 매물 생성 10회 제한
 - 개발자 모드: 무제한 생성 + 디버그 정보 표시
@@ -56,6 +63,7 @@
 - **OpenAI API** (GPT-4o)
 - **Google Sheets API** (사전 알림 신청)
 - **Gmail SMTP** (확인 메일 발송)
+- **Unsplash API** (매물 유형별 고유 이미지)
 
 ### Animation & Charts
 
@@ -98,6 +106,9 @@ GMAIL_USER=your-email@gmail.com
 GMAIL_APP_PASSWORD=your-16-digit-app-password
 GMAIL_FROM_EMAIL=your-email@gmail.com
 
+# Unsplash API (매물 이미지용)
+UNSPLASH_ACCESS_KEY=your-unsplash-access-key
+
 # 개발 모드 (선택)
 NEXT_PUBLIC_DEV_MODE=false
 ```
@@ -118,7 +129,21 @@ GMAIL_APP_PASSWORD=your-16-digit-app-password
 GMAIL_FROM_EMAIL=your-email@gmail.com
 ```
 
-### 5. 개발 서버 실행
+### 5. Unsplash API 설정 (매물 이미지용)
+
+Unsplash 개발자 계정에서 Access Key 발급:
+
+1. **Unsplash 개발자 페이지**: https://unsplash.com/developers
+2. **"New Application" 클릭**
+3. **애플리케이션 정보 입력** (이름: "Bid Master AI")
+4. **"Public" 선택** (개인용)
+5. **생성된 Access Key를 `.env.local`에 설정**
+
+```env
+UNSPLASH_ACCESS_KEY=your-unsplash-access-key
+```
+
+### 6. 개발 서버 실행
 
 ```bash
 npm run dev
@@ -146,7 +171,8 @@ bid-master-ai/
 │   ├── lib/                      # 핵심 로직
 │   │   ├── openai-client.ts      # AI 매물 생성
 │   │   ├── rights-analysis-engine.ts  # 권리분석 엔진
-│   │   └── profit-calculator.ts  # 수익 계산
+│   │   ├── profit-calculator.ts  # 수익 계산
+│   │   └── unsplash-client.ts    # 매물 이미지 검색
 │   ├── store/                    # 상태 관리
 │   │   └── simulation-store.ts
 │   └── types/                    # 타입 정의
@@ -186,6 +212,7 @@ bid-master-ai/
 - [ ] `GMAIL_USER`
 - [ ] `GMAIL_APP_PASSWORD`
 - [ ] `GMAIL_FROM_EMAIL`
+- [ ] `UNSPLASH_ACCESS_KEY`
 
 ## 📊 MVP 성공 지표
 
@@ -201,6 +228,7 @@ bid-master-ai/
 - ✅ AI 기반 교육용 매물 생성
 - ✅ 권리분석 엔진
 - ✅ 수익 계산기
+- ✅ 매물 유형별 고유 이미지 시스템
 
 ### Phase 2: 사용자 인증 (Clerk)
 

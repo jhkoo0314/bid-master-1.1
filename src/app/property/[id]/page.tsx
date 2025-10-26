@@ -30,9 +30,26 @@ function generateDynamicStepGuide(property: SimulationScenario): {
   const isOffice = propertyDetails?.usage === "오피스텔";
   const isCommercial = propertyDetails?.usage === "상가";
 
+  // 권리 유형별 특성 분석
+  const rightTypes = rights?.map((r) => r.rightType) || [];
+  const hasMortgage = rightTypes.includes("근저당권");
+  const hasMortgageRight = rightTypes.includes("저당권");
+  const hasSeizure =
+    rightTypes.includes("압류") || rightTypes.includes("가압류");
+  const hasPledge = rightTypes.includes("담보가등기");
+  const hasChonse = rightTypes.includes("전세권");
+  const hasOwnershipTransfer = rightTypes.includes("소유권이전청구권가등기");
+  const hasInjunction = rightTypes.includes("가처분");
+  const hasTenantRights = rightTypes.includes("주택상가임차권");
+  const hasHousingTenantRights = rightTypes.includes("주택임차권");
+  const hasCommercialTenantRights = rightTypes.includes("상가임차권");
+  const hasLien = rightTypes.includes("유치권");
+  const hasSurfaceRights = rightTypes.includes("법정지상권");
+  const hasTombRights = rightTypes.includes("분묘기지권");
+
   const guide: { [key: string]: string } = {};
 
-  // 1단계: 권리분석 (매물 특성에 따라 다름)
+  // 1단계: 권리분석 (권리 유형별 특성에 따라 다름)
   if (hasMultipleMortgages) {
     guide.step1 = `다중 근저당권이 설정된 복잡한 권리구조입니다. 
     • 말소기준권리(${
@@ -41,6 +58,66 @@ function generateDynamicStepGuide(property: SimulationScenario): {
     • 각 근저당권의 설정일자와 청구금액 비교
     • 배당순위에 따른 권리 소멸/인수 여부 파악
     • 권리분석 전문가 상담 권장`;
+  } else if (hasSeizure) {
+    guide.step1 = `압류/가압류가 설정된 매물입니다.
+    • 압류/가압류의 설정일자와 청구금액 확인
+    • 강제집행 절차의 진행 상황 파악
+    • 압류/가압류 해제 가능성 검토
+    • 법원의 압류/가압류 해제 신청 필요`;
+  } else if (hasChonse) {
+    guide.step1 = `전세권이 설정된 매물입니다.
+    • 전세권의 설정일자와 전세금 확인
+    • 전세권의 우선순위 파악 (근저당권보다 우선)
+    • 전세권 인수 시 전세금 반환 의무
+    • 전세권 해제 가능성 검토`;
+  } else if (hasOwnershipTransfer) {
+    guide.step1 = `소유권이전청구권가등기가 설정된 매물입니다.
+    • 소유권이전청구권의 설정일자와 청구금액 확인
+    • 가등기의 효력과 본등기 가능성 검토
+    • 소유권이전청구권의 우선순위 파악
+    • 권리자와의 협의 필요`;
+  } else if (hasInjunction) {
+    guide.step1 = `가처분이 설정된 매물입니다.
+    • 가처분의 설정일자와 청구금액 확인
+    • 가처분의 목적과 효력 파악
+    • 가처분 해제 가능성 검토
+    • 법원의 가처분 해제 신청 필요`;
+  } else if (hasLien) {
+    guide.step1 = `유치권이 설정된 매물입니다.
+    • 유치권의 설정일자와 청구금액 확인
+    • 유치권의 대상물과 효력 파악
+    • 유치권 인수 시 유치물 반환 의무
+    • 유치권 해제 가능성 검토`;
+  } else if (hasSurfaceRights) {
+    guide.step1 = `법정지상권이 설정된 매물입니다.
+    • 법정지상권의 설정일자와 청구금액 확인
+    • 지상권의 범위와 효력 파악
+    • 지상권 인수 시 지상권자와의 협의 필요
+    • 지상권 해제 가능성 검토`;
+  } else if (hasTombRights) {
+    guide.step1 = `분묘기지권이 설정된 매물입니다.
+    • 분묘기지권의 설정일자와 청구금액 확인
+    • 분묘의 위치와 범위 파악
+    • 분묘기지권 인수 시 분묘 보존 의무
+    • 분묘기지권 해제 가능성 검토`;
+  } else if (hasMortgageRight) {
+    guide.step1 = `저당권이 설정된 매물입니다.
+    • 저당권의 설정일자와 청구금액 확인
+    • 저당권의 우선순위와 배당 가능성 파악
+    • 저당권 인수 시 채무 인수 의무
+    • 저당권 해제 가능성 검토`;
+  } else if (hasHousingTenantRights) {
+    guide.step1 = `주택임차권이 설정된 매물입니다.
+    • 주택임차권의 설정일자와 청구금액 확인
+    • 주택임대차보호법에 따른 권리 보호 범위 파악
+    • 주택임차권 인수 시 임차인 보호 의무
+    • 주택임차권 해제 가능성 검토`;
+  } else if (hasCommercialTenantRights) {
+    guide.step1 = `상가임차권이 설정된 매물입니다.
+    • 상가임차권의 설정일자와 청구금액 확인
+    • 상가임대차보호법에 따른 권리 보호 범위 파악
+    • 상가임차권 인수 시 임차인 보호 의무
+    • 상가임차권 해제 가능성 검토`;
   } else if (hasComplexRights) {
     guide.step1 = `다양한 권리가 설정된 매물입니다.
     • 근저당권 외 다른 권리들(${rights
@@ -165,6 +242,23 @@ function generateDynamicCoreAnalysis(property: SimulationScenario): {
       100
   );
 
+  // 권리 유형별 특성 분석
+  const rightTypes = rights?.map((r) => r.rightType) || [];
+  const hasMortgage = rightTypes.includes("근저당권");
+  const hasMortgageRight = rightTypes.includes("저당권");
+  const hasSeizure =
+    rightTypes.includes("압류") || rightTypes.includes("가압류");
+  const hasPledge = rightTypes.includes("담보가등기");
+  const hasChonse = rightTypes.includes("전세권");
+  const hasOwnershipTransfer = rightTypes.includes("소유권이전청구권가등기");
+  const hasInjunction = rightTypes.includes("가처분");
+  const hasTenantRights = rightTypes.includes("주택상가임차권");
+  const hasHousingTenantRights = rightTypes.includes("주택임차권");
+  const hasCommercialTenantRights = rightTypes.includes("상가임차권");
+  const hasLien = rightTypes.includes("유치권");
+  const hasSurfaceRights = rightTypes.includes("법정지상권");
+  const hasTombRights = rightTypes.includes("분묘기지권");
+
   const keyPoints: string[] = [];
   const risks: string[] = [];
 
@@ -180,8 +274,38 @@ function generateDynamicCoreAnalysis(property: SimulationScenario): {
     keyPoints.push("임대료 수준과 용도변경 가능성 검토 필요");
   }
 
-  // 권리구조별 핵심 포인트
-  if (hasMultipleMortgages) {
+  // 권리 유형별 핵심 포인트
+  if (hasSeizure) {
+    keyPoints.push("압류/가압류 해제 절차와 비용 검토 필요");
+    keyPoints.push("강제집행 절차의 진행 상황과 해제 가능성 파악");
+  } else if (hasChonse) {
+    keyPoints.push("전세권의 우선순위와 전세금 반환 의무 확인");
+    keyPoints.push("전세권 해제 절차와 비용 검토 필요");
+  } else if (hasOwnershipTransfer) {
+    keyPoints.push("소유권이전청구권의 효력과 본등기 가능성 검토");
+    keyPoints.push("권리자와의 협의 및 해제 절차 필요");
+  } else if (hasInjunction) {
+    keyPoints.push("가처분의 목적과 효력, 해제 가능성 검토");
+    keyPoints.push("법원의 가처분 해제 신청 절차 필요");
+  } else if (hasLien) {
+    keyPoints.push("유치권의 대상물과 효력, 인수 시 반환 의무 확인");
+    keyPoints.push("유치권 해제 절차와 비용 검토 필요");
+  } else if (hasSurfaceRights) {
+    keyPoints.push("법정지상권의 범위와 효력, 지상권자와의 협의 필요");
+    keyPoints.push("지상권 해제 절차와 비용 검토 필요");
+  } else if (hasTombRights) {
+    keyPoints.push("분묘기지권의 범위와 분묘 보존 의무 확인");
+    keyPoints.push("분묘기지권 해제 절차와 비용 검토 필요");
+  } else if (hasMortgageRight) {
+    keyPoints.push("저당권의 우선순위와 배당 가능성 확인");
+    keyPoints.push("저당권 인수 시 채무 인수 의무와 비용 검토 필요");
+  } else if (hasHousingTenantRights) {
+    keyPoints.push("주택임대차보호법에 따른 임차인 보호 범위 확인");
+    keyPoints.push("주택임차권 인수 시 임차인 보호 의무와 비용 검토 필요");
+  } else if (hasCommercialTenantRights) {
+    keyPoints.push("상가임대차보호법에 따른 임차인 보호 범위 확인");
+    keyPoints.push("상가임차권 인수 시 임차인 보호 의무와 비용 검토 필요");
+  } else if (hasMultipleMortgages) {
     keyPoints.push("다중 근저당권의 배당순위와 말소기준권리 분석 중요");
     keyPoints.push("각 근저당권의 설정일자와 청구금액 비교 필수");
   } else if (hasComplexRights) {
@@ -216,10 +340,41 @@ function generateDynamicCoreAnalysis(property: SimulationScenario): {
     keyPoints.push("적정 할인율로 균형잡힌 투자 기회");
   }
 
-  // 리스크 분석
-  if (hasComplexRights) {
+  // 권리 유형별 리스크 분석
+  if (hasSeizure) {
+    risks.push("압류/가압류 해제 절차의 복잡성과 비용 발생 가능");
+    risks.push("강제집행 절차로 인한 추가 시간과 비용 소요");
+  } else if (hasChonse) {
+    risks.push("전세권 해제 시 전세금 반환 의무로 인한 추가 비용");
+    risks.push("전세권의 우선순위로 인한 배당 순위 영향");
+  } else if (hasOwnershipTransfer) {
+    risks.push("소유권이전청구권의 본등기 가능성으로 인한 권리 충돌");
+    risks.push("권리자와의 협의 실패 시 법적 분쟁 가능성");
+  } else if (hasInjunction) {
+    risks.push("가처분 해제 절차의 복잡성과 법원 신청 비용");
+    risks.push("가처분의 목적에 따른 추가 제약사항 발생 가능");
+  } else if (hasLien) {
+    risks.push("유치권 해제 시 유치물 반환 의무로 인한 추가 비용");
+    risks.push("유치권의 대상물 확인 및 반환 절차의 복잡성");
+  } else if (hasSurfaceRights) {
+    risks.push("법정지상권 해제 시 지상권자와의 협의 실패 가능성");
+    risks.push("지상권의 범위와 효력으로 인한 사용 제약");
+  } else if (hasTombRights) {
+    risks.push("분묘기지권 해제 시 분묘 보존 의무로 인한 제약");
+    risks.push("분묘의 위치와 범위로 인한 사용 제한");
+  } else if (hasMortgageRight) {
+    risks.push("저당권 인수 시 채무 인수 의무로 인한 추가 비용");
+    risks.push("저당권의 우선순위로 인한 배당 순위 영향");
+  } else if (hasHousingTenantRights) {
+    risks.push("주택임대차보호법에 따른 임차인 보호 의무로 인한 제약");
+    risks.push("주택임차권 해제 시 임차인 보호 비용 발생 가능");
+  } else if (hasCommercialTenantRights) {
+    risks.push("상가임대차보호법에 따른 임차인 보호 의무로 인한 제약");
+    risks.push("상가임차권 해제 시 임차인 보호 비용 발생 가능");
+  } else if (hasComplexRights) {
     risks.push("복잡한 권리구조로 인한 추가 분석 비용 발생 가능");
   }
+
   if (hasTenants) {
     risks.push("임차인 인수 비용으로 인한 예상보다 높은 투자금 필요");
   }
@@ -255,6 +410,23 @@ function generateDynamicProTips(property: SimulationScenario): string[] {
       100
   );
 
+  // 권리 유형별 특성 분석
+  const rightTypes = rights?.map((r) => r.rightType) || [];
+  const hasMortgage = rightTypes.includes("근저당권");
+  const hasMortgageRight = rightTypes.includes("저당권");
+  const hasSeizure =
+    rightTypes.includes("압류") || rightTypes.includes("가압류");
+  const hasPledge = rightTypes.includes("담보가등기");
+  const hasChonse = rightTypes.includes("전세권");
+  const hasOwnershipTransfer = rightTypes.includes("소유권이전청구권가등기");
+  const hasInjunction = rightTypes.includes("가처분");
+  const hasTenantRights = rightTypes.includes("주택상가임차권");
+  const hasHousingTenantRights = rightTypes.includes("주택임차권");
+  const hasCommercialTenantRights = rightTypes.includes("상가임차권");
+  const hasLien = rightTypes.includes("유치권");
+  const hasSurfaceRights = rightTypes.includes("법정지상권");
+  const hasTombRights = rightTypes.includes("분묘기지권");
+
   const tips: string[] = [];
 
   // 매물 유형별 실전팁
@@ -271,8 +443,40 @@ function generateDynamicProTips(property: SimulationScenario): string[] {
     tips.push("임대료 수준과 용도변경 가능성을 현장에서 직접 확인하세요");
   }
 
-  // 권리구조별 실전팁
-  if (hasMultipleMortgages) {
+  // 권리 유형별 실전팁
+  if (hasSeizure) {
+    tips.push("압류/가압류 해제를 위해 법원에 해제 신청을 제출하세요");
+    tips.push("압류/가압류 해제 비용을 입찰가에 반영하세요");
+  } else if (hasChonse) {
+    tips.push(
+      "전세권은 근저당권보다 우선순위가 높으니 전세금 반환 비용을 고려하세요"
+    );
+    tips.push("전세권 해제 시 전세권자와의 협의가 필요합니다");
+  } else if (hasOwnershipTransfer) {
+    tips.push("소유권이전청구권가등기의 본등기 가능성을 확인하세요");
+    tips.push("권리자와의 협의를 통해 해제 가능성을 검토하세요");
+  } else if (hasInjunction) {
+    tips.push("가처분 해제를 위해 법원에 해제 신청을 제출하세요");
+    tips.push("가처분의 목적과 효력을 정확히 파악하세요");
+  } else if (hasLien) {
+    tips.push("유치권의 대상물을 확인하고 반환 의무를 파악하세요");
+    tips.push("유치권 해제 시 유치물 반환 절차를 준비하세요");
+  } else if (hasSurfaceRights) {
+    tips.push("법정지상권의 범위와 효력을 정확히 파악하세요");
+    tips.push("지상권자와의 협의를 통해 해제 가능성을 검토하세요");
+  } else if (hasTombRights) {
+    tips.push("분묘의 위치와 범위를 확인하고 보존 의무를 파악하세요");
+    tips.push("분묘기지권 해제 시 분묘 보존 방안을 준비하세요");
+  } else if (hasMortgageRight) {
+    tips.push("저당권의 우선순위와 배당 가능성을 정확히 파악하세요");
+    tips.push("저당권 인수 시 채무 인수 의무와 비용을 미리 계산하세요");
+  } else if (hasHousingTenantRights) {
+    tips.push("주택임대차보호법에 따른 임차인 보호 범위를 확인하세요");
+    tips.push("주택임차권 인수 시 임차인 보호 의무와 비용을 고려하세요");
+  } else if (hasCommercialTenantRights) {
+    tips.push("상가임대차보호법에 따른 임차인 보호 범위를 확인하세요");
+    tips.push("상가임차권 인수 시 임차인 보호 의무와 비용을 고려하세요");
+  } else if (hasMultipleMortgages) {
     tips.push(
       "다중 근저당권은 말소기준권리를 먼저 파악하고 배당순위를 확인하세요"
     );
@@ -326,6 +530,143 @@ function generateDynamicProTips(property: SimulationScenario): string[] {
 
   console.log("✅ [동적 실전팁] 생성 완료:", tips);
   return tips;
+}
+
+// 매물별 동적 상세리포트 생성 함수
+function generateDynamicDetailedReport(property: SimulationScenario): {
+  [key: string]: string;
+} {
+  console.log("🔍 [동적 상세리포트] 매물별 상세리포트 생성:", property.id);
+
+  const { basicInfo, rights, tenants, propertyDetails } = property;
+  const hasComplexRights = rights && rights.length > 2;
+  const hasTenants = tenants && tenants.length > 0;
+  const hasSmallTenants = tenants && tenants.some((t) => t.isSmallTenant);
+  const hasMultipleMortgages =
+    rights && rights.filter((r) => r.rightType === "근저당권").length > 1;
+  const isApartment = propertyDetails?.usage === "아파트";
+  const isOffice = propertyDetails?.usage === "오피스텔";
+  const isCommercial = propertyDetails?.usage === "상가";
+  const discountRate = Math.round(
+    (1 - (basicInfo.minimumBidPrice || 0) / (basicInfo.appraisalValue || 1)) *
+      100
+  );
+
+  // 권리 유형별 특성 분석
+  const rightTypes = rights?.map((r) => r.rightType) || [];
+  const hasMortgage = rightTypes.includes("근저당권");
+  const hasMortgageRight = rightTypes.includes("저당권");
+  const hasSeizure =
+    rightTypes.includes("압류") || rightTypes.includes("가압류");
+  const hasPledge = rightTypes.includes("담보가등기");
+  const hasChonse = rightTypes.includes("전세권");
+  const hasOwnershipTransfer = rightTypes.includes("소유권이전청구권가등기");
+  const hasInjunction = rightTypes.includes("가처분");
+  const hasTenantRights = rightTypes.includes("주택상가임차권");
+  const hasHousingTenantRights = rightTypes.includes("주택임차권");
+  const hasCommercialTenantRights = rightTypes.includes("상가임차권");
+  const hasLien = rightTypes.includes("유치권");
+  const hasSurfaceRights = rightTypes.includes("법정지상권");
+  const hasTombRights = rightTypes.includes("분묘기지권");
+
+  const report: { [key: string]: string } = {};
+
+  // 매물 유형별 상세리포트
+  if (isApartment) {
+    report.apartment = `아파트 경매의 특성상 안정적인 투자가 가능하지만, 
+    관리비와 입주민 규정을 꼼꼼히 확인해야 합니다. 
+    주차장 사용권과 대지권 비율을 확인하여 추가 비용을 파악하고, 
+    입주민 규정을 확인하여 사용 제한사항을 파악하세요.`;
+  } else if (isOffice) {
+    report.office = `오피스텔은 상업용 관리비가 일반 아파트보다 높으므로 
+    관리비 부담을 미리 확인해야 합니다. 
+    용도변경 제한사항을 확인하여 활용 방안을 검토하고, 
+    임대수익률과 상권 분석이 투자 성공의 핵심입니다.`;
+  } else if (isCommercial) {
+    report.commercial = `상가는 상권 분석과 유동인구 조사가 투자 성공의 핵심입니다. 
+    임대료 수준과 용도변경 가능성을 현장에서 직접 확인하고, 
+    상권의 변화와 유동인구 패턴을 분석하여 투자 가치를 판단하세요.`;
+  }
+
+  // 권리 유형별 상세리포트
+  if (hasSeizure) {
+    report.seizure = `압류/가압류가 설정된 매물입니다. 
+    압류/가압류의 설정일자와 청구금액을 확인하고, 
+    강제집행 절차의 진행 상황을 파악해야 합니다. 
+    압류/가압류 해제를 위해 법원에 해제 신청을 제출하고, 
+    해제 비용을 입찰가에 반영해야 합니다.`;
+  } else if (hasChonse) {
+    report.chonse = `전세권이 설정된 매물입니다. 
+    전세권의 설정일자와 전세금을 확인하고, 
+    전세권의 우선순위를 파악해야 합니다 (근저당권보다 우선). 
+    전세권 인수 시 전세금 반환 의무가 있으므로 전세금 반환 비용을 고려하고, 
+    전세권 해제 시 전세권자와의 협의가 필요합니다.`;
+  } else if (hasOwnershipTransfer) {
+    report.ownershipTransfer = `소유권이전청구권가등기가 설정된 매물입니다. 
+    소유권이전청구권의 설정일자와 청구금액을 확인하고, 
+    가등기의 효력과 본등기 가능성을 검토해야 합니다. 
+    소유권이전청구권의 우선순위를 파악하고, 
+    권리자와의 협의를 통해 해제 가능성을 검토해야 합니다.`;
+  } else if (hasInjunction) {
+    report.injunction = `가처분이 설정된 매물입니다. 
+    가처분의 설정일자와 청구금액을 확인하고, 
+    가처분의 목적과 효력을 파악해야 합니다. 
+    가처분 해제를 위해 법원에 해제 신청을 제출하고, 
+    가처분의 목적에 따른 추가 제약사항을 고려해야 합니다.`;
+  } else if (hasLien) {
+    report.lien = `유치권이 설정된 매물입니다. 
+    유치권의 설정일자와 청구금액을 확인하고, 
+    유치권의 대상물과 효력을 파악해야 합니다. 
+    유치권 인수 시 유치물 반환 의무가 있으므로 유치물 반환 절차를 준비하고, 
+    유치권 해제 시 유치물 반환 절차를 준비해야 합니다.`;
+  } else if (hasSurfaceRights) {
+    report.surfaceRights = `법정지상권이 설정된 매물입니다. 
+    법정지상권의 설정일자와 청구금액을 확인하고, 
+    지상권의 범위와 효력을 파악해야 합니다. 
+    지상권 인수 시 지상권자와의 협의가 필요하므로, 
+    지상권자와의 협의를 통해 해제 가능성을 검토해야 합니다.`;
+  } else if (hasTombRights) {
+    report.tombRights = `분묘기지권이 설정된 매물입니다. 
+    분묘기지권의 설정일자와 청구금액을 확인하고, 
+    분묘의 위치와 범위를 파악해야 합니다. 
+    분묘기지권 인수 시 분묘 보존 의무가 있으므로, 
+    분묘기지권 해제 시 분묘 보존 방안을 준비해야 합니다.`;
+  } else if (hasMortgageRight) {
+    report.mortgageRight = `저당권이 설정된 매물입니다. 
+    저당권의 설정일자와 청구금액을 확인하고, 
+    저당권의 우선순위와 배당 가능성을 파악해야 합니다. 
+    저당권 인수 시 채무 인수 의무가 있으므로, 
+    저당권 해제 시 채무 인수 비용을 고려해야 합니다.`;
+  } else if (hasHousingTenantRights) {
+    report.housingTenantRights = `주택임차권이 설정된 매물입니다. 
+    주택임차권의 설정일자와 청구금액을 확인하고, 
+    주택임대차보호법에 따른 권리 보호 범위를 파악해야 합니다. 
+    주택임차권 인수 시 임차인 보호 의무가 있으므로, 
+    주택임차권 해제 시 임차인 보호 비용을 고려해야 합니다.`;
+  } else if (hasCommercialTenantRights) {
+    report.commercialTenantRights = `상가임차권이 설정된 매물입니다. 
+    상가임차권의 설정일자와 청구금액을 확인하고, 
+    상가임대차보호법에 따른 권리 보호 범위를 파악해야 합니다. 
+    상가임차권 인수 시 임차인 보호 의무가 있으므로, 
+    상가임차권 해제 시 임차인 보호 비용을 고려해야 합니다.`;
+  } else if (hasMultipleMortgages) {
+    report.mortgage = `다중 근저당권이 설정된 복잡한 권리구조입니다. 
+    말소기준권리를 먼저 파악하고 배당순위를 확인해야 합니다. 
+    각 근저당권의 설정일자와 청구금액을 비교하여 인수 여부를 결정하고, 
+    권리분석 전문가와 상담하여 정확한 분석을 받으세요.`;
+  } else if (hasComplexRights) {
+    report.rights = `다양한 권리가 설정된 매물입니다. 
+    각 권리의 인수/소멸 여부를 명확히 파악하고, 
+    권리자별 청구금액과 배당 가능성을 검토해야 합니다. 
+    권리분석 전문가와 상담하여 정확한 분석을 받으세요.`;
+  } else {
+    report.simple = `단순한 권리구조의 매물입니다. 
+    근저당권 1개만 설정된 안전한 구조로 권리분석이 상대적으로 간단합니다. 
+    입찰 시 권리 인수 부담이 최소화되어 상대적으로 안전한 투자가 가능합니다.`;
+  }
+
+  console.log("✅ [동적 상세리포트] 생성 완료:", report);
+  return report;
 }
 
 // 단계별 가이드 제목 함수
@@ -897,7 +1238,41 @@ export default function PropertyDetailPage() {
                       {property.rights?.map((right, index) => (
                         <tr key={right.id}>
                           <td className="py-2">{index + 1}</td>
-                          <td className="py-2">{right.rightType}</td>
+                          <td className="py-2">
+                            <span
+                              className={`px-2 py-1 text-xs rounded ${
+                                right.rightType === "근저당권"
+                                  ? "bg-blue-100 text-blue-800"
+                                  : right.rightType === "저당권"
+                                  ? "bg-blue-100 text-blue-800"
+                                  : right.rightType === "압류"
+                                  ? "bg-red-100 text-red-800"
+                                  : right.rightType === "가압류"
+                                  ? "bg-orange-100 text-orange-800"
+                                  : right.rightType === "담보가등기"
+                                  ? "bg-purple-100 text-purple-800"
+                                  : right.rightType === "전세권"
+                                  ? "bg-green-100 text-green-800"
+                                  : right.rightType === "소유권이전청구권가등기"
+                                  ? "bg-indigo-100 text-indigo-800"
+                                  : right.rightType === "가처분"
+                                  ? "bg-pink-100 text-pink-800"
+                                  : right.rightType === "주택임차권"
+                                  ? "bg-cyan-100 text-cyan-800"
+                                  : right.rightType === "상가임차권"
+                                  ? "bg-cyan-100 text-cyan-800"
+                                  : right.rightType === "유치권"
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : right.rightType === "법정지상권"
+                                  ? "bg-teal-100 text-teal-800"
+                                  : right.rightType === "분묘기지권"
+                                  ? "bg-gray-100 text-gray-800"
+                                  : "bg-gray-100 text-gray-800"
+                              }`}
+                            >
+                              {right.rightType}
+                            </span>
+                          </td>
                           <td className="py-2">{right.rightHolder}</td>
                           <td className="py-2">{right.registrationDate}</td>
                           <td className="py-2 font-bold text-blue-600">
@@ -924,6 +1299,67 @@ export default function PropertyDetailPage() {
                       ))}
                     </tbody>
                   </table>
+                </div>
+
+                {/* 권리 유형별 설명 */}
+                <div className="mt-4 p-3 bg-gray-50 rounded">
+                  <h4 className="font-semibold text-gray-800 mb-2">
+                    권리 유형별 설명
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs">
+                    <div className="flex items-center gap-1">
+                      <span className="w-3 h-3 bg-blue-100 rounded"></span>
+                      <span>근저당권: 채권 담보</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="w-3 h-3 bg-blue-100 rounded"></span>
+                      <span>저당권: 채권 담보</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="w-3 h-3 bg-red-100 rounded"></span>
+                      <span>압류: 강제집행</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="w-3 h-3 bg-orange-100 rounded"></span>
+                      <span>가압류: 임시보전</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="w-3 h-3 bg-purple-100 rounded"></span>
+                      <span>담보가등기: 담보설정</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="w-3 h-3 bg-green-100 rounded"></span>
+                      <span>전세권: 전세금 담보</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="w-3 h-3 bg-indigo-100 rounded"></span>
+                      <span>소유권이전청구권가등기</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="w-3 h-3 bg-pink-100 rounded"></span>
+                      <span>가처분: 임시처분</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="w-3 h-3 bg-cyan-100 rounded"></span>
+                      <span>주택임차권: 주택 임차</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="w-3 h-3 bg-cyan-100 rounded"></span>
+                      <span>상가임차권: 상가 임차</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="w-3 h-3 bg-yellow-100 rounded"></span>
+                      <span>유치권: 유치물권</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="w-3 h-3 bg-teal-100 rounded"></span>
+                      <span>법정지상권: 법정권리</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="w-3 h-3 bg-gray-100 rounded"></span>
+                      <span>분묘기지권: 분묘권리</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -961,7 +1397,41 @@ export default function PropertyDetailPage() {
                         <tr key={right.id}>
                           <td className="py-2">{index + 1}</td>
                           <td className="py-2">{right.rightHolder}</td>
-                          <td className="py-2">{right.rightType}</td>
+                          <td className="py-2">
+                            <span
+                              className={`px-2 py-1 text-xs rounded ${
+                                right.rightType === "근저당권"
+                                  ? "bg-blue-100 text-blue-800"
+                                  : right.rightType === "저당권"
+                                  ? "bg-blue-100 text-blue-800"
+                                  : right.rightType === "압류"
+                                  ? "bg-red-100 text-red-800"
+                                  : right.rightType === "가압류"
+                                  ? "bg-orange-100 text-orange-800"
+                                  : right.rightType === "담보가등기"
+                                  ? "bg-purple-100 text-purple-800"
+                                  : right.rightType === "전세권"
+                                  ? "bg-green-100 text-green-800"
+                                  : right.rightType === "소유권이전청구권가등기"
+                                  ? "bg-indigo-100 text-indigo-800"
+                                  : right.rightType === "가처분"
+                                  ? "bg-pink-100 text-pink-800"
+                                  : right.rightType === "주택임차권"
+                                  ? "bg-cyan-100 text-cyan-800"
+                                  : right.rightType === "상가임차권"
+                                  ? "bg-cyan-100 text-cyan-800"
+                                  : right.rightType === "유치권"
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : right.rightType === "법정지상권"
+                                  ? "bg-teal-100 text-teal-800"
+                                  : right.rightType === "분묘기지권"
+                                  ? "bg-gray-100 text-gray-800"
+                                  : "bg-gray-100 text-gray-800"
+                              }`}
+                            >
+                              {right.rightType}
+                            </span>
+                          </td>
                           <td className="py-2">
                             {right.claimAmount.toLocaleString("ko-KR")}원
                           </td>

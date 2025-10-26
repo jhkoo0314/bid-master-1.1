@@ -4,10 +4,14 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SimulationScenario } from "@/types/simulation";
 import Link from "next/link";
 import { BiddingModal } from "./BiddingModal";
+import {
+  searchUniquePropertyImage,
+  clearCommercialPropertyCache,
+} from "@/lib/unsplash-client";
 
 // 용어 설명 함수 - 핵심분석에 나오는 용어들만 설명
 function getTermExplanation(term: string, keyPoints: string[] = []): string {
@@ -72,6 +76,8 @@ interface PropertyCardProps {
 export function PropertyCard({ property }: PropertyCardProps) {
   const { basicInfo, educationalContent } = property;
   const [isBiddingModalOpen, setIsBiddingModalOpen] = useState(false);
+  const [propertyImage, setPropertyImage] = useState<string | null>(null);
+  const [imageLoading, setImageLoading] = useState(true);
 
   // 난이도별 색상
   const difficultyColors = {
@@ -84,13 +90,104 @@ export function PropertyCard({ property }: PropertyCardProps) {
     ? difficultyColors[educationalContent.difficulty]
     : "bg-gray-100 text-gray-800 border-gray-300";
 
+  // 매물 이미지 로드
+  useEffect(() => {
+    const loadPropertyImage = async () => {
+      try {
+        console.log(
+          `🖼️ [매물카드] 이미지 로드 시작 - ${basicInfo.propertyType}`
+        );
+        setImageLoading(true);
+
+        // 상가 매물 유형인 경우 고정 이미지 사용
+        if (basicInfo.propertyType === "상가") {
+          const commercialImageUrl =
+            "https://images.unsplash.com/photo-1677933416890-14c28bc64052?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixlib=rb-4.1.0&q=80&w=1080";
+          setPropertyImage(commercialImageUrl);
+          console.log(
+            `🏪 [매물카드] 상가 매물 유형 - 고정 이미지 사용: ${commercialImageUrl}`
+          );
+          setImageLoading(false);
+          return;
+        }
+
+        // 빌라 매물 유형인 경우 고정 이미지 사용
+        if (basicInfo.propertyType === "빌라") {
+          const villaImageUrl =
+            "https://images.unsplash.com/photo-1760129745103-91c4022ed5fb?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixlib=rb-4.1.0&q=80&w=1080";
+          setPropertyImage(villaImageUrl);
+          console.log(
+            `🏠 [매물카드] 빌라 매물 유형 - 고정 이미지 사용: ${villaImageUrl}`
+          );
+          setImageLoading(false);
+          return;
+        }
+
+        const imageUrl = await searchUniquePropertyImage(
+          basicInfo.propertyType,
+          basicInfo.locationShort,
+          basicInfo.marketValue
+        );
+
+        if (imageUrl) {
+          setPropertyImage(imageUrl);
+          console.log(`✅ [매물카드] 이미지 로드 성공: ${imageUrl}`);
+        } else {
+          console.log(`⚠️ [매물카드] 이미지 로드 실패 - 기본 이미지 사용`);
+        }
+      } catch (error) {
+        console.error(`❌ [매물카드] 이미지 로드 오류:`, error);
+      } finally {
+        setImageLoading(false);
+      }
+    };
+
+    loadPropertyImage();
+  }, [basicInfo.propertyType, basicInfo.locationShort, basicInfo.marketValue]);
+
   return (
     <div className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 overflow-hidden border border-gray-200">
-      {/* 매물 이미지 플레이스홀더 */}
-      <div className="h-48 bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-4xl mb-2">🏢</div>
-          <div className="text-sm text-gray-600">{basicInfo.propertyType}</div>
+      {/* 매물 이미지 */}
+      <div className="h-48 relative overflow-hidden">
+        {imageLoading ? (
+          // 로딩 상태
+          <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+              <div className="text-sm text-gray-600">이미지 로딩중...</div>
+            </div>
+          </div>
+        ) : propertyImage ? (
+          // 실제 이미지
+          <img
+            src={propertyImage}
+            alt={`${basicInfo.propertyType} - ${basicInfo.locationShort}`}
+            className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+            onError={(e) => {
+              console.log(`❌ [매물카드] 이미지 로드 실패: ${propertyImage}`);
+              e.currentTarget.style.display = "none";
+              e.currentTarget.nextElementSibling?.classList.remove("hidden");
+            }}
+          />
+        ) : null}
+
+        {/* 이미지 로드 실패 시 기본 표시 */}
+        <div
+          className={`w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center ${
+            propertyImage ? "hidden" : ""
+          }`}
+        >
+          <div className="text-center">
+            <div className="text-4xl mb-2">🏢</div>
+            <div className="text-sm text-gray-600">
+              {basicInfo.propertyType}
+            </div>
+          </div>
+        </div>
+
+        {/* 매물 유형 오버레이 */}
+        <div className="absolute top-2 left-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-xs font-medium">
+          {basicInfo.propertyType}
         </div>
       </div>
 
@@ -193,6 +290,28 @@ export function PropertyCard({ property }: PropertyCardProps) {
                   {point.substring(0, 15)}...
                 </span>
               ))}
+          </div>
+        )}
+
+        {/* 권리 유형 표시 */}
+        {property.rights && property.rights.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-4">
+            {property.rights.slice(0, 3).map((right, index) => (
+              <span
+                key={right.id}
+                className="px-2 py-1 bg-red-50 text-red-700 text-xs rounded"
+                title={`${right.rightType} - ${
+                  right.rightHolder
+                } (${right.claimAmount.toLocaleString()}원)`}
+              >
+                {right.rightType}
+              </span>
+            ))}
+            {property.rights.length > 3 && (
+              <span className="px-2 py-1 bg-gray-50 text-gray-600 text-xs">
+                +{property.rights.length - 3}개
+              </span>
+            )}
           </div>
         )}
 

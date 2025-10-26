@@ -157,11 +157,11 @@ export function AuctionAnalysisModal({
               </div>
 
               {/* 권리 상세 목록 */}
-              {property.rights && property.rights.length > 0 && (
-                <div className="bg-white p-4 rounded-lg shadow-sm">
-                  <h4 className="font-semibold text-gray-800 mb-3">
-                    권리 상세 내역
-                  </h4>
+              <div className="bg-white p-4 rounded-lg shadow-sm">
+                <h4 className="font-semibold text-gray-800 mb-3">
+                  권리 상세 내역
+                </h4>
+                {property.rights && property.rights.length > 0 ? (
                   <div className="space-y-3">
                     {property.rights.map((right, index) => (
                       <div
@@ -170,10 +170,17 @@ export function AuctionAnalysisModal({
                       >
                         <div className="flex-1">
                           <p className="font-medium text-gray-800">
-                            {right.type}
+                            {right.rightType}
                           </p>
                           <p className="text-sm text-gray-600">
-                            금액: {right.amount?.toLocaleString("ko-KR")}원
+                            권리자: {right.rightHolder}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            청구금액:{" "}
+                            {right.claimAmount?.toLocaleString("ko-KR")}원
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            등기일: {right.registrationDate}
                           </p>
                         </div>
                         <div className="flex items-center space-x-2">
@@ -191,8 +198,18 @@ export function AuctionAnalysisModal({
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="text-4xl mb-2">✅</div>
+                    <p className="text-gray-600 font-medium">
+                      권리 부담이 없는 깨끗한 매물입니다
+                    </p>
+                    <p className="text-sm text-gray-500 mt-1">
+                      이는 매우 매력적인 투자 기회를 의미합니다
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* 임차인 현황 상세 분석 */}
@@ -230,11 +247,11 @@ export function AuctionAnalysisModal({
               </div>
 
               {/* 임차인 상세 목록 */}
-              {property.tenants && property.tenants.length > 0 && (
-                <div className="bg-white p-4 rounded-lg shadow-sm">
-                  <h4 className="font-semibold text-gray-800 mb-3">
-                    임차인 상세 내역
-                  </h4>
+              <div className="bg-white p-4 rounded-lg shadow-sm">
+                <h4 className="font-semibold text-gray-800 mb-3">
+                  임차인 상세 내역
+                </h4>
+                {property.tenants && property.tenants.length > 0 ? (
                   <div className="space-y-3">
                     {property.tenants.map((tenant, index) => (
                       <div
@@ -243,12 +260,15 @@ export function AuctionAnalysisModal({
                       >
                         <div className="flex-1">
                           <p className="font-medium text-gray-800">
-                            {tenant.name}
+                            {tenant.tenantName}
                           </p>
                           <p className="text-sm text-gray-600">
                             보증금: {tenant.deposit?.toLocaleString("ko-KR")}원
                             | 월세:{" "}
                             {tenant.monthlyRent?.toLocaleString("ko-KR")}원
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            입주일: {tenant.moveInDate}
                           </p>
                         </div>
                         <div className="flex items-center space-x-2">
@@ -266,8 +286,18 @@ export function AuctionAnalysisModal({
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="text-4xl mb-2">✅</div>
+                    <p className="text-gray-600 font-medium">
+                      임차인이 없는 매물입니다
+                    </p>
+                    <p className="text-sm text-gray-500 mt-1">
+                      추가 부담 없이 투자할 수 있습니다
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* 투자 분석 및 리스크 평가 */}

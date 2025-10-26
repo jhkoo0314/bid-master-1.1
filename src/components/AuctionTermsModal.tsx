@@ -44,15 +44,9 @@ const auctionTerms: Term[] = [
     category: "기본용어",
   },
   {
-    term: "전세권",
-    definition: "전세금을 지급하고 일정기간 부동산을 사용할 수 있는 권리",
-    example: "전세권 설정으로 전세금 1억원",
-    category: "권리유형",
-  },
-  {
-    term: "지상권",
-    definition: "타인의 토지 위에 건물을 소유할 수 있는 권리",
-    example: "지상권 설정으로 건물 소유",
+    term: "근저당권",
+    definition: "일정한 범위의 채권을 담보하기 위해 부동산에 설정하는 저당권",
+    example: "근저당권 설정으로 최고 3억원까지 담보",
     category: "권리유형",
   },
   {
@@ -62,16 +56,72 @@ const auctionTerms: Term[] = [
     category: "권리유형",
   },
   {
+    term: "압류",
+    definition:
+      "채권자가 채무자의 재산을 법원이 압수하여 처분을 금지하는 강제집행",
+    example: "압류 등기로 부동산 처분 제한",
+    category: "권리유형",
+  },
+  {
     term: "가압류",
     definition: "채권보전을 위해 부동산 처분을 제한하는 법적 조치",
     example: "가압류 등기로 처분 제한",
-    category: "법적상태",
+    category: "권리유형",
+  },
+  {
+    term: "담보가등기",
+    definition: "채권담보를 위해 부동산에 설정하는 가등기",
+    example: "담보가등기로 채권 담보",
+    category: "권리유형",
+  },
+  {
+    term: "전세권",
+    definition: "전세금을 지급하고 일정기간 부동산을 사용할 수 있는 권리",
+    example: "전세권 설정으로 전세금 1억원",
+    category: "권리유형",
+  },
+  {
+    term: "소유권이전청구권가등기",
+    definition: "소유권 이전 청구권을 보전하기 위한 가등기",
+    example: "소유권이전청구권가등기로 권리 보전",
+    category: "권리유형",
   },
   {
     term: "가처분",
     definition: "임시로 부동산 처분을 금지하는 법적 조치",
     example: "가처분 등기로 매매 제한",
-    category: "법적상태",
+    category: "권리유형",
+  },
+  {
+    term: "주택임차권",
+    definition: "주택의 임차인이 가지는 권리",
+    example: "주택임차권으로 거주권 보장",
+    category: "권리유형",
+  },
+  {
+    term: "상가임차권",
+    definition: "상가의 임차인이 가지는 권리",
+    example: "상가임차권으로 영업권 보장",
+    category: "권리유형",
+  },
+  {
+    term: "유치권",
+    definition:
+      "채권자가 채무자의 물건을 점유하고 있는 경우 그 물건에 대해 가지는 담보권",
+    example: "유치권으로 채권 담보",
+    category: "권리유형",
+  },
+  {
+    term: "법정지상권",
+    definition: "건물 소유를 위해 토지에 자동으로 발생하는 지상권",
+    example: "법정지상권으로 건물 소유권 보장",
+    category: "권리유형",
+  },
+  {
+    term: "분묘기지권",
+    definition: "분묘를 설치하기 위해 토지를 사용할 수 있는 권리",
+    example: "분묘기지권으로 묘지 사용",
+    category: "권리유형",
   },
   {
     term: "등기부등본",
@@ -96,12 +146,6 @@ const auctionTerms: Term[] = [
     definition: "부동산을 점유자로부터 인도받는 것",
     example: "명도소송으로 점유자 퇴거",
     category: "실제상황",
-  },
-  {
-    term: "대지권",
-    definition: "아파트 등에서 전유부분과 함께 부수되는 대지 사용권",
-    example: "대지권 비율 0.1234",
-    category: "권리유형",
   },
   {
     term: "관리비",

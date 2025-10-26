@@ -81,14 +81,7 @@ export default function HomePage() {
   };
 
   const handleRefresh = async () => {
-    // 일반 모드에서 10회 제한 체크
-    if (!devMode.isDevMode && devMode.refreshCount >= 10) {
-      alert(
-        "오늘의 무료 매물 생성을 모두 사용했습니다. 더 많은 매물을 보려면 사전 알림을 신청해주세요!"
-      );
-      return;
-    }
-
+    console.log("🔄 [메인페이지] 새로고침 요청 - 무제한 사용 가능");
     incrementRefreshCount();
     await loadInitialProperties(currentFilters);
   };
@@ -129,9 +122,7 @@ export default function HomePage() {
     await loadInitialProperties(currentFilters);
   };
 
-  const remainingRefreshes = devMode.isDevMode
-    ? "무제한"
-    : `${Math.max(0, 10 - devMode.refreshCount)}/10회 남음`;
+  const remainingRefreshes = "";
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -200,10 +191,7 @@ export default function HomePage() {
               </span>
               <button
                 onClick={handleRefresh}
-                disabled={
-                  isLoading ||
-                  (!devMode.isDevMode && devMode.refreshCount >= 10)
-                }
+                disabled={isLoading}
                 className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 <span>🔄</span>

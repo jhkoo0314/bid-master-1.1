@@ -6,7 +6,9 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "setup-env": "copy env.example .env.local",
+    "dev:setup": "npm run setup-env && npm run dev"
   },
   "dependencies": {
     "@notionhq/client": "^5.2.0",
@@ -15,6 +17,7 @@
     "@types/react-dom": "^19.2.2",
     "@vercel/speed-insights": "^1.2.0",
     "autoprefixer": "^10.4.21",
+    "dotenv": "^17.2.3",
     "framer-motion": "^12.23.24",
     "googleapis": "^164.1.0",
     "lucide-react": "^0.546.0",

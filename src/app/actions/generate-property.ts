@@ -733,11 +733,42 @@ function generateEducationalRights(
 
   // 난이도별 권리 추가
   if (difficulty === "중급" || difficulty === "고급") {
+    // 다양한 권리 유형 중에서 랜덤 선택
+    const additionalRightTypes = [
+      "압류",
+      "가압류",
+      "담보가등기",
+      "소유권이전청구권가등기",
+      "가처분",
+      "유치권",
+      "법정지상권",
+      "분묘기지권",
+    ];
+    const selectedRightType =
+      additionalRightTypes[
+        Math.floor(Math.random() * additionalRightTypes.length)
+      ];
+
     rights.push({
       id: "right-2",
       registrationDate: "2018-03-15",
-      rightType: "근저당권",
-      rightHolder: "신한은행",
+      rightType: selectedRightType,
+      rightHolder:
+        selectedRightType === "압류" || selectedRightType === "가압류"
+          ? "서울중앙지방법원"
+          : selectedRightType === "담보가등기"
+          ? "신한은행"
+          : selectedRightType === "소유권이전청구권가등기"
+          ? "김영수"
+          : selectedRightType === "가처분"
+          ? "서울중앙지방법원"
+          : selectedRightType === "유치권"
+          ? "이영희"
+          : selectedRightType === "법정지상권"
+          ? "박민수"
+          : selectedRightType === "분묘기지권"
+          ? "최수진"
+          : "권리자",
       claimAmount: secondaryClaimAmount,
       priority: 2,
       isMalsoBaseRight: false,
@@ -747,11 +778,32 @@ function generateEducationalRights(
   }
 
   if (difficulty === "고급") {
+    // 고급에서는 더 복잡한 권리 구조
+    const complexRightTypes = [
+      "전세권",
+      "주택상가임차권",
+      "압류",
+      "가압류",
+      "담보가등기",
+    ];
+    const selectedComplexRightType =
+      complexRightTypes[Math.floor(Math.random() * complexRightTypes.length)];
+
     rights.push({
       id: "right-3",
       registrationDate: "2020-07-10",
-      rightType: "근저당권",
-      rightHolder: "하나은행",
+      rightType: selectedComplexRightType,
+      rightHolder:
+        selectedComplexRightType === "전세권"
+          ? "김영수"
+          : selectedComplexRightType === "주택상가임차권"
+          ? "이영희"
+          : selectedComplexRightType === "압류" ||
+            selectedComplexRightType === "가압류"
+          ? "서울중앙지방법원"
+          : selectedComplexRightType === "담보가등기"
+          ? "하나은행"
+          : "권리자",
       claimAmount: Math.floor(claimAmount * 0.2),
       priority: 3,
       isMalsoBaseRight: false,
@@ -759,7 +811,7 @@ function generateEducationalRights(
       willBeAssumed: false,
     });
 
-    // 상가의 경우 전세권 추가
+    // 매물 유형별 특수 권리 추가
     if (propertyType === "상가") {
       rights.push({
         id: "right-4",
@@ -772,10 +824,39 @@ function generateEducationalRights(
         willBeExtinguished: false,
         willBeAssumed: false,
       });
+    } else if (propertyType === "아파트") {
+      rights.push({
+        id: "right-4",
+        registrationDate: "2022-01-20",
+        rightType: "주택상가임차권",
+        rightHolder: "이영희",
+        claimAmount: Math.floor(claimAmount * 0.15),
+        priority: 4,
+        isMalsoBaseRight: false,
+        willBeExtinguished: false,
+        willBeAssumed: false,
+      });
+    } else if (propertyType === "단독주택") {
+      rights.push({
+        id: "right-4",
+        registrationDate: "2022-01-20",
+        rightType: "법정지상권",
+        rightHolder: "박민수",
+        claimAmount: Math.floor(claimAmount * 0.15),
+        priority: 4,
+        isMalsoBaseRight: false,
+        willBeExtinguished: false,
+        willBeAssumed: false,
+      });
     }
   }
 
   console.log(`✅ [교육용 권리 생성] 생성된 권리 개수: ${rights.length}`);
+  console.log(
+    `🔍 [교육용 권리 생성] 생성된 권리 유형: ${rights
+      .map((r) => r.rightType)
+      .join(", ")}`
+  );
   return rights;
 }
 
