@@ -1943,25 +1943,13 @@ export async function generateProperty(
           : propertyTemplates[
               Math.floor(Math.random() * propertyTemplates.length)
             ];
-      // 지역 필터링
-      let availableLocations = selectedTemplate.locations;
-      if (filters?.regions && filters.regions.length > 0) {
-        availableLocations = selectedTemplate.locations.filter((location) =>
-          filters.regions!.some((region) => location.short.includes(region))
-        );
-        console.log(
-          `📍 [필터링] 지역 필터 적용: ${filters.regions.join(", ")}`
-        );
-      }
-
+      // 지역은 항상 랜덤으로 선택 (필터 무시)
       const selectedLocation =
-        availableLocations.length > 0
-          ? availableLocations[
-              Math.floor(Math.random() * availableLocations.length)
-            ]
-          : selectedTemplate.locations[
-              Math.floor(Math.random() * selectedTemplate.locations.length)
-            ];
+        selectedTemplate.locations[
+          Math.floor(Math.random() * selectedTemplate.locations.length)
+        ];
+
+      console.log(`📍 [랜덤 지역] 선택된 위치: ${selectedLocation.short}`);
 
       // 동적으로 가격 생성
       console.log(
@@ -1972,27 +1960,15 @@ export async function generateProperty(
         selectedLocation.short
       );
 
-      // 가격 필터링
-      let availablePriceRanges = generatedPriceRanges;
-      if (filters?.priceRange) {
-        availablePriceRanges = generatedPriceRanges.filter(
-          (range) =>
-            range.appraisalValue >= filters.priceRange!.min &&
-            range.appraisalValue <= filters.priceRange!.max
-        );
-        console.log(
-          `💰 [필터링] 가격 필터 적용: ${filters.priceRange.min.toLocaleString()}원 ~ ${filters.priceRange.max.toLocaleString()}원`
-        );
-      }
-
+      // 가격은 항상 랜덤으로 선택 (필터 무시)
       const selectedPriceRange =
-        availablePriceRanges.length > 0
-          ? availablePriceRanges[
-              Math.floor(Math.random() * availablePriceRanges.length)
-            ]
-          : generatedPriceRanges[
-              Math.floor(Math.random() * generatedPriceRanges.length)
-            ];
+        generatedPriceRanges[
+          Math.floor(Math.random() * generatedPriceRanges.length)
+        ];
+
+      console.log(
+        `💰 [랜덤 가격] 선택된 가격: ${selectedPriceRange.appraisalValue.toLocaleString()}원`
+      );
       const selectedPropertyDetails =
         selectedTemplate.propertyDetails[
           Math.floor(Math.random() * selectedTemplate.propertyDetails.length)

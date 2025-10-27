@@ -33,6 +33,17 @@ export function clearCommercialPropertyCache() {
 }
 
 /**
+ * 단독주택 매물 유형의 이미지 캐시를 강제로 초기화합니다.
+ * 새로운 모던한 단독주택 이미지 검색어 적용을 위해 사용
+ */
+export function clearSingleHouseCache() {
+  propertyImageCache.delete("단독주택");
+  console.log(
+    `🏠 [캐시 초기화] 단독주택 매물 유형 캐시 강제 삭제됨 - 새로운 모던한 이미지 검색어 적용`
+  );
+}
+
+/**
  * 현재 캐시 상태를 확인합니다.
  */
 export function getCacheStatus() {
@@ -62,16 +73,16 @@ const getPropertySearchTerms = (propertyType: string): string[] => {
       "korean apartment balcony",
     ],
     오피스텔: [
-      "modern office building glass facade",
-      "contemporary office building exterior",
-      "modern glass office building urban",
-      "office building with commercial space",
-      "modern mixed-use building",
-      "contemporary office complex",
-      "glass office building city",
-      "modern office tower",
-      "urban office building",
-      "contemporary commercial building",
+      "modern city skyline glass skyscrapers",
+      "contemporary urban skyline buildings",
+      "modern glass skyscrapers cityscape",
+      "urban skyline modern buildings",
+      "city skyline glass towers",
+      "modern urban architecture skyline",
+      "contemporary city skyline",
+      "glass skyscrapers urban landscape",
+      "modern cityscape buildings",
+      "urban skyline contemporary buildings",
     ],
     상가: [
       "korean commercial building exterior",
@@ -86,16 +97,16 @@ const getPropertySearchTerms = (propertyType: string): string[] => {
       "korean commercial building front",
     ],
     단독주택: [
-      "korean house exterior",
-      "korean traditional house",
-      "korean modern house",
-      "korean house interior",
-      "korean house living room",
-      "korean house kitchen",
-      "korean house garden",
-      "korean house front",
-      "korean house backyard",
-      "korean house entrance",
+      "modern contemporary house exterior",
+      "modern house architecture",
+      "contemporary house design",
+      "modern house balcony",
+      "modern house front",
+      "modern house facade",
+      "contemporary house exterior",
+      "modern house structure",
+      "modern house design",
+      "contemporary house architecture",
     ],
     빌라: [
       "korean villa exterior",
@@ -416,10 +427,10 @@ export function getDefaultPropertyImage(propertyType: string): string {
     아파트:
       "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
     오피스텔:
-      "https://images.unsplash.com/photo-1758597129071-29bc78c021e8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MTU3OTV8MHwxfHNlYXJjaHwyfHxtb2Rlcm4lMjBvZmZpY2UlMjBidWlsZGluZyUyMGdsYXNzJTIwZmFjYWRlJTIwdXJiYW4lMjBjaXR5fGVufDB8MHx8fDE3NjE1NjA3NDV8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "https://images.unsplash.com/photo-1722299547563-03e2d21fe289?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4MTU3OTV8MHwxfHNlYXJjaHw4fHxnbGFzcyUyMHNreXNjcmFwZXIlMjBtb2Rlcm58ZW58MHwwfHx8MTc2MTU3MjkzNXww&ixlib=rb-4.1.0&q=85",
     상가: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
     단독주택:
-      "https://images.unsplash.com/photo-1570129477492-45c003edd2be?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1686164748506-4311ba437c24?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MTU3OTV8MHwxfHNlYXJjaHw3fHxtb2Rlcm4lMjBjb250ZW1wb3JhcnklMjBob3VzZSUyMGV4dGVyaW9yJTIwYXJjaGl0ZWN0dXJlfGVufDF8MHx8fDE3NjE1NzMzODl8MA&ixlib=rb-4.1.0&q=80&w=1080",
     빌라: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
     원룸: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
   };
@@ -428,9 +439,18 @@ export function getDefaultPropertyImage(propertyType: string): string {
 
   if (propertyType === "오피스텔") {
     console.log(
-      `🏢 [오피스텔 이미지] 현대적인 유리 외관 오피스텔 이미지로 교체 완료`
+      `🏢 [오피스텔 이미지] 도시 스카이라인 스타일의 모던한 빌딩 이미지로 교체 완료`
     );
     console.log(`🖼️ [오피스텔 이미지] 새로운 이미지 URL: ${selectedImage}`);
+  }
+
+  if (propertyType === "단독주택") {
+    console.log(
+      `🏠 [단독주택 이미지] 발코니가 있는 2층 모던 주택 이미지로 교체 완료`
+    );
+    console.log(
+      `🖼️ [단독주택 이미지] 새로운 모던한 이미지 URL: ${selectedImage}`
+    );
   }
 
   return selectedImage;

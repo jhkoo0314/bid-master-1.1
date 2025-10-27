@@ -246,17 +246,17 @@ export function AuctionTermsModal({ isOpen, onClose }: AuctionTermsModalProps) {
     <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
         {/* 헤더 */}
-        <div className="bg-blue-600 text-white p-6">
+        <div className="bg-white text-black p-6 border-b">
           <div className="flex justify-between items-center">
             <h2 className="text-2xl font-bold">📚 주요 경매 용어</h2>
             <button
               onClick={handleClose}
-              className="text-white hover:text-gray-200 text-2xl"
+              className="text-black hover:text-gray-600 text-2xl"
             >
               ×
             </button>
           </div>
-          <p className="text-blue-100 mt-2">
+          <p className="text-gray-600 mt-2">
             경매 투자에 필요한 핵심 용어들을 쉽게 배워보세요
           </p>
         </div>
@@ -274,7 +274,7 @@ export function AuctionTermsModal({ isOpen, onClose }: AuctionTermsModalProps) {
                   console.log("🔍 [경매용어] 검색어 변경:", e.target.value);
                   setSearchTerm(e.target.value);
                 }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
               />
             </div>
 
@@ -289,7 +289,7 @@ export function AuctionTermsModal({ isOpen, onClose }: AuctionTermsModalProps) {
                   }}
                   className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
                     selectedCategory === category
-                      ? "bg-blue-600 text-white"
+                      ? "bg-black text-white"
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
@@ -315,16 +315,16 @@ export function AuctionTermsModal({ isOpen, onClose }: AuctionTermsModalProps) {
                   className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors"
                 >
                   <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-lg font-bold text-blue-600">
+                    <h3 className="text-lg font-bold text-black">
                       {term.term}
                     </h3>
-                    <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full">
+                    <span className="text-xs bg-black text-white px-2 py-1 rounded-full">
                       {term.category}
                     </span>
                   </div>
                   <p className="text-gray-700 mb-2">{term.definition}</p>
                   {term.example && (
-                    <p className="text-sm text-gray-600 bg-white p-2 rounded border-l-4 border-blue-500">
+                    <p className="text-sm text-gray-600 bg-white p-2 rounded border-l-4 border-black">
                       💡 예시: {term.example}
                     </p>
                   )}
@@ -342,7 +342,7 @@ export function AuctionTermsModal({ isOpen, onClose }: AuctionTermsModalProps) {
             </p>
             <button
               onClick={handleClose}
-              className="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+              className="px-6 py-2 bg-black text-white font-medium rounded-lg hover:bg-gray-800 transition-colors"
             >
               닫기
             </button>

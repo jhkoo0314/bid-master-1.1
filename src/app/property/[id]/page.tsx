@@ -859,11 +859,9 @@ export default function PropertyDetailPage() {
           <div className="lg:col-span-2">
             {/* 사건 기본정보 */}
             <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-              <div className="bg-blue-600 text-white px-6 py-4">
+              <div className="bg-white text-black px-6 py-4 border-b border-black">
                 <h2 className="text-xl font-bold">사건 기본정보</h2>
-                <p className="text-blue-100 text-sm">
-                  조회수: 1,026 | 입찰 {basicInfo.daysUntilBid}일 전
-                </p>
+                <p className="text-black text-sm">조회수: 1,026</p>
               </div>
               <div className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -875,23 +873,23 @@ export default function PropertyDetailPage() {
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-600">경매종류</span>
+                      <span className="text-gray-600">경매 종류</span>
                       <span className="font-medium">
                         {basicInfo.auctionType}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-600">물건종류</span>
+                      <span className="text-gray-600">물건 종류</span>
                       <span className="font-medium">
                         {basicInfo.propertyType}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-600">경매대상</span>
+                      <span className="text-gray-600">경매 대상</span>
                       <span className="font-medium">토지 및 건물일괄매각</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-600">입찰방법</span>
+                      <span className="text-gray-600">입찰 방법</span>
                       <span className="font-medium">
                         {basicInfo.biddingMethod}
                       </span>
@@ -899,13 +897,13 @@ export default function PropertyDetailPage() {
                   </div>
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-600">토지면적</span>
+                      <span className="text-gray-600">토지 면적</span>
                       <span className="font-medium">
                         {property.propertyDetails?.landAreaPyeong || 0}평
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-600">건물면적</span>
+                      <span className="text-gray-600">건물 면적</span>
                       <span className="font-medium">
                         {property.propertyDetails?.buildingAreaPyeong || 0}평
                       </span>
@@ -935,7 +933,7 @@ export default function PropertyDetailPage() {
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-600">입찰보증금</span>
+                      <span className="text-gray-600">입찰 보증금</span>
                       <span className="font-medium">
                         (10%){" "}
                         {Math.round(
@@ -959,7 +957,7 @@ export default function PropertyDetailPage() {
                       <span className="font-medium">{basicInfo.creditor}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">청구금액</span>
+                      <span className="text-gray-600">청구 금액</span>
                       <span className="font-medium">
                         {basicInfo.claimAmount?.toLocaleString("ko-KR") || "0"}
                         원
@@ -972,8 +970,8 @@ export default function PropertyDetailPage() {
 
             {/* 진행일정 */}
             <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-              <div className="bg-gray-800 text-white px-6 py-4">
-                <h3 className="text-lg font-bold">진행일정</h3>
+              <div className="bg-white text-black px-6 py-4 border-b border-black">
+                <h3 className="text-lg font-bold">진행 일정</h3>
               </div>
               <div className="p-6">
                 <div className="overflow-x-auto">
@@ -988,28 +986,28 @@ export default function PropertyDetailPage() {
                     <tbody>
                       <tr>
                         <td className="py-2">1일</td>
-                        <td className="py-2">경매사건접수</td>
+                        <td className="py-2">경매 사건 접수</td>
                         <td className="py-2">
                           {property.schedule?.caseFiledDate || "정보 없음"}
                         </td>
                       </tr>
                       <tr>
                         <td className="py-2">6일</td>
-                        <td className="py-2">개시결정일</td>
+                        <td className="py-2">개시 결정일</td>
                         <td className="py-2">
                           {property.schedule?.decisionDate || "정보 없음"}
                         </td>
                       </tr>
                       <tr>
                         <td className="py-2">97일</td>
-                        <td className="py-2">배당요구종기일</td>
+                        <td className="py-2">배당 요구 종기일</td>
                         <td className="py-2">
                           {property.schedule?.dividendDeadline || "정보 없음"}
                         </td>
                       </tr>
                       <tr>
                         <td className="py-2">418일</td>
-                        <td className="py-2">최초경매일</td>
+                        <td className="py-2">최초 경매일</td>
                         <td className="py-2">
                           {property.schedule?.firstAuctionDate || "정보 없음"}
                         </td>
@@ -1022,11 +1020,8 @@ export default function PropertyDetailPage() {
 
             {/* 매각일정 */}
             <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-              <div className="bg-gray-800 text-white px-6 py-4">
+              <div className="bg-white text-black px-6 py-4 border-b border-black">
                 <h3 className="text-lg font-bold">매각일정</h3>
-                <p className="text-gray-300 text-sm">
-                  입찰 {basicInfo.daysUntilBid}일 전
-                </p>
               </div>
               <div className="p-6">
                 <div className="overflow-x-auto">
@@ -1088,15 +1083,15 @@ export default function PropertyDetailPage() {
 
             {/* 감정평가현황 */}
             <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-              <div className="bg-gray-800 text-white px-6 py-4">
-                <h3 className="text-lg font-bold">감정평가현황</h3>
-                <p className="text-gray-300 text-sm">
+              <div className="bg-white text-black px-6 py-4 border-b border-black">
+                <h3 className="text-lg font-bold">감정 평가 현황</h3>
+                <p className="text-black text-sm">
                   [감정원 : 경남감정 / 가격시점 : 2024.02.22]
                 </p>
               </div>
               <div className="p-6">
                 <div className="overflow-x-auto">
-                  <table className="w-full">
+                  <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b">
                         <th className="text-left py-2">목록</th>
@@ -1124,7 +1119,7 @@ export default function PropertyDetailPage() {
                             "0"}
                           원
                         </td>
-                        <td className="py-2 text-sm text-gray-600">
+                        <td className="py-2 text-gray-600">
                           본건은 아파트로 현황은 거주용임
                         </td>
                       </tr>
@@ -1136,9 +1131,9 @@ export default function PropertyDetailPage() {
 
             {/* 임차인현황 */}
             <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-              <div className="bg-gray-800 text-white px-6 py-4">
-                <h3 className="text-lg font-bold">임차인현황</h3>
-                <p className="text-gray-300 text-sm">
+              <div className="bg-white text-black px-6 py-4 border-b border-black">
+                <h3 className="text-lg font-bold">임차인 현황</h3>
+                <p className="text-black text-sm">
                   [말소기준권리 : 2014. 8. 28.근저당권. 설정, 배당요구종기일 :
                   2024/05/14]
                 </p>
@@ -1218,9 +1213,9 @@ export default function PropertyDetailPage() {
 
             {/* 토지등기부 */}
             <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-              <div className="bg-gray-800 text-white px-6 py-4">
-                <h3 className="text-lg font-bold">토지등기부</h3>
-                <p className="text-gray-300 text-sm">등기부상 권리 현황</p>
+              <div className="bg-white text-black px-6 py-4 border-b border-black">
+                <h3 className="text-lg font-bold">토지 등기부</h3>
+                <p className="text-black text-sm">등기부상 권리 현황</p>
               </div>
               <div className="p-6">
                 <div className="overflow-x-auto">
@@ -1367,9 +1362,9 @@ export default function PropertyDetailPage() {
 
             {/* 예상배당표 */}
             <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-              <div className="bg-gray-800 text-white px-6 py-4">
+              <div className="bg-white text-black px-6 py-4 border-b border-black">
                 <h3 className="text-lg font-bold">예상배당표</h3>
-                <p className="text-gray-300 text-sm">
+                <p className="text-black text-sm">
                   경매 매각대금 배당 순서 및 예상 금액
                 </p>
               </div>
@@ -1498,9 +1493,9 @@ export default function PropertyDetailPage() {
 
             {/* 지역분석 */}
             <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-              <div className="bg-gray-800 text-white px-6 py-4">
+              <div className="bg-white text-black px-6 py-4 border-b border-black">
                 <h3 className="text-lg font-bold">지역분석</h3>
-                <p className="text-gray-300 text-sm">
+                <p className="text-black text-sm">
                   관할 법원, 등기소, 세무서 정보
                 </p>
               </div>
@@ -1766,7 +1761,7 @@ export default function PropertyDetailPage() {
                       className="flex items-center justify-between w-full p-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
                     >
                       <h4 className="font-medium text-gray-800">
-                        📋 매각물건명세
+                        📋 매각물건명세서
                       </h4>
                       <span className="text-gray-600">
                         {showSpecification ? "▲" : "▼"}

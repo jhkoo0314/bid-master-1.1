@@ -29,17 +29,17 @@ export function PropertyFilter({
   onApplyFilter,
   isLoading = false,
 }: PropertyFilterProps) {
-  const [isRightTypesExpanded, setIsRightTypesExpanded] = useState(false);
-  const rightTypesRef = useRef<HTMLDivElement>(null);
+  const [isFilterExpanded, setIsFilterExpanded] = useState(false);
+  const filterRef = useRef<HTMLDivElement>(null);
 
   // 외부 클릭 감지
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
-        rightTypesRef.current &&
-        !rightTypesRef.current.contains(event.target as Node)
+        filterRef.current &&
+        !filterRef.current.contains(event.target as Node)
       ) {
-        setIsRightTypesExpanded(false);
+        setIsFilterExpanded(false);
       }
     };
 
@@ -156,13 +156,9 @@ export function PropertyFilter({
       propertyTypeOptions[
         Math.floor(Math.random() * propertyTypeOptions.length)
       ].value;
-    const randomRegion =
-      regionOptions[Math.floor(Math.random() * regionOptions.length)].value;
     const randomDifficulty =
       difficultyOptions[Math.floor(Math.random() * difficultyOptions.length)]
         .value;
-    const randomPriceRange =
-      priceRanges[Math.floor(Math.random() * priceRanges.length)];
 
     // 권리유형은 1-3개 랜덤 선택
     const shuffledRightTypes = [...rightTypeOptions].sort(
@@ -175,8 +171,8 @@ export function PropertyFilter({
 
     const randomFilters: PropertyFilterOptions = {
       propertyType: randomPropertyType,
-      region: randomRegion,
-      priceRange: { min: randomPriceRange.min, max: randomPriceRange.max },
+      region: "", // 지역은 항상 빈 값으로 설정 (랜덤 생성)
+      priceRange: { min: 0, max: 5000000000 }, // 가격범위는 항상 전체로 설정 (랜덤 생성)
       difficultyLevel: randomDifficulty,
       rightTypes: randomRightTypes,
     };
@@ -206,228 +202,187 @@ export function PropertyFilter({
     onApplyFilter();
   };
 
+  // 필터 요약 텍스트 생성
+  const getFilterSummary = () => {
+    const parts = [];
+    if (filters.propertyType) parts.push(`🏠 ${filters.propertyType}`);
+    if (filters.rightTypes.length > 0) parts.push(`⚖️ 권리유형`);
+    if (filters.difficultyLevel) parts.push(`📚 ${filters.difficultyLevel}`);
+
+    return parts.length > 0 ? parts.join(", ") : "매물을 선택해 주세요";
+  };
+
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-      {/* 필터 헤더 */}
-      <div className="flex justify-end items-center mb-4 gap-2">
+    <div className="bg-white rounded-lg shadow-md p-3 mb-3">
+      {/* 한줄 토글 필터 */}
+      <div className="relative" ref={filterRef}>
+        {/* 토글 버튼 */}
         <button
-          onClick={randomizeFilters}
-          className="px-3 py-1 text-sm bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition-colors flex items-center gap-1"
+          onClick={() => {
+            console.log("🔍 [필터 토글] 필터 토글 클릭:", !isFilterExpanded);
+            setIsFilterExpanded(!isFilterExpanded);
+          }}
+          className="w-full px-4 py-3 text-left bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-all duration-200 shadow-sm hover:shadow-md"
         >
-          <span>🎲</span>
-          <span>랜덤</span>
-        </button>
-        <button
-          onClick={resetFilters}
-          className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
-        >
-          초기화
-        </button>
-      </div>
-
-      {/* 필터 내용 */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        {/* 지역 */}
-        <div>
-          <h4 className="text-sm font-medium text-gray-700 mb-2">📍 지역</h4>
-          <select
-            value={filters.region}
-            onChange={(e) => selectFilter("region", e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors text-sm"
-          >
-            <option value="">지역 선택</option>
-            {regionOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* 매물 유형 */}
-        <div>
-          <h4 className="text-sm font-medium text-gray-700 mb-2">
-            🏠 매물 유형
-          </h4>
-          <select
-            value={filters.propertyType}
-            onChange={(e) => selectFilter("propertyType", e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
-          >
-            <option value="">매물 유형 선택</option>
-            {propertyTypeOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* 권리 유형 */}
-        <div>
-          <h4 className="text-sm font-medium text-gray-700 mb-2">
-            ⚖️ 권리 유형
-          </h4>
-          <div className="relative" ref={rightTypesRef}>
-            {/* 토글박스 버튼 */}
-            <button
-              onClick={() => setIsRightTypesExpanded(!isRightTypesExpanded)}
-              className="w-full px-3 py-2 text-left text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors bg-white hover:bg-gray-50"
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm text-gray-700">
+              <span className="text-gray-500">{getFilterSummary()}</span>
+            </div>
+            <svg
+              className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
+                isFilterExpanded ? "rotate-180" : ""
+              }`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
-              <div className="flex justify-between items-center">
-                <span
-                  className={
-                    filters.rightTypes.length > 0
-                      ? "text-gray-900"
-                      : "text-gray-500"
-                  }
-                >
-                  {filters.rightTypes.length > 0
-                    ? `${filters.rightTypes.length}개 선택됨`
-                    : "권리 유형을 선택하세요"}
-                </span>
-                <svg
-                  className={`w-4 h-4 transition-transform ${
-                    isRightTypesExpanded ? "rotate-180" : ""
-                  }`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-              </div>
-            </button>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </div>
+        </button>
 
-            {/* 체크박스 드롭다운 */}
-            {isRightTypesExpanded && (
-              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                <div className="p-3">
-                  <div className="grid grid-cols-1 gap-2">
-                    {rightTypeOptions.map((option) => (
-                      <label
-                        key={option.value}
-                        className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-2 rounded"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={filters.rightTypes.includes(option.value)}
-                          onChange={() => toggleRightType(option.value)}
-                          className="rounded border-gray-300 text-red-600 focus:ring-red-500"
-                        />
-                        <span className="text-sm text-gray-700">
-                          {option.label}
-                        </span>
-                      </label>
+        {/* 드롭다운 필터 옵션 */}
+        {isFilterExpanded && (
+          <div className="absolute z-20 w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg">
+            <div className="p-4">
+              {/* 필터 헤더 */}
+              <div className="flex justify-end items-center mb-4 gap-2">
+                <button
+                  onClick={() => {
+                    console.log("🎲 [랜덤 필터] 랜덤 필터 버튼 클릭");
+                    randomizeFilters();
+                  }}
+                  className="px-3 py-1.5 text-xs bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition-colors flex items-center gap-1"
+                >
+                  <span>🎲</span>
+                  <span>랜덤</span>
+                </button>
+                <button
+                  onClick={() => {
+                    console.log("🔄 [필터 초기화] 초기화 버튼 클릭");
+                    resetFilters();
+                  }}
+                  className="px-3 py-1.5 text-xs bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
+                >
+                  초기화
+                </button>
+              </div>
+
+              {/* 필터 옵션들 */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* 매물 유형 */}
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+                    <span>🏠</span>
+                    <span>매물유형</span>
+                  </h4>
+                  <select
+                    value={filters.propertyType}
+                    onChange={(e) => {
+                      console.log("🏠 [매물유형] 선택:", e.target.value);
+                      selectFilter("propertyType", e.target.value);
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                  >
+                    <option value="">매물 유형 선택</option>
+                    {propertyTypeOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
                     ))}
+                  </select>
+                </div>
+
+                {/* 권리 유형 */}
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+                    <span>⚖️</span>
+                    <span>권리유형</span>
+                  </h4>
+                  <div className="max-h-32 overflow-y-auto border border-gray-300 rounded-md p-2">
+                    <div className="grid grid-cols-1 gap-1">
+                      {rightTypeOptions.map((option) => (
+                        <label
+                          key={option.value}
+                          className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-1 rounded"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={filters.rightTypes.includes(option.value)}
+                            onChange={() => {
+                              console.log(
+                                "⚖️ [권리유형] 체크박스 토글:",
+                                option.value
+                              );
+                              toggleRightType(option.value);
+                            }}
+                            className="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                          />
+                          <span className="text-sm text-gray-700">
+                            {option.label}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
                   </div>
                 </div>
+
+                {/* 난이도 */}
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+                    <span>📚</span>
+                    <span>난이도 설정하기</span>
+                  </h4>
+                  <select
+                    value={filters.difficultyLevel}
+                    onChange={(e) => {
+                      console.log("📚 [난이도] 선택:", e.target.value);
+                      selectFilter("difficultyLevel", e.target.value);
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors text-sm"
+                  >
+                    <option value="">난이도 선택</option>
+                    {difficultyOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
-            )}
+
+              {/* 필터 적용 버튼 */}
+              <div className="pt-4 border-t border-gray-200 mt-4">
+                <button
+                  onClick={() => {
+                    console.log("✅ [필터 적용] 필터 적용 버튼 클릭");
+                    handleApplyFilter();
+                    setIsFilterExpanded(false);
+                  }}
+                  disabled={isLoading}
+                  className="w-full px-4 py-2.5 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
+                >
+                  {isLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span>필터 적용 중...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>🔍</span>
+                      <span>필터 적용하기</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
-
-        {/* 난이도 */}
-        <div>
-          <h4 className="text-sm font-medium text-gray-700 mb-2">📚 난이도</h4>
-          <select
-            value={filters.difficultyLevel}
-            onChange={(e) => selectFilter("difficultyLevel", e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors text-sm"
-          >
-            <option value="">난이도 선택</option>
-            {difficultyOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* 가격 범위 */}
-        <div>
-          <h4 className="text-sm font-medium text-gray-700 mb-2">
-            💰 가격 범위
-          </h4>
-          <select
-            value={`${filters.priceRange.min}-${filters.priceRange.max}`}
-            onChange={(e) => {
-              const [min, max] = e.target.value.split("-").map(Number);
-              updatePriceRange({ min, max });
-            }}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors text-sm"
-          >
-            <option value="0-5000000000">가격 범위 선택</option>
-            {priceRanges.map((range, index) => (
-              <option key={index} value={`${range.min}-${range.max}`}>
-                {range.label}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {/* 필터 적용 버튼 */}
-      <div className="pt-4 border-t border-gray-200 mt-4">
-        <button
-          onClick={handleApplyFilter}
-          disabled={isLoading}
-          className="w-full px-4 py-3 bg-white text-gray-800 font-medium rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-        >
-          {isLoading ? (
-            <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
-              <span>필터 적용 중...</span>
-            </>
-          ) : (
-            <>
-              <span>🔍</span>
-              <span>필터 적용하기</span>
-            </>
-          )}
-        </button>
-      </div>
-
-      {/* 선택된 필터 요약 */}
-      <div className="text-sm text-gray-600 mt-4">
-        {filters.propertyType && (
-          <span className="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs mr-2 mb-1">
-            매물: {filters.propertyType}
-          </span>
         )}
-        {filters.region && (
-          <span className="inline-block bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs mr-2 mb-1">
-            지역: {filters.region}
-          </span>
-        )}
-        {filters.difficultyLevel && (
-          <span className="inline-block bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-xs mr-2 mb-1">
-            난이도: {filters.difficultyLevel}
-          </span>
-        )}
-        {filters.rightTypes.length > 0 && (
-          <span className="inline-block bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs mr-2 mb-1">
-            권리: {filters.rightTypes.join(", ")}
-          </span>
-        )}
-        {filters.priceRange.min > 0 && (
-          <span className="inline-block bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-xs mr-2 mb-1">
-            가격: {filters.priceRange.min.toLocaleString()}원 ~{" "}
-            {filters.priceRange.max.toLocaleString()}원
-          </span>
-        )}
-        {!filters.propertyType &&
-          !filters.region &&
-          !filters.difficultyLevel &&
-          filters.rightTypes.length === 0 &&
-          filters.priceRange.min === 0 && (
-            <span className="text-gray-400">필터를 선택해주세요</span>
-          )}
       </div>
     </div>
   );
