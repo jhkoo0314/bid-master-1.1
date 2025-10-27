@@ -201,7 +201,7 @@ export default function HomePage() {
                 href="#properties"
                 className="inline-flex items-center justify-center px-6 py-3 bg-white text-gray-900 font-semibold rounded-full border border-gray-200 hover:bg-gray-50 transition-all duration-200 text-sm shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
               >
-                🏠 매물 보러가기
+                매물 보러가기
               </a>
               <button
                 onClick={() => {
@@ -210,13 +210,13 @@ export default function HomePage() {
                 }}
                 className="inline-flex items-center justify-center px-6 py-3 bg-white text-gray-900 font-semibold rounded-full border border-gray-200 hover:bg-gray-50 transition-all duration-200 text-sm shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
               >
-                📚 주요 경매용어
+                주요 경매용어
               </button>
               <Link
                 href="/calculator"
                 className="inline-flex items-center justify-center px-6 py-3 bg-white text-gray-900 font-semibold rounded-full border border-gray-200 hover:bg-gray-50 transition-all duration-200 text-sm shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
               >
-                💰 수익 계산하기
+                수익 계산하기
               </Link>
               <button
                 onClick={() => {
@@ -225,7 +225,7 @@ export default function HomePage() {
                 }}
                 className="inline-flex items-center justify-center px-6 py-3 bg-white text-gray-900 font-semibold rounded-full border border-gray-200 hover:bg-gray-50 transition-all duration-200 text-sm shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
               >
-                🔔 사전 알림 신청
+                사전 알림 신청
               </button>
             </div>
           </div>

@@ -256,7 +256,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
             >
               감정가
             </span>
-            <span className="font-bold text-gray-900 text-base">
+            <span className="text-gray-900 text-sm">
               {basicInfo.appraisalValue.toLocaleString("ko-KR")}원
             </span>
           </div>
@@ -267,7 +267,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
             >
               최저가
             </span>
-            <span className="font-bold text-black text-base">
+            <span className="text-black text-sm">
               {basicInfo.minimumBidPrice.toLocaleString("ko-KR")}원
             </span>
           </div>

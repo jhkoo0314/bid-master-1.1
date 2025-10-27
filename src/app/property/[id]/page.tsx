@@ -692,9 +692,10 @@ export default function PropertyDetailPage() {
   const [showLegalTerms, setShowLegalTerms] = useState(false);
   const [showStepGuide, setShowStepGuide] = useState(false);
   const [showCoreAnalysis, setShowCoreAnalysis] = useState(false);
-  const [activeTab, setActiveTab] = useState<
-    "education" | "report" | "specification"
-  >("education");
+  const [showSpecification, setShowSpecification] = useState(false);
+  const [activeTab, setActiveTab] = useState<"education" | "report">(
+    "education"
+  );
   const [showWaitlistModal, setShowWaitlistModal] = useState(false);
   const [showAuctionAnalysisModal, setShowAuctionAnalysisModal] =
     useState(false);
@@ -1638,16 +1639,6 @@ export default function PropertyDetailPage() {
                   📚 교육 포인트
                 </button>
                 <button
-                  onClick={() => setActiveTab("specification")}
-                  className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
-                    activeTab === "specification"
-                      ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
-                      : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
-                  }`}
-                >
-                  📋 매각물건명세서
-                </button>
-                <button
                   onClick={() => {
                     console.log(
                       "📊 [경매리포트] 탭 클릭 - 개발자모드:",
@@ -1768,6 +1759,35 @@ export default function PropertyDetailPage() {
                 </div>
 
                 <div className="space-y-6">
+                  {/* 매각물건명세 */}
+                  <div>
+                    <button
+                      onClick={() => setShowSpecification(!showSpecification)}
+                      className="flex items-center justify-between w-full p-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
+                    >
+                      <h4 className="font-medium text-gray-800">
+                        📋 매각물건명세
+                      </h4>
+                      <span className="text-gray-600">
+                        {showSpecification ? "▲" : "▼"}
+                      </span>
+                    </button>
+                    {showSpecification && (
+                      <div className="mt-3 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                        <div className="text-center py-8">
+                          <div className="text-4xl mb-3">🚧</div>
+                          <h4 className="text-lg font-semibold text-gray-800 mb-2">
+                            서비스 준비중 입니다
+                          </h4>
+                          <p className="text-gray-600 text-sm">
+                            매각물건명세 기능은 현재 개발 중입니다.
+                            <br />곧 만나보실 수 있습니다.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   {/* 매물별 맞춤 가이드 */}
                   <div>
                     <button
@@ -1900,26 +1920,6 @@ export default function PropertyDetailPage() {
               </div>
             )}
 
-            {/* 매각물건명세서 탭 */}
-            {activeTab === "specification" && (
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  📋 매각물건명세서
-                </h3>
-
-                <div className="text-center py-12">
-                  <div className="text-6xl mb-4">🚧</div>
-                  <h4 className="text-xl font-semibold text-gray-800 mb-2">
-                    서비스 준비중 입니다
-                  </h4>
-                  <p className="text-gray-600">
-                    매각물건명세서 기능은 현재 개발 중입니다.
-                    <br />곧 만나보실 수 있습니다.
-                  </p>
-                </div>
-              </div>
-            )}
-
             {/* 경매분석 리포트 탭 */}
             {activeTab === "report" && devMode.isDevMode && (
               <div className="bg-white rounded-lg shadow-md p-6">
@@ -1929,10 +1929,10 @@ export default function PropertyDetailPage() {
                   </h3>
                   <button
                     onClick={() => setShowAuctionAnalysisModal(true)}
-                    className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+                    className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-md hover:bg-blue-700 transition-colors flex items-center space-x-1"
                   >
                     <svg
-                      className="w-4 h-4"
+                      className="w-3 h-3"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -1952,7 +1952,7 @@ export default function PropertyDetailPage() {
                   {/* 매물 기본 정보 요약 */}
                   <div className="border-l-4 border-blue-500 pl-4">
                     <h4 className="font-semibold text-gray-800 mb-3">
-                      📋 매물 기본 정보
+                      📋 매물 정보 요약
                     </h4>
                     <div className="grid grid-cols-1 gap-3">
                       <div className="bg-blue-50 p-3 rounded-lg">
@@ -2001,12 +2001,12 @@ export default function PropertyDetailPage() {
                   {/* 권리 현황 분석 */}
                   <div className="border-l-4 border-red-500 pl-4">
                     <h4 className="font-semibold text-gray-800 mb-3">
-                      ⚖️ 권리 현황 분석
+                      ⚖️ 권리 현황 체크
                     </h4>
                     <div className="grid grid-cols-3 gap-3">
                       <div className="bg-red-50 p-3 rounded-lg text-center">
                         <p className="text-sm font-medium text-gray-800">
-                          총 권리 수
+                          설정된 권리
                         </p>
                         <p className="text-lg font-bold text-red-600">
                           {property.rights?.length || 0}개
@@ -2014,7 +2014,7 @@ export default function PropertyDetailPage() {
                       </div>
                       <div className="bg-blue-50 p-3 rounded-lg text-center">
                         <p className="text-sm font-medium text-gray-800">
-                          인수 권리
+                          인수 예정
                         </p>
                         <p className="text-lg font-bold text-blue-600">
                           {property.rights?.filter((r) => r.willBeAssumed)
@@ -2024,7 +2024,7 @@ export default function PropertyDetailPage() {
                       </div>
                       <div className="bg-gray-50 p-3 rounded-lg text-center">
                         <p className="text-sm font-medium text-gray-800">
-                          소멸 권리
+                          소멸 예정
                         </p>
                         <p className="text-lg font-bold text-gray-600">
                           {property.rights?.filter((r) => r.willBeExtinguished)
@@ -2038,12 +2038,12 @@ export default function PropertyDetailPage() {
                   {/* 임차인 현황 분석 */}
                   <div className="border-l-4 border-green-500 pl-4">
                     <h4 className="font-semibold text-gray-800 mb-3">
-                      🏠 임차인 현황 분석
+                      🏠 임차인 현황 체크
                     </h4>
                     <div className="grid grid-cols-3 gap-3">
                       <div className="bg-green-50 p-3 rounded-lg text-center">
                         <p className="text-sm font-medium text-gray-800">
-                          총 임차인 수
+                          거주 중인 임차인
                         </p>
                         <p className="text-lg font-bold text-green-600">
                           {property.tenants?.length || 0}명
@@ -2061,7 +2061,7 @@ export default function PropertyDetailPage() {
                       </div>
                       <div className="bg-blue-50 p-3 rounded-lg text-center">
                         <p className="text-sm font-medium text-gray-800">
-                          대항력 보유
+                          대항력 보유자
                         </p>
                         <p className="text-lg font-bold text-blue-600">
                           {property.tenants?.filter((t) => t.hasDaehangryeok)
@@ -2075,12 +2075,12 @@ export default function PropertyDetailPage() {
                   {/* 투자 분석 */}
                   <div className="border-l-4 border-purple-500 pl-4">
                     <h4 className="font-semibold text-gray-800 mb-3">
-                      💰 투자 분석
+                      💰 투자 기회 분석
                     </h4>
                     <div className="space-y-3">
                       <div className="bg-purple-50 p-3 rounded-lg">
                         <p className="text-sm font-medium text-gray-800">
-                          할인율
+                          현재 할인율
                         </p>
                         <p className="text-lg font-bold text-purple-600">
                           {Math.round(
@@ -2099,13 +2099,13 @@ export default function PropertyDetailPage() {
                           </p>
                           <p className="text-sm font-bold text-blue-600">
                             {property.rights && property.rights.length > 3
-                              ? "높음 ⚠️"
-                              : "보통 ✅"}
+                              ? "복잡함 ⚠️"
+                              : "단순함 ✅"}
                           </p>
                         </div>
                         <div className="bg-green-50 p-3 rounded-lg">
                           <p className="text-sm font-medium text-gray-800">
-                            임차인 리스크
+                            임차인 부담
                           </p>
                           <p className="text-sm font-bold text-green-600">
                             {property.tenants && property.tenants.length > 0
@@ -2120,12 +2120,12 @@ export default function PropertyDetailPage() {
                   {/* 권장 입찰 전략 */}
                   <div className="border-l-4 border-orange-500 pl-4">
                     <h4 className="font-semibold text-gray-800 mb-3">
-                      📈 권장 입찰 전략
+                      📈 입찰 전략 가이드
                     </h4>
                     <div className="space-y-3">
                       <div className="bg-orange-50 p-3 rounded-lg">
                         <p className="text-sm font-medium text-gray-800">
-                          권장 입찰가
+                          추천 입찰가
                         </p>
                         <p className="text-lg font-bold text-orange-600">
                           {Math.round(

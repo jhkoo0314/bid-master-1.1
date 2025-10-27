@@ -53,7 +53,7 @@ export function AuctionAnalysisModal({
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold mb-2">
-                📊 경매분석 상세 리포트
+                📊 매물 상세 분석 리포트
               </h2>
               <p className="text-blue-100">{property.basicInfo.location}</p>
             </div>
@@ -84,7 +84,7 @@ export function AuctionAnalysisModal({
             {/* 매물 기본 정보 */}
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border-l-4 border-blue-500">
               <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
-                📋 매물 기본 정보
+                📋 매물 정보 요약
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="bg-white p-4 rounded-lg shadow-sm">
@@ -125,7 +125,7 @@ export function AuctionAnalysisModal({
             {/* 권리 현황 상세 분석 */}
             <div className="bg-gradient-to-r from-red-50 to-pink-50 p-6 rounded-xl border-l-4 border-red-500">
               <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
-                ⚖️ 권리 현황 상세 분석
+                ⚖️ 권리 현황 상세 체크
               </h3>
 
               {/* 권리 개요 */}
@@ -215,7 +215,7 @@ export function AuctionAnalysisModal({
             {/* 임차인 현황 상세 분석 */}
             <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border-l-4 border-green-500">
               <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
-                🏠 임차인 현황 상세 분석
+                🏠 임차인 현황 상세 체크
               </h3>
 
               {/* 임차인 개요 */}
@@ -303,7 +303,7 @@ export function AuctionAnalysisModal({
             {/* 투자 분석 및 리스크 평가 */}
             <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-6 rounded-xl border-l-4 border-purple-500">
               <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
-                💰 투자 분석 및 리스크 평가
+                💰 투자 기회 및 리스크 체크
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -378,7 +378,7 @@ export function AuctionAnalysisModal({
             {/* 권장 입찰 전략 */}
             <div className="bg-gradient-to-r from-orange-50 to-yellow-50 p-6 rounded-xl border-l-4 border-orange-500">
               <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
-                📈 권장 입찰 전략
+                📈 입찰 전략 가이드
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -436,7 +436,7 @@ export function AuctionAnalysisModal({
             {/* 상세 분석 설명 */}
             <div className="bg-gradient-to-r from-gray-50 to-slate-50 p-6 rounded-xl border-l-4 border-gray-500">
               <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
-                📝 상세 분석 설명
+                📝 분석 결과 요약
               </h3>
 
               <div className="space-y-6">
