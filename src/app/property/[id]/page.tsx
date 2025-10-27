@@ -1625,11 +1625,27 @@ export default function PropertyDetailPage() {
               <div className="flex border-b">
                 <button
                   onClick={() => setActiveTab("education")}
-                  className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+                  className={`flex-1 px-4 py-3 text-sm font-medium relative transition-all duration-300 ease-in-out transform ${
                     activeTab === "education"
                       ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
-                      : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+                      : "text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:shadow-lg"
                   }`}
+                  style={{
+                    transform:
+                      activeTab === "education"
+                        ? "translateY(0)"
+                        : "translateY(0)",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (activeTab !== "education") {
+                      e.currentTarget.style.transform = "translateY(-4px)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (activeTab !== "education") {
+                      e.currentTarget.style.transform = "translateY(0)";
+                    }
+                  }}
                 >
                   📚 교육 포인트
                 </button>
@@ -1648,11 +1664,27 @@ export default function PropertyDetailPage() {
                       setShowWaitlistModal(true);
                     }
                   }}
-                  className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+                  className={`flex-1 px-4 py-3 text-sm font-medium relative transition-all duration-300 ease-in-out transform ${
                     activeTab === "report" && devMode.isDevMode
                       ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
-                      : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+                      : "text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:shadow-lg"
                   }`}
+                  style={{
+                    transform:
+                      activeTab === "report" && devMode.isDevMode
+                        ? "translateY(0)"
+                        : "translateY(0)",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!(activeTab === "report" && devMode.isDevMode)) {
+                      e.currentTarget.style.transform = "translateY(-4px)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!(activeTab === "report" && devMode.isDevMode)) {
+                      e.currentTarget.style.transform = "translateY(0)";
+                    }
+                  }}
                 >
                   📊 경매분석 리포트
                 </button>

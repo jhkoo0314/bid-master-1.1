@@ -197,13 +197,23 @@ export default function HomePage() {
       {/* 헤더 - 좌측 로고와 가운데 메뉴 버튼들 */}
       <header className="bg-white border-b border-gray-200">
         <div className="container mx-auto px-4 max-w-6xl">
-          <div className="flex items-center py-4">
+          <div className="flex items-center justify-between py-4">
             {/* 로고 - 좌측 정렬 */}
-            <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-gray-900">Bid master</h1>
+            <div className="flex items-center gap-3">
+              <img
+                src="/bmlogo.png"
+                alt="Bid Master Logo"
+                className="h-8 w-8 object-contain"
+              />
+              <div className="flex flex-col items-start">
+                <h1 className="text-2xl font-bold text-gray-900">Bid master</h1>
+                <p className="text-xs text-gray-500 font-medium tracking-wide">
+                  Fail, Fast, learn faster
+                </p>
+              </div>
             </div>
-            {/* 메뉴 버튼들 - 가운데 정렬 */}
-            <div className="flex items-center gap-2 flex-1 justify-center">
+            {/* 메뉴 버튼들 - 정확한 가운데 정렬 */}
+            <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-2">
               <button
                 onClick={() => {
                   console.log("📚 [주요경매용어] 모달 열기 요청");
@@ -211,13 +221,13 @@ export default function HomePage() {
                 }}
                 className="inline-flex items-center justify-center px-3 py-1.5 bg-white text-gray-900 font-medium rounded-md border-0 hover:border hover:border-gray-200 hover:bg-gray-50 transition-all duration-200 text-xs shadow-none hover:shadow-md"
               >
-                주요 경매용어
+                경매용어
               </button>
               <Link
                 href="/calculator"
                 className="inline-flex items-center justify-center px-3 py-1.5 bg-white text-gray-900 font-medium rounded-md border-0 hover:border hover:border-gray-200 hover:bg-gray-50 transition-all duration-200 text-xs shadow-none hover:shadow-md"
               >
-                수익 계산하기
+                수익 계산기
               </Link>
               <button
                 onClick={() => {
@@ -230,10 +240,13 @@ export default function HomePage() {
               </button>
             </div>
             {/* 빈 공간 - 우측 균형을 위해 */}
-            <div className="flex items-center">
+            <div className="flex flex-col items-end">
               <h1 className="text-2xl font-bold text-gray-900 opacity-0">
                 Bid master
               </h1>
+              <p className="text-xs text-gray-500 font-medium tracking-wide opacity-0">
+                Fail, Fast, learn faster
+              </p>
             </div>
           </div>
         </div>
@@ -244,15 +257,15 @@ export default function HomePage() {
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="text-center max-w-4xl mx-auto">
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-5xl font-bold mb-6 text-gray-900 leading-tight tracking-tight">
-              경매 공부, 아직도 비싼 돈주고 배우세요?
+              부동산 경매, 아직도 비싼 돈 주고 배우세요?
             </h1>
             <p className="text-lg sm:text-xl md:text-2xl text-gray-600 mb-4 font-normal leading-relaxed max-w-3xl mx-auto">
-              로그인 없이 시작하는 경매 시뮬레이션
+              로그인 없이 시작하는 경매 학습 시뮬레이션
             </p>
             <p className="text-base sm:text-lg text-gray-500 mb-8 font-normal leading-relaxed max-w-2xl mx-auto">
               최대한 많이 실패하고, 더 많이 배울 수 있습니다.
             </p>
-            <div className="flex justify-center">
+            <div className="flex justify-center items-center">
               <button
                 onClick={() => {
                   console.log(

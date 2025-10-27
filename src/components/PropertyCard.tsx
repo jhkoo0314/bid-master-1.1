@@ -167,7 +167,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
   }, [basicInfo.propertyType, basicInfo.locationShort, basicInfo.marketValue]);
 
   return (
-    <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 flex flex-col h-full min-h-[350px] group">
+    <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 flex flex-col h-full min-h-[350px] group hover:-translate-y-2 hover:shadow-2xl">
       {/* 매물 이미지 */}
       <div className="aspect-[3/2] relative overflow-hidden">
         {imageLoading ? (
