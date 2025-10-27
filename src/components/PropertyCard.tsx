@@ -169,7 +169,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
   return (
     <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 flex flex-col h-full min-h-[350px] group">
       {/* 매물 이미지 */}
-      <div className="aspect-[4/3] relative overflow-hidden">
+      <div className="aspect-[3/2] relative overflow-hidden">
         {imageLoading ? (
           // 로딩 상태
           <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
