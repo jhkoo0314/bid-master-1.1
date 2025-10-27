@@ -172,42 +172,44 @@ export default function HomePage() {
       {process.env.NODE_ENV !== "production" && <DevModeToggle />}
 
       {/* Hero 섹션 */}
-      <section className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-6 sm:py-8 md:py-12">
-        <div className="container mx-auto px-4 max-w-7xl text-center">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-2 sm:mb-3">
-            AI로 무한 생성되는 실전 경매 훈련장
+      <section className="bg-white py-8 sm:py-12 md:py-16">
+        <div className="container mx-auto px-3 max-w-6xl">
+          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black mb-4 sm:mb-6 text-center text-gray-900 leading-tight">
+            AI로 무한 생성되는
+            <br className="sm:hidden" />
+            <span className="text-blue-600">실전 경매 훈련장</span>
           </h1>
-          <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-blue-100 mb-4 sm:mb-6">
+          <p className="text-sm sm:text-base md:text-lg text-gray-600 mb-8 sm:mb-10 text-center font-medium">
             로그인 없이 즉시 시작하는 경매 시뮬레이션
           </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-3 md:gap-4 flex-wrap">
+          <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-3 md:gap-4 flex-wrap text-center">
             <a
               href="#properties"
-              className="px-4 sm:px-6 md:px-8 py-2 sm:py-3 bg-white text-blue-600 font-bold rounded-lg hover:bg-blue-50 active:scale-95 transition-all text-center text-sm sm:text-base"
+              className="px-3 sm:px-4 md:px-5 py-2 sm:py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 active:scale-95 transition-all text-center text-sm sm:text-base shadow-md hover:shadow-lg"
             >
-              매물 보러가기
+              🏠 매물 보러가기
             </a>
             <button
               onClick={() => {
                 console.log("📚 [주요경매용어] 모달 열기 요청");
                 setIsAuctionTermsModalOpen(true);
               }}
-              className="px-4 sm:px-6 md:px-8 py-2 sm:py-3 bg-purple-600 text-white font-bold rounded-lg hover:bg-purple-700 active:scale-95 transition-all border-2 border-white text-center text-sm sm:text-base"
+              className="px-3 sm:px-4 md:px-5 py-2 sm:py-2 bg-purple-600 text-white font-bold rounded-lg hover:bg-purple-700 active:scale-95 transition-all text-center text-sm sm:text-base shadow-md hover:shadow-lg"
             >
               📚 주요 경매용어
             </button>
             <Link
               href="/calculator"
-              className="px-4 sm:px-6 md:px-8 py-2 sm:py-3 bg-blue-700 text-white font-bold rounded-lg hover:bg-blue-600 active:scale-95 transition-all border-2 border-white text-center text-sm sm:text-base"
+              className="px-3 sm:px-4 md:px-5 py-2 sm:py-2 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 active:scale-95 transition-all text-center text-sm sm:text-base shadow-md hover:shadow-lg"
             >
-              수익 계산하기
+              💰 수익 계산하기
             </Link>
             <button
               onClick={() => {
                 console.log("🔔 [사전 알림] 모달 열기 요청");
                 setIsWaitlistModalOpen(true);
               }}
-              className="px-4 sm:px-6 md:px-8 py-2 sm:py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 active:scale-95 transition-all border-2 border-white text-center text-sm sm:text-base"
+              className="px-3 sm:px-4 md:px-5 py-2 sm:py-2 bg-orange-600 text-white font-bold rounded-lg hover:bg-orange-700 active:scale-95 transition-all text-center text-sm sm:text-base shadow-md hover:shadow-lg"
             >
               🔔 사전 알림 신청
             </button>
@@ -217,7 +219,7 @@ export default function HomePage() {
 
       {/* 경매 입찰 섹션 */}
       <section id="properties" className="py-16">
-        <div className="container mx-auto px-4 max-w-7xl">
+        <div className="container mx-auto px-3 max-w-6xl">
           <div className="flex justify-between items-center mb-8">
             <div>
               <h2 className="text-3xl font-bold text-gray-900 mb-2">
@@ -258,7 +260,7 @@ export default function HomePage() {
 
           {/* 로딩 상태 */}
           {isLoading && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {[...Array(6)].map((_, index) => (
                 <div
                   key={index}
@@ -279,7 +281,7 @@ export default function HomePage() {
           {!isLoading && educationalProperties.length > 0 && (
             <>
               {/* 데스크톱 그리드 */}
-              <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
+              <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 gap-4 items-stretch">
                 {educationalProperties.map((property) => (
                   <PropertyCard key={property.id} property={property} />
                 ))}
@@ -351,7 +353,7 @@ export default function HomePage() {
 
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-8">
-        <div className="container mx-auto px-4 max-w-7xl text-center">
+        <div className="container mx-auto px-3 max-w-6xl text-center">
           <p className="text-gray-400">
             © 2025 Bid Master AI. All rights reserved.
           </p>

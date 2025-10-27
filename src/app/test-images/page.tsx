@@ -94,7 +94,7 @@ export default function TestImagesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto px-3">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">
           매물 유형별 고유 이미지 테스트
         </h1>

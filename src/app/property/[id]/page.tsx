@@ -792,7 +792,7 @@ export default function PropertyDetailPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto px-3 py-8">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
             <div className="h-4 bg-gray-200 rounded w-1/2 mb-8"></div>
@@ -813,7 +813,7 @@ export default function PropertyDetailPage() {
   if (error || !property) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto px-3 py-8">
           <div className="text-center">
             <div className="text-6xl mb-4">❌</div>
             <h1 className="text-2xl font-bold text-gray-900 mb-4">
@@ -838,7 +838,7 @@ export default function PropertyDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 max-w-7xl py-8">
+      <div className="container mx-auto px-3 max-w-6xl py-8">
         {/* 헤더 */}
         <div className="mb-8">
           <Link
