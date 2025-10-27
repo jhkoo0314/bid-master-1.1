@@ -78,6 +78,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
   const [isBiddingModalOpen, setIsBiddingModalOpen] = useState(false);
   const [propertyImage, setPropertyImage] = useState<string | null>(null);
   const [imageLoading, setImageLoading] = useState(true);
+  const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
 
   // 난이도별 색상
   const difficultyColors = {
@@ -89,6 +90,24 @@ export function PropertyCard({ property }: PropertyCardProps) {
   const difficultyColor = educationalContent
     ? difficultyColors[educationalContent.difficulty]
     : "bg-gray-100 text-gray-800 border-gray-300";
+
+  // ESC 키로 이미지 뷰어 닫기
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && isImageViewerOpen) {
+        console.log("🖼️ [매물카드] ESC 키로 풀스크린 뷰어 닫기");
+        setIsImageViewerOpen(false);
+      }
+    };
+
+    if (isImageViewerOpen) {
+      document.addEventListener("keydown", handleKeyDown);
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isImageViewerOpen]);
 
   // 매물 이미지 로드
   useEffect(() => {
@@ -146,9 +165,9 @@ export function PropertyCard({ property }: PropertyCardProps) {
   }, [basicInfo.propertyType, basicInfo.locationShort, basicInfo.marketValue]);
 
   return (
-    <div className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 overflow-hidden border border-gray-200">
+    <div className="bg-white rounded-lg shadow-md hover:shadow-xl active:scale-95 transition-all duration-300 overflow-hidden border border-gray-200 flex flex-col h-full min-h-[550px]">
       {/* 매물 이미지 */}
-      <div className="h-48 relative overflow-hidden">
+      <div className="aspect-[4/3] relative overflow-hidden">
         {imageLoading ? (
           // 로딩 상태
           <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
@@ -162,7 +181,11 @@ export function PropertyCard({ property }: PropertyCardProps) {
           <img
             src={propertyImage}
             alt={`${basicInfo.propertyType} - ${basicInfo.locationShort}`}
-            className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+            className="w-full h-full object-cover transition-transform duration-300 hover:scale-105 cursor-pointer"
+            onClick={() => {
+              console.log("🖼️ [매물카드] 이미지 클릭 - 풀스크린 뷰어 열기");
+              setIsImageViewerOpen(true);
+            }}
             onError={(e) => {
               console.log(`❌ [매물카드] 이미지 로드 실패: ${propertyImage}`);
               e.currentTarget.style.display = "none";
@@ -173,7 +196,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
 
         {/* 이미지 로드 실패 시 기본 표시 */}
         <div
-          className={`w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center ${
+          className={`absolute inset-0 bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center ${
             propertyImage ? "hidden" : ""
           }`}
         >
@@ -192,36 +215,36 @@ export function PropertyCard({ property }: PropertyCardProps) {
       </div>
 
       {/* 매물 정보 */}
-      <div className="p-4">
+      <div className="p-3 flex flex-col flex-grow">
         {/* 난이도 뱃지 */}
-        {educationalContent && (
-          <div className="flex items-center gap-2 mb-3">
-            <span
-              className={`px-3 py-1 rounded-full text-xs font-bold border ${difficultyColor}`}
-            >
-              {educationalContent.difficulty}
-            </span>
+        <div className="flex items-center gap-2 mb-2">
+          <span
+            className={`px-3 py-1 rounded-full text-xs font-bold border ${difficultyColor}`}
+          >
+            {educationalContent ? educationalContent.difficulty : "분석중"}
+          </span>
+          {educationalContent && (
             <span className="text-xs text-gray-500">
               {educationalContent.oneLiner}
             </span>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* 사건번호 */}
         <div className="text-sm text-gray-500 mb-1">{basicInfo.caseNumber}</div>
 
         {/* 소재지 */}
-        <h3 className="font-bold text-gray-900 mb-2 line-clamp-2">
+        <h3 className="font-bold text-gray-900 mb-1 line-clamp-2">
           {basicInfo.locationShort}
         </h3>
 
         {/* 물건종별 */}
-        <div className="text-sm text-gray-600 mb-3">
+        <div className="text-sm text-gray-600 mb-2">
           {basicInfo.propertyType}
         </div>
 
         {/* 가격 정보 */}
-        <div className="space-y-1 mb-3">
+        <div className="space-y-1 mb-2">
           <div className="flex justify-between text-sm group">
             <span
               className="text-gray-600 group-hover:text-blue-600 transition-colors cursor-help"
@@ -269,63 +292,51 @@ export function PropertyCard({ property }: PropertyCardProps) {
         </div>
 
         {/* 입찰 상태 */}
-        <div className="text-xs text-gray-500 mb-4">
+        <div className="text-xs text-gray-500 mb-3">
           입찰 {basicInfo.daysUntilBid}일 전
         </div>
 
-        {/* 교육 포인트 태그 */}
-        {educationalContent && (
-          <div className="flex flex-wrap gap-1 mb-4">
-            {educationalContent.coreAnalysis.keyPoints
-              .slice(0, 2)
-              .map((point, index) => (
-                <span
-                  key={index}
-                  className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded cursor-help group"
-                  title={getTermExplanation(
-                    point,
-                    educationalContent.coreAnalysis.keyPoints
-                  )}
-                >
-                  {point.substring(0, 15)}...
-                </span>
-              ))}
-          </div>
-        )}
-
         {/* 권리 유형 표시 */}
-        {property.rights && property.rights.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-4">
-            {property.rights.slice(0, 3).map((right, index) => (
-              <span
-                key={right.id}
-                className="px-2 py-1 bg-red-50 text-red-700 text-xs rounded"
-                title={`${right.rightType} - ${
-                  right.rightHolder
-                } (${right.claimAmount.toLocaleString()}원)`}
-              >
-                {right.rightType}
-              </span>
-            ))}
-            {property.rights.length > 3 && (
-              <span className="px-2 py-1 bg-gray-50 text-gray-600 text-xs">
-                +{property.rights.length - 3}개
+        <div className="mb-3">
+          <div className="flex flex-wrap gap-1 min-h-[28px] items-center">
+            {property.rights && property.rights.length > 0 ? (
+              <>
+                {property.rights.slice(0, 3).map((right, index) => (
+                  <span
+                    key={right.id}
+                    className="px-2 py-1 bg-red-50 text-red-700 text-xs rounded"
+                    title={`${right.rightType} - ${
+                      right.rightHolder
+                    } (${right.claimAmount.toLocaleString()}원)`}
+                  >
+                    {right.rightType}
+                  </span>
+                ))}
+                {property.rights.length > 3 && (
+                  <span className="px-2 py-1 bg-gray-50 text-gray-600 text-xs">
+                    +{property.rights.length - 3}개
+                  </span>
+                )}
+              </>
+            ) : (
+              <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
+                권리 분석중...
               </span>
             )}
           </div>
-        )}
+        </div>
 
         {/* 버튼 */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 mt-auto">
           <Link
             href={`/property/${property.id}`}
-            className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 text-center text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors"
+            className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 text-center text-sm font-medium rounded-lg hover:bg-gray-200 active:scale-95 transition-all"
           >
             상세보기
           </Link>
           <button
             onClick={() => setIsBiddingModalOpen(true)}
-            className="flex-1 px-4 py-2 bg-blue-600 text-white text-center text-sm font-bold rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex-1 px-4 py-2 bg-blue-600 text-white text-center text-sm font-bold rounded-lg hover:bg-blue-700 active:scale-95 transition-all"
           >
             경매입찰
           </button>
@@ -338,6 +349,41 @@ export function PropertyCard({ property }: PropertyCardProps) {
         isOpen={isBiddingModalOpen}
         onClose={() => setIsBiddingModalOpen(false)}
       />
+
+      {/* 풀스크린 이미지 뷰어 */}
+      {isImageViewerOpen && propertyImage && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center"
+          onClick={(e) => {
+            // 배경 클릭 시 모달 닫기
+            if (e.target === e.currentTarget) {
+              console.log("🖼️ [매물카드] 배경 클릭으로 풀스크린 뷰어 닫기");
+              setIsImageViewerOpen(false);
+            }
+          }}
+        >
+          <div className="relative max-w-full max-h-full p-4">
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log("🖼️ [매물카드] X 버튼 클릭으로 풀스크린 뷰어 닫기");
+                setIsImageViewerOpen(false);
+              }}
+              className="absolute top-2 right-2 text-white text-2xl hover:text-gray-300 transition-colors z-10 bg-black bg-opacity-50 rounded-full w-8 h-8 flex items-center justify-center"
+              aria-label="이미지 뷰어 닫기"
+            >
+              ✕
+            </button>
+            <img
+              src={propertyImage}
+              alt={`${basicInfo.propertyType} - ${basicInfo.locationShort}`}
+              className="max-w-full max-h-full object-contain"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

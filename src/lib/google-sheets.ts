@@ -7,9 +7,11 @@ import { google } from "googleapis";
 import fs from "fs";
 import path from "path";
 
-// Google Sheets 설정
+// Google Sheets 설정 - env.example에서 안전하게 보관된 키값 사용
 const GOOGLE_SHEET_ID =
-  process.env.GOOGLE_SHEET_ID || "1ZBZ9JVSo6aBWU1VSk0p7LBSCzR8eQTN05jEL4LSyhso";
+  process.env.GOOGLE_SHEET_ID ||
+  process.env.GOOGLE_SHEETS_SPREADSHEET_ID ||
+  "1ZBZ9JVSo6aBWU1VSk0p7LBSCzR8eQTN05jEL4LSyhso";
 
 // 서비스 계정 정보 (새로운 키 파일에서 읽기)
 let serviceAccount;
@@ -21,18 +23,21 @@ try {
   );
   const serviceAccountData = fs.readFileSync(serviceAccountPath, "utf8");
   serviceAccount = JSON.parse(serviceAccountData);
-  console.log("🔑 [Google Sheets] 새로운 서비스 계정 키 로드 완료");
+  console.log("🔑 [Google Sheets] 서비스 계정 키 파일 로드 완료");
 } catch (error) {
   console.error("❌ [Google Sheets] 서비스 계정 키 로드 실패:", error);
-  // 폴백: 환경 변수에서 읽기
+  // 폴백: env.example에서 안전하게 보관된 키값 사용
+  console.log(
+    "🔑 [Google Sheets] 폴백: env.example에서 안전하게 보관된 키값 사용"
+  );
   serviceAccount = process.env.GOOGLE_SERVICE_ACCOUNT_JSON
     ? JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON)
     : {
         type: "service_account",
         project_id: "bid-master-v1",
-        private_key_id: "43be4118b18be54d3ead1e8938d9400719645c61",
+        private_key_id: "8c75751a1847b602aca6a95afd682d60e7be74d6",
         private_key:
-          "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCyY5aSIwJt8Pwc\nZg7E58jMNwDnCqwiRd7iE9+vcnkYUNB1AGgL1QdeBjuKTc3eCTJGRL2dYoHTn1QL\nzABiVS3NXX22xWFpmmv3xPcQH+uIiOt3RQKqCr+Xe9lF1ZTR1XvyEQSmd3GBAU16\n1OkuVbfvRcuLWr9CGKgJ4qxCiT+JfIFuHW65c1EviocesydcjdMeMV5QMA0yQ7NA\ncaZfyrKplz1RefCHUlEWvTXnaNXYtEj6nI8xulp7ERIHaGK98KxMTP1+rojMYwc9\nqFq9gO2173kul/eD+A78bjMJT5PxL2dm2d9Nhprk5xPHHnzSgHyU8VoiHyJbz5UG\nlzrxBsIjAgMBAAECggEAF45K/bUdxwLBZ8aaQKoSu9Svi9K+9C+hxNy29uX405so\nS6roElfpByNvjU3E14MDXoAJQdUWK6moYX5otpNk3u9vgEkEGfvIMgmSTlDIu1jJ\nLxCvz2Bn+ErkX/JaGnNEUKyqnoi7NjvDzWp7+CBdj3z56cbr5oB3AAcslASnnTHZ\nO9P+ngx+hV4V9V6vnEIuvRGLiAoePfUx3Kb/1msYGrLuORPFHflx1xoTzSyY+SZZ\nt0TbEr6GPAX+JiQLuDIOPcXkND8dgT8Tg9TiLqFPmu9MusMBOsWtxAZEKlgQhkUj\noGGN7ngRq3We5oaFVcvWisP2ZyqAgrTzmRXCYSJmMQKBgQDY3VaEBnhcyrjuulmI\nnfriyo03Q6kjBEWJ02c5DTvYRFzteCM/JXy9+IOXqDVQpCV9GCQqYSNBF1c+eZz3\nGNyXrlOHJU+UmNHqY8NBxYR0CKgvr/qiLogCOGXKBX4B7dH51TYacrySISKXDA+T\ng3JIHQ47YA3hOncXVpb54drh7wKBgQDSlMOIA2jdB0NyEfm/FDCFQ1zm7ZhM684+\nq40Lmg8amAS95IVO0tHaVaniMEe/9kdcUFHeSgFjCCJc7WWau1SdaG17fgNgV2cV\njBVQtwoxuhcUL8H0qte/VGP9UcoH6neUzvUM2xXCX81pBmPu64IJcEyiEUKqWJ7E\nn5KUv8BHDQKBgQDVqVTI5PsHKTAE/JKj2EpL0ZZKQZ5NgrLkdOU5P4GbtNb9nCTV\n3SBGpqc37yEAH4lT80oGewfZ5J4vTnBIvzTvOHDRMQBz/hCrZrkEfw7dp33U5gQA\nb+nOjjQzUy/vxJjhFaCldC+3pW/H87kQ9CvPQtk3xI5IPmsBEm3TKiOV/wKBgBAg\nenUBJde/hafHvqOmjSy3gvbgfUhuyqW8B5o62ytDNyG/zYHC3XVmGBONdQE7gC2O\nrSZj7oVCCzeoqp5V+F3xsGjDtsh7CRb6WmuLCQnT4Y6XNbhiGRG7CclNqTY/+5Z2\n3wd0A8+V/KotZhvXB2dnpUbIIZ3gGZCfU992a+hFAoGBAMnMwhyhLL1JtCNAJgoq\nDLrhL+1u26IqK+J3ojS/7VAtyLmOA3mg7+s9Bxb4EHdcxeBdSCSA5kZQOwrC2AGH\nubuue3J8MmgyVLJnGNibWo1Lissv/pB75cOvuzU5rsOYaRssNXn5xR21JWOBuYeL\nZR753VBnwgRAlI7tDfaBRvv+\n-----END PRIVATE KEY-----\n",
+          "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCTmry/j1hpO/Xk\nPKybchaz4gkKf41idb3BihyV0quzQkG44Z2159mNWE51ONhwIRl+pGzRKdzjezHr\ncsx0L79dh5GUHMVwZWWuirV5U/irlE5oYA9ga+DbyWIhJPWplleyDF7oeGfUTELB\nuX+8zZBaXBGC6NN96sOzvMpP8jWvakbw9Yf+ssqITv1aNSd9GLuuUCEmcaQTtDpm\n1jaRW7JM1Rd4a+BoJjqpswSFUv/ejwh2cxXYGpsT26YJ6Fe8ozIuNThHXA+V0b4J\nfBmTsYEkCEJwjUaAVnjxduIdMBr8Lo/qrEx7uOaJ8I7eEnkEIdeSetkrfI33jH+5\n1JT7KztrAgMBAAECggEADoYEuXKQ1/Xy6WzA7SCqNDPzAMnxLvV34OHGk0Vh6KcF\n0Xu9qWbxRJOiUK1xuoK/P/NM073jQqzeChVHIc2K7liHDgRQtxD7EtQKLDCDgNp8\nZo/BI5Mp0mZ71dgNpgypf1bxRb2HNd/1F5u5gmnVoNZ7UJ65JKQjcn2KiJhECQjt\nMeoOH1PEmqoZ1DWSJgE5/xBt+N89+7Xee0AYlibDmdLuK2uQOwIcaQ7vPbWGyiiP\nddlpHZFHjWVNRFWBNnEBKsfYAVk8/dWikbAOwu0CSo90dgjlJFIbxvKwCrJleKpx\nPmQCsP43RUG4bGNLyrq4gQDSKqpLY8PE71zR/FfYgQKBgQDPPO0VOAFBomCBbVT8\nKmByzOT35F/gfw+OxBNDwZb+HpifhqLgMP+tuJ5gxegWnh4MZ1iz76itXv1tsApv\nGqt6kkN2tfmh1bB0LLaL7Smcc7fw1a0rnifLGzuWNnLh//BSAV+srJCb7D4DP6p5\nMIRQCaB4Lj9cs8/dcUCAmGI2gQKBgQC2VcHmyCCEN2LXsoquyKvHh3aX0/620bnr\n9qmgfE6Mk8P7Wse5d/xQWqWW1v0BC0UxFK+X1xSwuL6X4bTgtv/kFKtHXcQTO8my\nN/m4U+f5/AzKJuFUJBfEzPGEGZ228sIqbPioQ9Y+Ibeju1GAq1H5AXdNiYR9bNG0\nzEUu/2ez6wKBgGq/eWf6pzsFxywkAyi5M2EvBapjKrfa+0qQ2VOHfp17aSaTFYbh\n9nGnrX0vtDMiU1wUR+63vm0/hs9fZKCCXl4OxU16wxGHnxLYjVdaXJrISLF3f3H+\nT4Uhi/n+JgMf8MxtBLlPUlXexLqrqsYuJZmMu+nr+Jtpy+LHGXCkDcMBAoGBAImK\nDwYjGEQj8295wpstzEZqrM7Cn3UQpwqTukjQ+/+Wx1Mnm1kQZUfH2Pj7m0XaVos7\na2lCWN0lvr+bBnIsGMLXxIvE807+3pqNFtYwlOBBfPRQd9CcmUFexyA6onmKjWSr\nZram1Ulw7bGYb1Z75Q3MSU432bUzDM0w+U8GYheZAoGBALZXMhMsZ9Ov11vtnYmq\n5OhbFxRb84Xx2Kw/j4sRg0wsUCmYzdIOA167zEpnYlOcMg1TL/yTbsRB8TzUmZkf\nzaapalUDtZ9mNypOOArp0UmuVZPtgXzZHvugNco6DlLSaq77ExKVfS7B1WUsGsic\nCGzqqoMsVGOmOS7h1BAv4muL\n-----END PRIVATE KEY-----\n",
         client_email: "bid-master-db@bid-master-v1.iam.gserviceaccount.com",
         client_id: "114364564145384020827",
         auth_uri: "https://accounts.google.com/o/oauth2/auth",

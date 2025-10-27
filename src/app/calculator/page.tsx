@@ -12,7 +12,7 @@ export default function CalculatorPage() {
     <div className="min-h-screen bg-gray-50">
       {/* 헤더 */}
       <div className="bg-white shadow-sm">
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto px-4 max-w-7xl py-4">
           <div className="flex items-center justify-between">
             <Link
               href="/"
@@ -28,7 +28,7 @@ export default function CalculatorPage() {
 
       {/* 수익계산기 섹션 */}
       <section className="py-16">
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-4 max-w-7xl">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold text-gray-900 mb-4">
@@ -44,7 +44,7 @@ export default function CalculatorPage() {
 
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-8">
-        <div className="container mx-auto px-4 text-center">
+        <div className="container mx-auto px-4 max-w-7xl text-center">
           <p className="text-gray-400">
             © 2025 Bid Master AI. All rights reserved.
           </p>

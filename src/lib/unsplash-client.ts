@@ -62,16 +62,16 @@ const getPropertySearchTerms = (propertyType: string): string[] => {
       "korean apartment balcony",
     ],
     오피스텔: [
-      "korean officetel interior",
-      "korean officetel living space",
-      "korean officetel kitchen",
-      "korean officetel bedroom",
-      "modern korean officetel",
-      "korean officetel building",
-      "korean officetel exterior",
-      "korean officetel lobby",
-      "korean officetel hallway",
-      "korean officetel bathroom",
+      "modern office building glass facade",
+      "contemporary office building exterior",
+      "modern glass office building urban",
+      "office building with commercial space",
+      "modern mixed-use building",
+      "contemporary office complex",
+      "glass office building city",
+      "modern office tower",
+      "urban office building",
+      "contemporary commercial building",
     ],
     상가: [
       "korean commercial building exterior",
@@ -410,11 +410,13 @@ export async function searchPropertyImage(
  * Unsplash API가 실패할 경우 사용할 기본 이미지들
  */
 export function getDefaultPropertyImage(propertyType: string): string {
+  console.log(`🖼️ [기본 이미지] ${propertyType} 유형 기본 이미지 반환`);
+
   const defaultImages: Record<string, string> = {
     아파트:
       "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
     오피스텔:
-      "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1758597129071-29bc78c021e8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MTU3OTV8MHwxfHNlYXJjaHwyfHxtb2Rlcm4lMjBvZmZpY2UlMjBidWlsZGluZyUyMGdsYXNzJTIwZmFjYWRlJTIwdXJiYW4lMjBjaXR5fGVufDB8MHx8fDE3NjE1NjA3NDV8MA&ixlib=rb-4.1.0&q=80&w=1080",
     상가: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
     단독주택:
       "https://images.unsplash.com/photo-1570129477492-45c003edd2be?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
@@ -422,5 +424,14 @@ export function getDefaultPropertyImage(propertyType: string): string {
     원룸: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
   };
 
-  return defaultImages[propertyType] || defaultImages.아파트;
+  const selectedImage = defaultImages[propertyType] || defaultImages.아파트;
+
+  if (propertyType === "오피스텔") {
+    console.log(
+      `🏢 [오피스텔 이미지] 현대적인 유리 외관 오피스텔 이미지로 교체 완료`
+    );
+    console.log(`🖼️ [오피스텔 이미지] 새로운 이미지 URL: ${selectedImage}`);
+  }
+
+  return selectedImage;
 }

@@ -5,7 +5,6 @@
 "use client";
 
 import { useState } from "react";
-import { submitWaitlist } from "@/app/actions/submit-waitlist";
 
 interface WaitlistModalProps {
   isOpen: boolean;
@@ -34,8 +33,23 @@ export function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
     console.log("📧 [사전 알림] 신청 시작:", { name, email });
 
     try {
-      // 서버 액션을 사용하여 데이터 저장
-      const result = await submitWaitlist(name.trim(), email.trim());
+      // API 엔드포인트를 사용하여 데이터 저장
+      const response = await fetch("/api/sheets/write", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: name.trim(),
+          email: email.trim(),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
       console.log("📧 [사전 알림] 신청 결과:", result);
 
       setSubmitResult(result);

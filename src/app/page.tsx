@@ -31,12 +31,15 @@ export default function HomePage() {
   const [isWaitlistModalOpen, setIsWaitlistModalOpen] = useState(false);
   const [isAuctionTermsModalOpen, setIsAuctionTermsModalOpen] = useState(false);
   const [currentFilters, setCurrentFilters] = useState<PropertyFilterOptions>({
-    propertyTypes: [],
-    regions: [],
+    propertyType: "",
+    region: "",
     priceRange: { min: 0, max: 5000000000 },
-    difficultyLevels: [],
+    difficultyLevel: "",
     rightTypes: [],
   });
+  const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  const [touchStartX, setTouchStartX] = useState(0);
+  const [touchEndX, setTouchEndX] = useState(0);
 
   // 페이지 로드 시 초기 매물 생성
   useEffect(() => {
@@ -65,9 +68,30 @@ export default function HomePage() {
         "고급",
       ];
 
+      // PropertyFilterOptions를 generateMultipleProperties가 받는 형태로 변환
+      const convertedFilters = filters
+        ? {
+            propertyTypes: filters.propertyType
+              ? [filters.propertyType]
+              : undefined,
+            regions: filters.region ? [filters.region] : undefined,
+            priceRange: filters.priceRange,
+            difficultyLevels: filters.difficultyLevel
+              ? [filters.difficultyLevel]
+              : undefined,
+            rightTypes:
+              filters.rightTypes.length > 0 ? filters.rightTypes : undefined,
+          }
+        : undefined;
+
+      console.log("🔄 [메인페이지] 필터 변환:", {
+        원본: filters,
+        변환: convertedFilters,
+      });
+
       const properties = await generateMultipleProperties(
         difficulties,
-        filters
+        convertedFilters
       );
       setEducationalProperties(properties);
 
@@ -98,19 +122,10 @@ export default function HomePage() {
 
     // 필터 적용 통계 로그
     const filterStats = {
-      매물유형:
-        currentFilters.propertyTypes.length > 0
-          ? currentFilters.propertyTypes.join(", ")
-          : "전체",
-      지역:
-        currentFilters.regions.length > 0
-          ? currentFilters.regions.join(", ")
-          : "전체",
+      매물유형: currentFilters.propertyType || "전체",
+      지역: currentFilters.region || "전체",
       가격범위: `${currentFilters.priceRange.min.toLocaleString()}원 ~ ${currentFilters.priceRange.max.toLocaleString()}원`,
-      난이도:
-        currentFilters.difficultyLevels.length > 0
-          ? currentFilters.difficultyLevels.join(", ")
-          : "전체",
+      난이도: currentFilters.difficultyLevel || "전체",
       권리유형:
         currentFilters.rightTypes.length > 0
           ? currentFilters.rightTypes.join(", ")
@@ -124,24 +139,51 @@ export default function HomePage() {
 
   const remainingRefreshes = "";
 
+  // 스와이프 제스처 핸들러
+  const handleTouchStart = (e: React.TouchEvent) => {
+    console.log("📱 [스와이프] 터치 시작");
+    setTouchStartX(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEndX(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartX || !touchEndX) return;
+
+    const distance = touchStartX - touchEndX;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+
+    if (isLeftSwipe && currentCardIndex < educationalProperties.length - 1) {
+      console.log("📱 [스와이프] 왼쪽 스와이프 - 다음 카드");
+      setCurrentCardIndex(currentCardIndex + 1);
+    }
+    if (isRightSwipe && currentCardIndex > 0) {
+      console.log("📱 [스와이프] 오른쪽 스와이프 - 이전 카드");
+      setCurrentCardIndex(currentCardIndex - 1);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* 개발자 모드 토글 */}
-      <DevModeToggle />
+      {/* 개발자 모드 토글 - 프로덕션에서는 숨김 */}
+      {process.env.NODE_ENV !== "production" && <DevModeToggle />}
 
       {/* Hero 섹션 */}
-      <section className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-20">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">
+      <section className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-6 sm:py-8 md:py-12">
+        <div className="container mx-auto px-4 max-w-7xl text-center">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-2 sm:mb-3">
             AI로 무한 생성되는 실전 경매 훈련장
           </h1>
-          <p className="text-xl md:text-2xl text-blue-100 mb-8">
+          <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-blue-100 mb-4 sm:mb-6">
             로그인 없이 즉시 시작하는 경매 시뮬레이션
           </p>
-          <div className="flex justify-center gap-4 flex-wrap">
+          <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-3 md:gap-4 flex-wrap">
             <a
               href="#properties"
-              className="px-8 py-3 bg-white text-blue-600 font-bold rounded-lg hover:bg-blue-50 transition-colors"
+              className="px-4 sm:px-6 md:px-8 py-2 sm:py-3 bg-white text-blue-600 font-bold rounded-lg hover:bg-blue-50 active:scale-95 transition-all text-center text-sm sm:text-base"
             >
               매물 보러가기
             </a>
@@ -150,13 +192,13 @@ export default function HomePage() {
                 console.log("📚 [주요경매용어] 모달 열기 요청");
                 setIsAuctionTermsModalOpen(true);
               }}
-              className="px-8 py-3 bg-purple-600 text-white font-bold rounded-lg hover:bg-purple-700 transition-colors border-2 border-white"
+              className="px-4 sm:px-6 md:px-8 py-2 sm:py-3 bg-purple-600 text-white font-bold rounded-lg hover:bg-purple-700 active:scale-95 transition-all border-2 border-white text-center text-sm sm:text-base"
             >
               📚 주요 경매용어
             </button>
             <Link
               href="/calculator"
-              className="px-8 py-3 bg-blue-700 text-white font-bold rounded-lg hover:bg-blue-600 transition-colors border-2 border-white"
+              className="px-4 sm:px-6 md:px-8 py-2 sm:py-3 bg-blue-700 text-white font-bold rounded-lg hover:bg-blue-600 active:scale-95 transition-all border-2 border-white text-center text-sm sm:text-base"
             >
               수익 계산하기
             </Link>
@@ -165,7 +207,7 @@ export default function HomePage() {
                 console.log("🔔 [사전 알림] 모달 열기 요청");
                 setIsWaitlistModalOpen(true);
               }}
-              className="px-8 py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition-colors border-2 border-white"
+              className="px-4 sm:px-6 md:px-8 py-2 sm:py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 active:scale-95 transition-all border-2 border-white text-center text-sm sm:text-base"
             >
               🔔 사전 알림 신청
             </button>
@@ -175,7 +217,7 @@ export default function HomePage() {
 
       {/* 경매 입찰 섹션 */}
       <section id="properties" className="py-16">
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-4 max-w-7xl">
           <div className="flex justify-between items-center mb-8">
             <div>
               <h2 className="text-3xl font-bold text-gray-900 mb-2">
@@ -192,7 +234,7 @@ export default function HomePage() {
               <button
                 onClick={handleRefresh}
                 disabled={isLoading}
-                className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 active:scale-95 transition-all disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 <span>🔄</span>
                 <span>새로고침</span>
@@ -235,11 +277,60 @@ export default function HomePage() {
 
           {/* 매물 그리드 */}
           {!isLoading && educationalProperties.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {educationalProperties.map((property) => (
-                <PropertyCard key={property.id} property={property} />
-              ))}
-            </div>
+            <>
+              {/* 데스크톱 그리드 */}
+              <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
+                {educationalProperties.map((property) => (
+                  <PropertyCard key={property.id} property={property} />
+                ))}
+              </div>
+
+              {/* 모바일 스와이프 카드 */}
+              <div className="md:hidden">
+                <div
+                  className="swipeable overflow-hidden"
+                  onTouchStart={handleTouchStart}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={handleTouchEnd}
+                >
+                  <div
+                    className="flex transition-transform duration-300 ease-out"
+                    style={{
+                      transform: `translateX(-${currentCardIndex * 100}%)`,
+                    }}
+                  >
+                    {educationalProperties.map((property) => (
+                      <div
+                        key={property.id}
+                        className="w-full flex-shrink-0 px-2"
+                      >
+                        <PropertyCard property={property} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 스와이프 인디케이터 */}
+                <div className="flex justify-center mt-4 space-x-2">
+                  {educationalProperties.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        console.log(
+                          `📱 [스와이프] 인디케이터 클릭 - 카드 ${index + 1}`
+                        );
+                        setCurrentCardIndex(index);
+                      }}
+                      className={`w-2 h-2 rounded-full transition-colors ${
+                        index === currentCardIndex
+                          ? "bg-blue-600"
+                          : "bg-gray-300"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </>
           )}
 
           {/* 빈 상태 */}
@@ -260,7 +351,7 @@ export default function HomePage() {
 
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-8">
-        <div className="container mx-auto px-4 text-center">
+        <div className="container mx-auto px-4 max-w-7xl text-center">
           <p className="text-gray-400">
             © 2025 Bid Master AI. All rights reserved.
           </p>

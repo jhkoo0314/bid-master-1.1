@@ -27,6 +27,7 @@
 - **OpenAI API** (GPT-4o)
 - **Google Sheets API** (사전 알림 신청)
 - **Gmail API** (확인 메일 발송)
+- **Unsplash API** (매물 이미지 생성)
 
 ### Animation & Charts
 
@@ -59,6 +60,7 @@ bid-master-ai/
 │   │   ├── simulation/[id]/    # 시뮬레이션 페이지
 │   │   ├── test-sheets/        # 구글 시트 테스트 페이지
 │   │   ├── test-simple/        # 간단한 테스트 페이지
+│   │   ├── test-images/        # 이미지 테스트 페이지
 │   │   ├── layout.tsx          # 루트 레이아웃
 │   │   └── page.tsx            # 메인 페이지
 │   ├── components/             # UI 컴포넌트
@@ -75,7 +77,8 @@ bid-master-ai/
 │   │   ├── openai-client.ts    # AI 매물 생성
 │   │   ├── profit-calculator.ts # 수익 계산
 │   │   ├── regional-analysis.ts # 지역분석
-│   │   └── rights-analysis-engine.ts # 권리분석 엔진
+│   │   ├── rights-analysis-engine.ts # 권리분석 엔진
+│   │   └── unsplash-client.ts  # Unsplash 이미지 API
 │   ├── store/                  # 상태 관리
 │   │   └── simulation-store.ts # 시뮬레이션 상태
 │   └── types/                  # 타입 정의
@@ -126,10 +129,18 @@ bid-master-ai/
 - **이메일 확인**: Gmail API를 통한 신청 확인 메일 발송
 - **테스트 페이지**: 개발자용 테스트 페이지로 시스템 검증 가능
 
-### 6. 테스트 및 디버깅 도구
+### 6. 이미지 통합 시스템
+
+- **Unsplash API 연동**: 매물별 고품질 이미지 자동 생성
+- **이미지 테스트**: `/test-images` - Unsplash API 연결 및 이미지 생성 테스트
+- **동적 이미지 로딩**: 매물 유형별 맞춤형 이미지 검색
+- **이미지 캐싱**: 성능 최적화를 위한 이미지 캐싱 시스템
+
+### 7. 테스트 및 디버깅 도구
 
 - **구글 시트 테스트**: `/test-sheets` - 구글 시트 연결 상태 확인
 - **로컬 저장 테스트**: `/test-simple` - 로컬 파일 저장 기능 테스트
+- **이미지 테스트**: `/test-images` - Unsplash API 및 이미지 생성 테스트
 - **API 테스트**: 각종 API 엔드포인트별 개별 테스트 가능
 - **실시간 로그**: 모든 핵심 기능에 상세한 로그 기록
 
@@ -191,7 +202,16 @@ interface SimulationStore {
 - **에러 처리**: 연결 실패 시 로컬 파일로 백업 저장
 - **로깅**: 모든 작업에 상세한 로그 기록
 
-### 6. 사전 알림 시스템 (`src/app/actions/submit-waitlist.ts`)
+### 6. Unsplash 이미지 클라이언트 (`src/lib/unsplash-client.ts`)
+
+핵심 기능:
+
+- **API 연동**: Unsplash API를 통한 고품질 이미지 검색
+- **매물별 이미지**: 매물 유형에 맞는 맞춤형 이미지 검색
+- **성능 최적화**: 이미지 크기 및 품질 최적화
+- **에러 처리**: API 실패 시 기본 이미지로 대체
+
+### 7. 사전 알림 시스템 (`src/app/actions/submit-waitlist.ts`)
 
 - **이중 저장**: 구글 시트 + 로컬 파일 동시 저장
 - **이메일 발송**: Gmail API를 통한 확인 메일 자동 발송
@@ -247,10 +267,22 @@ const safetyMargin = calculateSafetyMargin(analyzedRights, analyzedTenants);
 6. 결과 반환 (성공/실패 상태)
 ```
 
-### 5. 테스트 시스템
+### 5. 이미지 생성 시스템
+
+```typescript
+// Unsplash 이미지 검색 프로세스
+1. 매물 유형별 검색 키워드 생성
+2. Unsplash API 호출 (고품질 이미지 검색)
+3. 이미지 최적화 (크기, 품질 조정)
+4. 캐싱 및 에러 처리
+5. 매물 카드에 이미지 적용
+```
+
+### 6. 테스트 시스템
 
 - **구글 시트 테스트**: `/test-sheets` - 구글 시트 연결 및 데이터 저장 테스트
 - **로컬 저장 테스트**: `/test-simple` - 로컬 파일 저장 기능 테스트
+- **이미지 테스트**: `/test-images` - Unsplash API 및 이미지 생성 테스트
 - **API 개별 테스트**: 각 엔드포인트별 독립적인 테스트 가능
 - **실시간 모니터링**: 모든 테스트에 상세한 로그 및 결과 표시
 
@@ -270,6 +302,8 @@ const safetyMargin = calculateSafetyMargin(analyzedRights, analyzedTenants);
 - ✅ 수익 계산기
 - ✅ 사전 알림 시스템 (구글 시트 + 로컬 백업)
 - ✅ 이메일 확인 시스템 (Gmail API)
+- ✅ Unsplash 이미지 통합 시스템
+- ✅ 이미지 테스트 및 디버깅 도구
 - ✅ 테스트 및 디버깅 도구
 - ✅ 상세한 로깅 시스템
 
@@ -318,6 +352,7 @@ const safetyMargin = calculateSafetyMargin(analyzedRights, analyzedTenants);
 - [ ] `GOOGLE_SHEETS_SPREADSHEET_ID` - 구글 시트 ID (사전 알림용)
 - [ ] `GMAIL_FROM_EMAIL` - Gmail 발송자 이메일 (확인 메일용)
 - [ ] `GOOGLE_SERVICE_ACCOUNT_JSON` - 구글 서비스 계정 JSON (선택사항)
+- [ ] `UNSPLASH_ACCESS_KEY` - Unsplash API 키 (이미지 생성용)
 - [ ] `NEXT_PUBLIC_DEV_MODE` - 개발자 모드 활성화 (선택사항)
 
 ## 📝 개발 가이드
@@ -334,10 +369,11 @@ const safetyMargin = calculateSafetyMargin(analyzedRights, analyzedTenants);
 
 1. **매물 생성**: AI 생성 시작/완료, 토큰 사용량
 2. **권리분석**: 말소기준권리 판단, 대항력 계산 결과
-3. **사용자 액션**: 필터 적용, 입찰 시도, 새로고침
-4. **에러 처리**: API 실패, 검증 오류, 네트워크 문제
-5. **사전 알림**: 구글 시트 저장, 로컬 백업, 이메일 발송
-6. **테스트 시스템**: 각종 API 테스트 결과 및 성능 지표
+3. **이미지 생성**: Unsplash API 호출, 이미지 검색 결과
+4. **사용자 액션**: 필터 적용, 입찰 시도, 새로고침
+5. **에러 처리**: API 실패, 검증 오류, 네트워크 문제
+6. **사전 알림**: 구글 시트 저장, 로컬 백업, 이메일 발송
+7. **테스트 시스템**: 각종 API 테스트 결과 및 성능 지표
 
 ### 로그 형식 예시
 
@@ -349,6 +385,10 @@ console.log("🏠 [매물 생성] 생성 완료 - 토큰 사용량: 1,250");
 // 권리분석 로그
 console.log("⚖️ [권리분석] 말소기준권리 판단 완료");
 console.log("⚖️ [권리분석] 대항력 계산 결과: 임차인 2명 인수");
+
+// 이미지 생성 로그
+console.log("🖼️ [이미지 생성] Unsplash API 호출 시작");
+console.log("🖼️ [이미지 생성] 이미지 검색 완료 - 매물 유형: 아파트");
 
 // 사전 알림 로그
 console.log("📧 [사전 알림] 구글 시트 저장 성공");
