@@ -212,8 +212,11 @@ export function PropertyCard({ property }: PropertyCardProps) {
           </div>
         </div>
 
-        {/* 매물 유형 오버레이 - 밝은색 스타일 */}
-        <div className="absolute top-3 left-3 bg-white bg-opacity-60 text-gray-800 px-3 py-1.5 rounded-full text-xs font-medium shadow-lg border border-gray-200">
+        {/* 매물 유형 오버레이 - 단독주택 가독성 개선 */}
+        <div
+          className="absolute top-3 left-3 text-black px-3 py-1.5 rounded-full text-xs font-bold shadow-lg border border-gray-300"
+          style={{ backgroundColor: "rgba(255, 255, 255, 0.3)" }}
+        >
           {basicInfo.propertyType}
         </div>
       </div>

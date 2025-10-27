@@ -1118,7 +1118,7 @@ export default function PropertyDetailPage() {
                         <td className="py-2">
                           {property.propertyDetails?.landAreaPyeong || 0}평
                         </td>
-                        <td className="py-2 font-bold text-blue-600">
+                        <td className="py-2">
                           {basicInfo.appraisalValue?.toLocaleString("ko-KR") ||
                             "0"}
                           원
@@ -1275,7 +1275,7 @@ export default function PropertyDetailPage() {
                           </td>
                           <td className="py-2">{right.rightHolder}</td>
                           <td className="py-2">{right.registrationDate}</td>
-                          <td className="py-2 font-bold text-blue-600">
+                          <td className="py-2">
                             {right.claimAmount.toLocaleString("ko-KR")}원
                           </td>
                           <td className="py-2">
@@ -1649,9 +1649,16 @@ export default function PropertyDetailPage() {
                 </button>
                 <button
                   onClick={() => {
+                    console.log(
+                      "📊 [경매리포트] 탭 클릭 - 개발자모드:",
+                      devMode.isDevMode
+                    );
                     if (devMode.isDevMode) {
                       setActiveTab("report");
                     } else {
+                      console.log(
+                        "📊 [경매리포트] 일반모드 - 대기자 명단 팝업 열기"
+                      );
                       setShowWaitlistModal(true);
                     }
                   }}
@@ -2158,8 +2165,8 @@ export default function PropertyDetailPage() {
 
         {/* 대기자 명단 수집 모달 */}
         {showWaitlistModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+          <div className="fixed inset-0 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 border border-gray-200">
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-gray-900">
