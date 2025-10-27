@@ -171,74 +171,89 @@ export default function HomePage() {
       {/* 개발자 모드 토글 - 프로덕션에서는 숨김 */}
       {process.env.NODE_ENV !== "production" && <DevModeToggle />}
 
-      {/* Hero 섹션 */}
-      <section className="bg-white py-8 sm:py-12 md:py-16">
-        <div className="container mx-auto px-3 max-w-6xl">
-          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black mb-4 sm:mb-6 text-center text-gray-900 leading-tight">
-            AI로 무한 생성되는
-            <br className="sm:hidden" />
-            <span className="text-blue-600">실전 경매 훈련장</span>
-          </h1>
-          <p className="text-sm sm:text-base md:text-lg text-gray-600 mb-8 sm:mb-10 text-center font-medium">
-            로그인 없이 즉시 시작하는 경매 시뮬레이션
-          </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-3 md:gap-4 flex-wrap text-center">
-            <a
-              href="#properties"
-              className="px-3 sm:px-4 md:px-5 py-2 sm:py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 active:scale-95 transition-all text-center text-sm sm:text-base shadow-md hover:shadow-lg"
-            >
-              🏠 매물 보러가기
-            </a>
-            <button
-              onClick={() => {
-                console.log("📚 [주요경매용어] 모달 열기 요청");
-                setIsAuctionTermsModalOpen(true);
-              }}
-              className="px-3 sm:px-4 md:px-5 py-2 sm:py-2 bg-purple-600 text-white font-bold rounded-lg hover:bg-purple-700 active:scale-95 transition-all text-center text-sm sm:text-base shadow-md hover:shadow-lg"
-            >
-              📚 주요 경매용어
-            </button>
-            <Link
-              href="/calculator"
-              className="px-3 sm:px-4 md:px-5 py-2 sm:py-2 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 active:scale-95 transition-all text-center text-sm sm:text-base shadow-md hover:shadow-lg"
-            >
-              💰 수익 계산하기
-            </Link>
-            <button
-              onClick={() => {
-                console.log("🔔 [사전 알림] 모달 열기 요청");
-                setIsWaitlistModalOpen(true);
-              }}
-              className="px-3 sm:px-4 md:px-5 py-2 sm:py-2 bg-orange-600 text-white font-bold rounded-lg hover:bg-orange-700 active:scale-95 transition-all text-center text-sm sm:text-base shadow-md hover:shadow-lg"
-            >
-              🔔 사전 알림 신청
-            </button>
+      {/* 헤더 - 좌측 상단 로고 */}
+      <header className="bg-white border-b border-gray-200">
+        <div className="container mx-auto px-4 max-w-6xl">
+          <div className="flex items-center justify-between py-4">
+            <div className="flex items-center">
+              <h1 className="text-2xl font-bold text-gray-900">Bid master</h1>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Hero 섹션 - 컴팩트 Vercel 스타일 */}
+      <section className="bg-white py-6 sm:py-8 md:py-12">
+        <div className="container mx-auto px-4 max-w-6xl">
+          <div className="text-center max-w-3xl mx-auto">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-gray-900 leading-tight tracking-tight">
+              AI로 무한 생성되는
+              <br />
+              <span className="bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                실전 경매 훈련장
+              </span>
+            </h1>
+            <p className="text-base sm:text-lg md:text-xl text-gray-600 mb-8 font-normal leading-relaxed max-w-2xl mx-auto">
+              로그인 없이 즉시 시작하는 경매 시뮬레이션
+            </p>
+            <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 flex-wrap">
+              <a
+                href="#properties"
+                className="inline-flex items-center justify-center px-6 py-3 bg-white text-gray-900 font-semibold rounded-full border border-gray-200 hover:bg-gray-50 transition-all duration-200 text-sm shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+              >
+                🏠 매물 보러가기
+              </a>
+              <button
+                onClick={() => {
+                  console.log("📚 [주요경매용어] 모달 열기 요청");
+                  setIsAuctionTermsModalOpen(true);
+                }}
+                className="inline-flex items-center justify-center px-6 py-3 bg-white text-gray-900 font-semibold rounded-full border border-gray-200 hover:bg-gray-50 transition-all duration-200 text-sm shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+              >
+                📚 주요 경매용어
+              </button>
+              <Link
+                href="/calculator"
+                className="inline-flex items-center justify-center px-6 py-3 bg-white text-gray-900 font-semibold rounded-full border border-gray-200 hover:bg-gray-50 transition-all duration-200 text-sm shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+              >
+                💰 수익 계산하기
+              </Link>
+              <button
+                onClick={() => {
+                  console.log("🔔 [사전 알림] 모달 열기 요청");
+                  setIsWaitlistModalOpen(true);
+                }}
+                className="inline-flex items-center justify-center px-6 py-3 bg-white text-gray-900 font-semibold rounded-full border border-gray-200 hover:bg-gray-50 transition-all duration-200 text-sm shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+              >
+                🔔 사전 알림 신청
+              </button>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* 경매 입찰 섹션 */}
-      <section id="properties" className="py-16">
-        <div className="container mx-auto px-3 max-w-6xl">
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">
+      {/* 경매 입찰 섹션 - 컴팩트 Vercel 스타일 */}
+      <section id="properties" className="py-12 bg-gray-50">
+        <div className="container mx-auto px-4 max-w-6xl">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-12">
+            <div className="mb-6 lg:mb-0">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-3 tracking-tight">
                 AI 생성 경매 매물
               </h2>
-              <p className="text-gray-600">
+              <p className="text-base sm:text-lg text-gray-600 font-normal leading-relaxed max-w-xl">
                 단계별 난이도로 경매의 핵심을 학습하세요
               </p>
             </div>
             <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">
+              <span className="text-sm text-gray-500 font-medium">
                 {remainingRefreshes}
               </span>
               <button
                 onClick={handleRefresh}
                 disabled={isLoading}
-                className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 active:scale-95 transition-all disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
+                className="inline-flex items-center justify-center px-5 py-2.5 bg-white text-gray-900 font-semibold rounded-full hover:bg-gray-50 transition-all duration-200 disabled:bg-gray-300 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-sm border border-gray-200"
               >
-                <span>🔄</span>
+                <span className="mr-2">🔄</span>
                 <span>새로고침</span>
               </button>
             </div>
@@ -251,9 +266,9 @@ export default function HomePage() {
             isLoading={isLoading}
           />
 
-          {/* 에러 메시지 */}
+          {/* 에러 메시지 - 컴팩트 Vercel 스타일 */}
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+            <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-xl mb-6 font-medium text-sm">
               {error}
             </div>
           )}
@@ -325,7 +340,7 @@ export default function HomePage() {
                       }}
                       className={`w-2 h-2 rounded-full transition-colors ${
                         index === currentCardIndex
-                          ? "bg-blue-600"
+                          ? "bg-slate-900"
                           : "bg-gray-300"
                       }`}
                     />
@@ -335,14 +350,19 @@ export default function HomePage() {
             </>
           )}
 
-          {/* 빈 상태 */}
+          {/* 빈 상태 - 컴팩트 Vercel 스타일 */}
           {!isLoading && educationalProperties.length === 0 && !error && (
-            <div className="text-center py-12">
-              <div className="text-6xl mb-4">📦</div>
-              <p className="text-gray-600 mb-4">아직 생성된 매물이 없습니다.</p>
+            <div className="text-center py-16">
+              <div className="text-6xl mb-6">📦</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">
+                아직 생성된 매물이 없습니다
+              </h3>
+              <p className="text-base text-gray-600 mb-6 max-w-md mx-auto">
+                새로운 매물을 생성하여 경매 시뮬레이션을 시작해보세요
+              </p>
               <button
                 onClick={() => loadInitialProperties()}
-                className="px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors"
+                className="inline-flex items-center justify-center px-6 py-3 bg-black text-white font-semibold rounded-full hover:bg-gray-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-sm"
               >
                 매물 생성하기
               </button>
@@ -351,13 +371,13 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-8">
-        <div className="container mx-auto px-3 max-w-6xl text-center">
-          <p className="text-gray-400">
+      {/* Footer - 컴팩트 Vercel 스타일 */}
+      <footer className="bg-black text-white py-12">
+        <div className="container mx-auto px-4 max-w-6xl text-center">
+          <p className="text-gray-400 text-base font-medium mb-3">
             © 2025 Bid Master AI. All rights reserved.
           </p>
-          <p className="text-gray-500 text-sm mt-2">
+          <p className="text-gray-500 text-sm max-w-xl mx-auto leading-relaxed">
             본 서비스는 교육 목적으로 제공되며, 실제 법원 경매와 다를 수
             있습니다.
           </p>

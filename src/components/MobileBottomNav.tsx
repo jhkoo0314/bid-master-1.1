@@ -59,21 +59,21 @@ export function MobileBottomNav() {
   };
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
-      <div className="flex items-center justify-around py-2">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 backdrop-blur-sm bg-white/80">
+      <div className="flex items-center justify-around py-3">
         {navItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
             onClick={() => handleNavClick(item.href, item.label)}
-            className={`flex flex-col items-center justify-center py-2 px-3 min-h-[44px] min-w-[44px] transition-colors ${
+            className={`flex flex-col items-center justify-center py-2 px-4 min-h-[48px] min-w-[48px] transition-all duration-200 ${
               item.isActive
-                ? "text-blue-600 bg-blue-50 rounded-lg"
-                : "text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-lg"
+                ? "text-black bg-gray-100 rounded-xl font-semibold"
+                : "text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-xl font-medium"
             }`}
           >
-            <span className="text-lg mb-1">{item.icon}</span>
-            <span className="text-xs font-medium">{item.label}</span>
+            <span className="text-xl mb-1">{item.icon}</span>
+            <span className="text-xs">{item.label}</span>
           </Link>
         ))}
       </div>

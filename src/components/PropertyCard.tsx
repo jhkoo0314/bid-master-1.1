@@ -84,9 +84,9 @@ export function PropertyCard({ property }: PropertyCardProps) {
 
   // 난이도별 색상
   const difficultyColors = {
-    초급: "bg-green-100 text-green-800 border-green-300",
-    중급: "bg-yellow-100 text-yellow-800 border-yellow-300",
-    고급: "bg-red-100 text-red-800 border-red-300",
+    초급: "bg-emerald-100 text-emerald-800 border-emerald-300",
+    중급: "bg-amber-100 text-amber-800 border-amber-300",
+    고급: "bg-rose-100 text-rose-800 border-rose-300",
   };
 
   const difficultyColor = educationalContent
@@ -167,15 +167,17 @@ export function PropertyCard({ property }: PropertyCardProps) {
   }, [basicInfo.propertyType, basicInfo.locationShort, basicInfo.marketValue]);
 
   return (
-    <div className="bg-white rounded-lg shadow-md hover:shadow-xl active:scale-95 transition-all duration-300 overflow-hidden border border-gray-200 flex flex-col h-full min-h-[380px]">
+    <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 flex flex-col h-full min-h-[350px] group">
       {/* 매물 이미지 */}
-      <div className="aspect-[5/2] relative overflow-hidden">
+      <div className="aspect-[4/3] relative overflow-hidden">
         {imageLoading ? (
           // 로딩 상태
-          <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
+          <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-1"></div>
-              <div className="text-xs text-gray-600">이미지 로딩중...</div>
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-600 mx-auto mb-1"></div>
+              <div className="text-xs text-gray-600 font-medium">
+                이미지 로딩중...
+              </div>
             </div>
           </div>
         ) : propertyImage ? (
@@ -198,88 +200,85 @@ export function PropertyCard({ property }: PropertyCardProps) {
 
         {/* 이미지 로드 실패 시 기본 표시 */}
         <div
-          className={`absolute inset-0 bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center ${
+          className={`absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center ${
             propertyImage ? "hidden" : ""
           }`}
         >
           <div className="text-center">
-            <div className="text-2xl mb-1">🏢</div>
-            <div className="text-xs text-gray-600">
+            <div className="text-3xl mb-2">🏢</div>
+            <div className="text-sm text-gray-600 font-medium">
               {basicInfo.propertyType}
             </div>
           </div>
         </div>
 
-        {/* 매물 유형 오버레이 */}
-        <div className="absolute top-1 left-1 bg-black bg-opacity-70 text-white px-1.5 py-0.5 rounded text-xs font-medium">
+        {/* 매물 유형 오버레이 - 밝은색 스타일 */}
+        <div className="absolute top-3 left-3 bg-white bg-opacity-60 text-gray-800 px-3 py-1.5 rounded-full text-xs font-medium shadow-lg border border-gray-200">
           {basicInfo.propertyType}
         </div>
       </div>
 
-      {/* 매물 정보 */}
-      <div className="p-2 flex flex-col flex-grow">
+      {/* 매물 정보 - 컴팩트 Vercel 스타일 */}
+      <div className="p-4 flex flex-col flex-grow">
         {/* 난이도 뱃지 */}
-        <div className="flex items-center gap-1 mb-1">
+        <div className="flex items-center gap-2 mb-3">
           <span
-            className={`px-2 py-0.5 rounded-full text-xs font-bold border ${difficultyColor}`}
+            className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${difficultyColor}`}
           >
             {educationalContent ? educationalContent.difficulty : "분석중"}
           </span>
           {educationalContent && (
-            <span className="text-xs text-gray-500 line-clamp-1">
+            <span className="text-xs text-gray-500 line-clamp-1 font-medium">
               {educationalContent.oneLiner}
             </span>
           )}
         </div>
 
         {/* 사건번호 */}
-        <div className="text-sm text-gray-500 mb-1">{basicInfo.caseNumber}</div>
+        <div className="text-xs text-gray-500 mb-2 font-medium">
+          {basicInfo.caseNumber}
+        </div>
 
         {/* 소재지 */}
-        <h3 className="font-bold text-gray-900 mb-1 line-clamp-2 text-base">
+        <h3 className="font-bold text-gray-900 mb-3 line-clamp-2 text-base leading-tight">
           {basicInfo.locationShort}
         </h3>
 
-        {/* 가격 정보 - 감정가와 최저가만 표시 */}
-        <div className="space-y-1 mb-2">
-          <div className="flex justify-between text-sm group">
+        {/* 가격 정보 - 컴팩트 Vercel 스타일 */}
+        <div className="space-y-2 mb-4">
+          <div className="flex justify-between items-center group">
             <span
-              className="text-gray-600 group-hover:text-blue-600 transition-colors cursor-help"
+              className="text-gray-600 group-hover:text-gray-900 transition-colors cursor-help font-medium text-sm"
               title={getTermExplanation("감정가")}
             >
               감정가
             </span>
-            <span className="font-semibold text-gray-900">
+            <span className="font-bold text-gray-900 text-base">
               {basicInfo.appraisalValue.toLocaleString("ko-KR")}원
             </span>
           </div>
-          <div className="flex justify-between text-sm group">
+          <div className="flex justify-between items-center group">
             <span
-              className="text-gray-600 group-hover:text-blue-600 transition-colors cursor-help"
+              className="text-gray-600 group-hover:text-gray-900 transition-colors cursor-help font-medium text-sm"
               title={getTermExplanation("최저가")}
             >
               최저가
             </span>
-            <span className="font-bold text-blue-600">
+            <span className="font-bold text-black text-base">
               {basicInfo.minimumBidPrice.toLocaleString("ko-KR")}원
             </span>
           </div>
         </div>
 
-        {/* 입찰 상태 */}
-        <div className="text-sm text-gray-500 mb-2">
-          입찰 {basicInfo.daysUntilBid}일 전
-        </div>
-
-        {/* 권리 유형 표시 */}
-        <div className="mb-2">
-          <div className="flex flex-wrap gap-1 min-h-[24px] items-center">
+        {/* 권리 유형 표시 - 컴팩트 Vercel 스타일 */}
+        <div className="mb-4">
+          <div className="flex flex-wrap gap-1.5 min-h-[24px] items-center">
             {property.rights && property.rights.length > 0 ? (
               <>
                 {property.rights.slice(0, 2).map((right, index) => (
                   <span
                     key={right.id}
-                    className="px-2 py-1 bg-red-50 text-red-700 text-sm rounded"
+                    className="px-2 py-1 bg-red-50 text-red-700 text-xs rounded-full font-medium border border-red-200"
                     title={`${right.rightType} - ${
                       right.rightHolder
                     } (${right.claimAmount.toLocaleString()}원)`}
@@ -288,30 +287,30 @@ export function PropertyCard({ property }: PropertyCardProps) {
                   </span>
                 ))}
                 {property.rights.length > 2 && (
-                  <span className="px-2 py-1 bg-gray-50 text-gray-600 text-sm">
+                  <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full font-medium">
                     +{property.rights.length - 2}개
                   </span>
                 )}
               </>
             ) : (
-              <span className="px-2 py-1 bg-gray-100 text-gray-600 text-sm rounded">
+              <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full font-medium">
                 권리 분석중...
               </span>
             )}
           </div>
         </div>
 
-        {/* 버튼 */}
+        {/* 버튼 - 컴팩트 Vercel 스타일 */}
         <div className="flex gap-2 mt-auto">
           <Link
             href={`/property/${property.id}`}
-            className="flex-1 px-3 py-2 bg-gray-100 text-gray-700 text-center text-sm font-medium rounded-lg hover:bg-gray-200 active:scale-95 transition-all"
+            className="flex-1 px-3 py-2 bg-gray-100 text-gray-700 text-center text-xs font-semibold rounded-full hover:bg-gray-200 transition-all duration-200 border border-gray-200"
           >
             상세보기
           </Link>
           <button
             onClick={() => setIsBiddingModalOpen(true)}
-            className="flex-1 px-3 py-2 bg-blue-600 text-white text-center text-sm font-bold rounded-lg hover:bg-blue-700 active:scale-95 transition-all"
+            className="flex-1 px-3 py-2 bg-blue-500 text-white text-center text-xs font-semibold rounded-full hover:bg-blue-600 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
           >
             경매입찰
           </button>
