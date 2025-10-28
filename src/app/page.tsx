@@ -44,6 +44,7 @@ export default function HomePage() {
     "basic"
   );
   const [isServicePreparing, setIsServicePreparing] = useState(false);
+  const [isExpertColumnPreparing, setIsExpertColumnPreparing] = useState(false);
 
   // 페이지 로드 시 초기 매물 생성
   useEffect(() => {
@@ -231,6 +232,15 @@ export default function HomePage() {
               </Link>
               <button
                 onClick={() => {
+                  console.log("📰 [전문가 칼럼] 서비스 준비중 모달 열기 요청");
+                  setIsExpertColumnPreparing(true);
+                }}
+                className="inline-flex items-center justify-center px-3 py-1.5 font-medium text-xs transition-all duration-200 hover:bg-gray-100 rounded-md text-gray-900 hover:-translate-y-1 hover:shadow-md"
+              >
+                전문가 칼럼
+              </button>
+              <button
+                onClick={() => {
                   console.log("🔔 [사전 알림] 모달 열기 요청");
                   setIsWaitlistModalOpen(true);
                 }}
@@ -293,7 +303,7 @@ export default function HomePage() {
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-12">
             <div className="mb-6 lg:mb-0">
-              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 tracking-tight text-gray-900">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-3 tracking-tight text-gray-900">
                 실전 경매 훈련장
               </h2>
               <p className="text-base sm:text-lg font-normal leading-relaxed max-w-xl text-gray-600">
@@ -312,7 +322,7 @@ export default function HomePage() {
               <button
                 onClick={handleRefresh}
                 disabled={isLoading}
-                className="inline-flex items-center justify-center px-5 py-2.5 bg-accent text-white font-semibold rounded-full hover:bg-accent/90 transition-all duration-200 disabled:bg-gray-300 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-sm"
+                className="inline-flex items-center justify-center px-5 py-2.5 text-gray-700 font-semibold rounded-full hover:bg-gray-100 transition-all duration-200 disabled:bg-gray-300 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-sm border border-gray-300"
               >
                 <span className="mr-2">🔄</span>
                 <span>매물 새로고침</span>
@@ -428,7 +438,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* 서비스 준비중 메시지 - 카드 탭 클릭 시에만 표시 */}
+          {/* 서비스 준비중 메시지 - 카드 탭 또는 전문가 칼럼 클릭 시 표시 */}
           {isServicePreparing && (
             <div className="text-center py-12 mb-8">
               <div className="text-6xl mb-6">🚧</div>
@@ -592,6 +602,32 @@ export default function HomePage() {
           setIsAuctionTermsModalOpen(false);
         }}
       />
+
+      {/* 전문가 칼럼 서비스 준비중 모달 */}
+      {isExpertColumnPreparing && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-8 shadow-2xl">
+            <div className="text-center">
+              <div className="text-6xl mb-6">📰</div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                전문가 칼럼 준비중입니다
+              </h2>
+              <p className="text-lg text-gray-600 mb-8">
+                경매 전문가들의 실전 노하우를 곧 만나보실 수 있습니다
+              </p>
+              <button
+                onClick={() => {
+                  console.log("📰 [전문가 칼럼] 모달 닫기");
+                  setIsExpertColumnPreparing(false);
+                }}
+                className="inline-flex items-center justify-center px-6 py-3 bg-black text-white font-semibold rounded-full hover:bg-gray-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-sm w-full"
+              >
+                확인
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
