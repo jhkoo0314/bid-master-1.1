@@ -4,7 +4,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { SimulationScenario } from "@/types/simulation";
 import Link from "next/link";
 import { BiddingModal } from "./BiddingModal";
@@ -79,14 +79,13 @@ export function PropertyCard({ property }: PropertyCardProps) {
   const [propertyImage, setPropertyImage] = useState<string | null>(null);
   const [imageLoading, setImageLoading] = useState(true);
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
+  const hasLoadedImage = useRef(false);
 
-  console.log("🏠 [매물카드] 컴팩트 사이즈로 렌더링 - 마이옥션 스타일 적용");
-
-  // 난이도별 색상
+  // 난이도별 색상 - Bid Master 커스텀 컬러 사용
   const difficultyColors = {
-    초급: "bg-emerald-100 text-emerald-800 border-emerald-300",
-    중급: "bg-amber-100 text-amber-800 border-amber-300",
-    고급: "bg-rose-100 text-rose-800 border-rose-300",
+    초급: "bg-success/10 text-success border-success/30",
+    중급: "bg-warning/10 text-warning border-warning/30",
+    고급: "bg-danger/10 text-danger border-danger/30",
   };
 
   const difficultyColor = educationalContent
@@ -111,23 +110,24 @@ export function PropertyCard({ property }: PropertyCardProps) {
     };
   }, [isImageViewerOpen]);
 
-  // 매물 이미지 로드
+  // 매물 이미지 로드 - 한 번만 실행
   useEffect(() => {
+    if (hasLoadedImage.current) {
+      return;
+    }
+
     const loadPropertyImage = async () => {
       try {
         console.log(
-          `🖼️ [매물카드] 이미지 로드 시작 - ${basicInfo.propertyType}`
+          `🖼️ [매물카드] 이미지 로드 시작 - ${basicInfo.propertyType} (${property.id})`
         );
-        setImageLoading(true);
+        hasLoadedImage.current = true;
 
         // 상가 매물 유형인 경우 고정 이미지 사용
         if (basicInfo.propertyType === "상가") {
           const commercialImageUrl =
             "https://images.unsplash.com/photo-1677933416890-14c28bc64052?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixlib=rb-4.1.0&q=80&w=1080";
           setPropertyImage(commercialImageUrl);
-          console.log(
-            `🏪 [매물카드] 상가 매물 유형 - 고정 이미지 사용: ${commercialImageUrl}`
-          );
           setImageLoading(false);
           return;
         }
@@ -137,24 +137,17 @@ export function PropertyCard({ property }: PropertyCardProps) {
           const villaImageUrl =
             "https://images.unsplash.com/photo-1760129745103-91c4022ed5fb?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixlib=rb-4.1.0&q=80&w=1080";
           setPropertyImage(villaImageUrl);
-          console.log(
-            `🏠 [매물카드] 빌라 매물 유형 - 고정 이미지 사용: ${villaImageUrl}`
-          );
           setImageLoading(false);
           return;
         }
 
         const imageUrl = await searchUniquePropertyImage(
           basicInfo.propertyType,
-          basicInfo.locationShort,
-          basicInfo.marketValue
+          basicInfo.locationShort
         );
 
         if (imageUrl) {
           setPropertyImage(imageUrl);
-          console.log(`✅ [매물카드] 이미지 로드 성공: ${imageUrl}`);
-        } else {
-          console.log(`⚠️ [매물카드] 이미지 로드 실패 - 기본 이미지 사용`);
         }
       } catch (error) {
         console.error(`❌ [매물카드] 이미지 로드 오류:`, error);
@@ -164,10 +157,10 @@ export function PropertyCard({ property }: PropertyCardProps) {
     };
 
     loadPropertyImage();
-  }, [basicInfo.propertyType, basicInfo.locationShort, basicInfo.marketValue]);
+  }, []); // 빈 의존성 배열로 한 번만 실행
 
   return (
-    <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 flex flex-col h-full min-h-[350px] group hover:-translate-y-2 hover:shadow-2xl">
+    <div className="bg-white rounded-xl shadow-lg transition-all duration-300 overflow-hidden border border-gray-100 flex flex-col h-full min-h-[350px] group">
       {/* 매물 이미지 */}
       <div className="aspect-[3/2] relative overflow-hidden">
         {imageLoading ? (
@@ -281,7 +274,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
                 {property.rights.slice(0, 2).map((right, index) => (
                   <span
                     key={right.id}
-                    className="px-2 py-1 bg-red-50 text-red-700 text-xs rounded-full font-medium border border-red-200"
+                    className="px-2 py-1 bg-danger/10 text-danger text-xs rounded-full font-medium border border-danger/30"
                     title={`${right.rightType} - ${
                       right.rightHolder
                     } (${right.claimAmount.toLocaleString()}원)`}
@@ -307,13 +300,13 @@ export function PropertyCard({ property }: PropertyCardProps) {
         <div className="flex gap-2 mt-auto">
           <Link
             href={`/property/${property.id}`}
-            className="flex-1 px-3 py-2 bg-gray-100 text-gray-700 text-center text-xs font-semibold rounded-full hover:bg-gray-200 transition-all duration-200 border border-gray-200"
+            className="flex-1 px-3 py-2 bg-gray-100 text-gray-700 text-center text-xs font-semibold rounded-full hover:bg-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-200 border border-gray-200"
           >
             상세보기
           </Link>
           <button
             onClick={() => setIsBiddingModalOpen(true)}
-            className="flex-1 px-3 py-2 bg-blue-500 text-white text-center text-xs font-semibold rounded-full hover:bg-blue-600 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+            className="flex-1 px-3 py-2 bg-secondary text-white text-center text-xs font-semibold rounded-full hover:bg-secondary/90 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
           >
             경매입찰
           </button>

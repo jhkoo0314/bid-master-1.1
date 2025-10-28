@@ -239,18 +239,15 @@ const getPriceBasedSearchTerms = (marketValue: number): string[] => {
  *
  * @param propertyType 매물 유형 (아파트, 오피스텔, 상가, 단독주택, 빌라, 원룸)
  * @param location 지역명
- * @param marketValue 시장가
  * @returns 고유한 이미지 URL 또는 null
  */
 export async function searchUniquePropertyImage(
   propertyType: string,
-  location: string,
-  marketValue: number
+  location: string
 ): Promise<string | null> {
   console.log(`🖼️ [고유 이미지 검색] 매물 이미지 검색 시작`);
   console.log(`  - 매물 유형: ${propertyType}`);
   console.log(`  - 지역: ${location}`);
-  console.log(`  - 시장가: ${marketValue.toLocaleString()}원`);
 
   try {
     // 매물 유형별 캐시 초기화
@@ -266,14 +263,12 @@ export async function searchUniquePropertyImage(
     // 검색어 생성
     const propertyTerms = getPropertySearchTerms(propertyType);
     const regionalTerms = getRegionalSearchTerms(location);
-    const priceTerms = getPriceBasedSearchTerms(marketValue);
 
-    // 검색어 조합 (최대 3개까지)
+    // 검색어 조합 (최대 2개까지)
     const searchTerms = [
       ...propertyTerms.slice(0, 2),
       ...regionalTerms.slice(0, 1),
-      ...priceTerms.slice(0, 1),
-    ].slice(0, 3);
+    ].slice(0, 2);
 
     const searchQuery = searchTerms.join(" ");
 

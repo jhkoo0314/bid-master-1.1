@@ -190,12 +190,18 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div
+      className="min-h-screen transition-colors duration-300"
+      style={{ backgroundColor: "var(--background)" }}
+    >
       {/* 개발자 모드 토글 - 프로덕션에서는 숨김 */}
       {process.env.NODE_ENV !== "production" && <DevModeToggle />}
 
       {/* 헤더 - 좌측 로고와 가운데 메뉴 버튼들 */}
-      <header className="bg-white border-b border-gray-200">
+      <header
+        className="border-b border-gray-200 transition-colors duration-300"
+        style={{ backgroundColor: "var(--background)" }}
+      >
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="flex items-center justify-between py-4">
             {/* 로고 - 좌측 정렬 */}
@@ -206,8 +212,16 @@ export default function HomePage() {
                 className="h-8 w-8 object-contain"
               />
               <div className="flex flex-col items-start">
-                <h1 className="text-2xl font-bold text-gray-900">Bid master</h1>
-                <p className="text-xs text-gray-500 font-medium tracking-wide">
+                <h1
+                  className="text-2xl font-bold transition-colors duration-300"
+                  style={{ color: "var(--foreground)" }}
+                >
+                  Bid master
+                </h1>
+                <p
+                  className="text-xs font-medium tracking-wide transition-colors duration-300"
+                  style={{ color: "var(--color-text-muted)" }}
+                >
                   Fail, Fast, learn faster
                 </p>
               </div>
@@ -219,13 +233,13 @@ export default function HomePage() {
                   console.log("📚 [주요경매용어] 모달 열기 요청");
                   setIsAuctionTermsModalOpen(true);
                 }}
-                className="inline-flex items-center justify-center px-3 py-1.5 bg-white text-gray-900 font-medium rounded-md border-0 hover:border hover:border-gray-200 hover:bg-gray-50 transition-all duration-200 text-xs shadow-none hover:shadow-md"
+                className="inline-flex items-center justify-center px-3 py-1.5 bg-secondary text-white font-medium rounded-md border-0 hover:bg-secondary/90 transition-all duration-200 text-xs shadow-none hover:shadow-md"
               >
                 경매용어
               </button>
               <Link
                 href="/calculator"
-                className="inline-flex items-center justify-center px-3 py-1.5 bg-white text-gray-900 font-medium rounded-md border-0 hover:border hover:border-gray-200 hover:bg-gray-50 transition-all duration-200 text-xs shadow-none hover:shadow-md"
+                className="inline-flex items-center justify-center px-3 py-1.5 bg-accent text-white font-medium rounded-md border-0 hover:bg-accent/90 transition-all duration-200 text-xs shadow-none hover:shadow-md"
               >
                 수익 계산기
               </Link>
@@ -234,17 +248,23 @@ export default function HomePage() {
                   console.log("🔔 [사전 알림] 모달 열기 요청");
                   setIsWaitlistModalOpen(true);
                 }}
-                className="inline-flex items-center justify-center px-3 py-1.5 bg-white text-gray-900 font-medium rounded-md border-0 hover:border hover:border-gray-200 hover:bg-gray-50 transition-all duration-200 text-xs shadow-none hover:shadow-md"
+                className="inline-flex items-center justify-center px-3 py-1.5 bg-primary text-white font-medium rounded-md border-0 hover:bg-primary/90 transition-all duration-200 text-xs shadow-none hover:shadow-md"
               >
                 사전 알림 신청
               </button>
             </div>
             {/* 빈 공간 - 우측 균형을 위해 */}
             <div className="flex flex-col items-end">
-              <h1 className="text-2xl font-bold text-gray-900 opacity-0">
+              <h1
+                className="text-2xl font-bold opacity-0 transition-colors duration-300"
+                style={{ color: "var(--foreground)" }}
+              >
                 Bid master
               </h1>
-              <p className="text-xs text-gray-500 font-medium tracking-wide opacity-0">
+              <p
+                className="text-xs font-medium tracking-wide opacity-0 transition-colors duration-300"
+                style={{ color: "var(--color-text-muted)" }}
+              >
                 Fail, Fast, learn faster
               </p>
             </div>
@@ -253,16 +273,28 @@ export default function HomePage() {
       </header>
 
       {/* 히어로 섹션 - 제목과 설명만 */}
-      <section className="py-16 bg-gray-50 flex items-center justify-center">
+      <section
+        className="py-16 flex items-center justify-center transition-colors duration-300"
+        style={{ backgroundColor: "var(--background)" }}
+      >
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="text-center max-w-4xl mx-auto">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-5xl font-bold mb-6 text-gray-900 leading-tight tracking-tight">
+            <h1
+              className="text-3xl sm:text-4xl md:text-5xl lg:text-5xl font-bold mb-6 leading-tight tracking-tight transition-colors duration-300"
+              style={{ color: "var(--foreground)" }}
+            >
               부동산 경매, 아직도 비싼 돈 주고 배우세요?
             </h1>
-            <p className="text-lg sm:text-xl md:text-2xl text-gray-600 mb-4 font-normal leading-relaxed max-w-3xl mx-auto">
+            <p
+              className="text-lg sm:text-xl md:text-2xl mb-4 font-normal leading-relaxed max-w-3xl mx-auto transition-colors duration-300"
+              style={{ color: "var(--color-text-secondary)" }}
+            >
               로그인 없이 시작하는 경매 학습 시뮬레이션
             </p>
-            <p className="text-base sm:text-lg text-gray-500 mb-8 font-normal leading-relaxed max-w-2xl mx-auto">
+            <p
+              className="text-base sm:text-lg mb-8 font-normal leading-relaxed max-w-2xl mx-auto transition-colors duration-300"
+              style={{ color: "var(--color-text-muted)" }}
+            >
               최대한 많이 실패하고, 더 많이 배울 수 있습니다.
             </p>
             <div className="flex justify-center items-center">
@@ -275,7 +307,7 @@ export default function HomePage() {
                     behavior: "smooth",
                   });
                 }}
-                className="inline-flex items-center justify-center px-8 py-4 bg-white text-black font-semibold rounded-full hover:bg-gray-100 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-sm border border-gray-200"
+                className="inline-flex items-center justify-center px-8 py-4 bg-secondary text-white font-semibold rounded-full hover:bg-secondary/90 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-sm"
               >
                 <span>매물 보러가기</span>
               </button>
@@ -287,16 +319,26 @@ export default function HomePage() {
       </section>
 
       {/* 경매 입찰 섹션 - 컴팩트 Vercel 스타일 */}
-      <section id="properties" className="py-12 bg-gray-50 relative">
+      <section
+        id="properties"
+        className="py-12 relative transition-colors duration-300"
+        style={{ backgroundColor: "var(--background)" }}
+      >
         {/* 상단 구분선 */}
         <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-gray-200 to-transparent"></div>
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-12">
             <div className="mb-6 lg:mb-0">
-              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-3 tracking-tight">
+              <h2
+                className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 tracking-tight transition-colors duration-300"
+                style={{ color: "var(--foreground)" }}
+              >
                 실전 경매 훈련장
               </h2>
-              <p className="text-base sm:text-lg text-gray-600 font-normal leading-relaxed max-w-xl">
+              <p
+                className="text-base sm:text-lg font-normal leading-relaxed max-w-xl transition-colors duration-300"
+                style={{ color: "var(--color-text-secondary)" }}
+              >
                 {activeTab === "basic" &&
                   "기초부터 차근차근 경매의 핵심을 익혀보세요"}
                 {activeTab === "practice" &&
@@ -306,13 +348,16 @@ export default function HomePage() {
               </p>
             </div>
             <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-500 font-medium">
+              <span
+                className="text-sm font-medium transition-colors duration-300"
+                style={{ color: "var(--color-text-muted)" }}
+              >
                 {remainingRefreshes}
               </span>
               <button
                 onClick={handleRefresh}
                 disabled={isLoading}
-                className="inline-flex items-center justify-center px-5 py-2.5 bg-white text-gray-900 font-semibold rounded-full hover:bg-gray-50 transition-all duration-200 disabled:bg-gray-300 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-sm border border-gray-200"
+                className="inline-flex items-center justify-center px-5 py-2.5 bg-accent text-white font-semibold rounded-full hover:bg-accent/90 transition-all duration-200 disabled:bg-gray-300 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-sm"
               >
                 <span className="mr-2">🔄</span>
                 <span>매물 새로고침</span>
@@ -563,7 +608,10 @@ export default function HomePage() {
       </section>
 
       {/* Footer - 컴팩트 Vercel 스타일 */}
-      <footer className="bg-white border-t border-gray-200 py-12">
+      <footer
+        className="border-t border-gray-200 py-12 transition-colors duration-300"
+        style={{ backgroundColor: "var(--background)" }}
+      >
         <div className="container mx-auto px-4 max-w-6xl text-center">
           <p className="text-gray-600 text-base font-medium mb-3">
             © 2025 Bid Master AI. All rights reserved.

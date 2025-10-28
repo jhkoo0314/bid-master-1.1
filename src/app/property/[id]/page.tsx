@@ -978,37 +978,37 @@ export default function PropertyDetailPage() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b">
-                        <th className="text-left py-2">경과</th>
-                        <th className="text-left py-2">진행</th>
-                        <th className="text-left py-2">날짜</th>
+                        <th className="text-left py-2 text-gray-900">경과</th>
+                        <th className="text-left py-2 text-gray-900">진행</th>
+                        <th className="text-left py-2 text-gray-900">날짜</th>
                       </tr>
                     </thead>
                     <tbody>
                       <tr>
-                        <td className="py-2">1일</td>
-                        <td className="py-2">경매 사건 접수</td>
-                        <td className="py-2">
+                        <td className="py-2 text-gray-700">1일</td>
+                        <td className="py-2 text-gray-700">경매 사건 접수</td>
+                        <td className="py-2 text-gray-700">
                           {property.schedule?.caseFiledDate || "정보 없음"}
                         </td>
                       </tr>
                       <tr>
-                        <td className="py-2">6일</td>
-                        <td className="py-2">개시 결정일</td>
-                        <td className="py-2">
+                        <td className="py-2 text-gray-700">6일</td>
+                        <td className="py-2 text-gray-700">개시 결정일</td>
+                        <td className="py-2 text-gray-700">
                           {property.schedule?.decisionDate || "정보 없음"}
                         </td>
                       </tr>
                       <tr>
-                        <td className="py-2">97일</td>
-                        <td className="py-2">배당 요구 종기일</td>
-                        <td className="py-2">
+                        <td className="py-2 text-gray-700">97일</td>
+                        <td className="py-2 text-gray-700">배당 요구 종기일</td>
+                        <td className="py-2 text-gray-700">
                           {property.schedule?.dividendDeadline || "정보 없음"}
                         </td>
                       </tr>
                       <tr>
-                        <td className="py-2">418일</td>
-                        <td className="py-2">최초 경매일</td>
-                        <td className="py-2">
+                        <td className="py-2 text-gray-700">418일</td>
+                        <td className="py-2 text-gray-700">최초 경매일</td>
+                        <td className="py-2 text-gray-700">
                           {property.schedule?.firstAuctionDate || "정보 없음"}
                         </td>
                       </tr>
@@ -1028,18 +1028,20 @@ export default function PropertyDetailPage() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b">
-                        <th className="text-left py-2">경과</th>
-                        <th className="text-left py-2">회차</th>
-                        <th className="text-left py-2">매각기일</th>
-                        <th className="text-left py-2">최저가</th>
-                        <th className="text-left py-2">비율</th>
-                        <th className="text-left py-2">상태</th>
+                        <th className="text-left py-2 text-gray-900">경과</th>
+                        <th className="text-left py-2 text-gray-900">회차</th>
+                        <th className="text-left py-2 text-gray-900">
+                          매각기일
+                        </th>
+                        <th className="text-left py-2 text-gray-900">최저가</th>
+                        <th className="text-left py-2 text-gray-900">비율</th>
+                        <th className="text-left py-2 text-gray-900">상태</th>
                       </tr>
                     </thead>
                     <tbody>
                       {property.biddingHistory?.map((bid, index) => (
                         <tr key={index}>
-                          <td className="py-2">
+                          <td className="py-2 text-gray-700">
                             {bid.round === 1
                               ? "417일"
                               : bid.round === 2
@@ -1050,16 +1052,18 @@ export default function PropertyDetailPage() {
                               ? "585일"
                               : "627일"}
                           </td>
-                          <td className="py-2">{bid.round}</td>
-                          <td className="py-2">
+                          <td className="py-2 text-gray-700">{bid.round}</td>
+                          <td className="py-2 text-gray-700">
                             {new Date(bid.auctionDate).toLocaleDateString(
                               "ko-KR"
                             )}
                           </td>
-                          <td className="py-2">
+                          <td className="py-2 text-gray-700">
                             {bid.minimumPrice.toLocaleString("ko-KR")}원
                           </td>
-                          <td className="py-2">{bid.priceRatio}%</td>
+                          <td className="py-2 text-gray-700">
+                            {bid.priceRatio}%
+                          </td>
                           <td className="py-2">
                             <span
                               className={`px-2 py-1 rounded text-xs ${
@@ -2249,7 +2253,7 @@ export default function PropertyDetailPage() {
                           name: e.target.value,
                         }))
                       }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 bg-white text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="홍길동"
                     />
                   </div>
@@ -2272,7 +2276,7 @@ export default function PropertyDetailPage() {
                           email: e.target.value,
                         }))
                       }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 bg-white text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="example@email.com"
                     />
                   </div>
