@@ -3,6 +3,7 @@
 .env
 .env.local
 .env*.local
+env.example
 
 # Google Service Account Keys (보안상 중요!)
 *.json
