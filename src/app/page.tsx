@@ -13,6 +13,8 @@ import {
 } from "@/components/PropertyFilter";
 import { WaitlistModal } from "@/components/WaitlistModal";
 import { AuctionTermsModal } from "@/components/AuctionTermsModal";
+import HeroBelow from "@/components/HeroBelow";
+import Footer from "@/components/Footer";
 import { useSimulationStore } from "@/store/simulation-store";
 import { generateMultipleProperties } from "@/app/actions/generate-property";
 import { SimulationScenario, DifficultyLevel } from "@/types/simulation";
@@ -294,9 +296,10 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-        {/* 구분선 */}
-        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-gray-200 to-transparent"></div>
       </section>
+
+      {/* HeroBelow 컴포넌트 - 실패 보관소, 감각 테스트, 실시간 현황 */}
+      <HeroBelow />
 
       {/* 경매 입찰 섹션 - 컴팩트 Vercel 스타일 */}
       <section id="properties" className="py-12 relative bg-white">
@@ -422,18 +425,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Footer - 컴팩트 Vercel 스타일 */}
-      <footer className="border-t border-gray-200 py-12 bg-white">
-        <div className="container mx-auto px-4 max-w-6xl text-center">
-          <p className="text-gray-600 text-base font-medium mb-3">
-            © 2025 Bid Master AI. All rights reserved.
-          </p>
-          <p className="text-gray-500 text-sm max-w-xl mx-auto leading-relaxed">
-            본 서비스는 교육 목적으로 제공되며, 실제 법원 경매와 다를 수
-            있습니다.
-          </p>
-        </div>
-      </footer>
+      {/* Footer - 새로운 푸터 컴포넌트 */}
+      <Footer />
 
       {/* 사전 알림 신청 모달 */}
       <WaitlistModal
