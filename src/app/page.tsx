@@ -240,14 +240,25 @@ export default function HomePage() {
                 사전 알림 신청
               </button>
             </div>
-            {/* 빈 공간 - 우측 균형을 위해 */}
-            <div className="flex flex-col items-end">
-              <h1 className="text-2xl font-bold opacity-0 text-gray-900">
-                Bid master
-              </h1>
-              <p className="text-xs font-medium tracking-wide opacity-0 text-gray-500">
-                Fail, Fast, learn faster
-              </p>
+            {/* 로그인 탭 - 우측 상단 (현재 미지원) */}
+            <div className="flex items-center">
+              <div className="inline-flex items-center justify-center px-3 py-1.5 sm:px-4 sm:py-2 font-medium text-xs sm:text-sm bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed opacity-60 hover:bg-gray-400 hover:opacity-80 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200">
+                <svg
+                  className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
+                  />
+                </svg>
+                <span className="hidden sm:inline">로그인</span>
+                <span className="sm:hidden">로그인</span>
+              </div>
             </div>
           </div>
         </div>
@@ -276,7 +287,8 @@ export default function HomePage() {
                     behavior: "smooth",
                   });
                 }}
-                className="inline-flex items-center justify-center px-8 py-3 bg-white text-gray-900 font-semibold rounded-full hover:bg-gray-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-sm border border-gray-200"
+                className="inline-flex items-center justify-center px-8 py-3 border border-gray-300 text-gray-700 font-semibold rounded-full transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-sm"
+                style={{ backgroundColor: "#F3F4F6" }}
               >
                 <span>실전 경매 훈련</span>
                 <svg

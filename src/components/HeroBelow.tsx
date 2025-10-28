@@ -182,7 +182,7 @@ export default function HeroBelow() {
   };
 
   return (
-    <section className="bg-[#f8fafc] py-24">
+    <section className="bg-[#f8fafc] py-16">
       <div className="max-w-6xl mx-auto px-4">
         {/* 1️⃣ 실패 보관소 */}
         <motion.div
