@@ -859,9 +859,9 @@ export default function PropertyDetailPage() {
           <div className="lg:col-span-2">
             {/* 사건 기본정보 */}
             <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-              <div className="bg-white text-black px-6 py-4 border-b border-black">
+              <div className="bg-gray-200 text-black px-6 py-4 border-b border-black">
                 <h2 className="text-xl font-bold">사건 기본정보</h2>
-                <p className="text-black text-sm">조회수: 1,026</p>
+                <p className="text-black text-xs">조회수: 1,026</p>
               </div>
               <div className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -970,12 +970,12 @@ export default function PropertyDetailPage() {
 
             {/* 진행일정 */}
             <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-              <div className="bg-white text-black px-6 py-4 border-b border-black">
+              <div className="bg-gray-200 text-black px-6 py-4 border-b border-black">
                 <h3 className="text-lg font-bold">진행 일정</h3>
               </div>
               <div className="p-6">
                 <div className="overflow-x-auto">
-                  <table className="w-full">
+                  <table className="w-full text-xs">
                     <thead>
                       <tr className="border-b">
                         <th className="text-left py-2 text-gray-900">경과</th>
@@ -1020,22 +1020,32 @@ export default function PropertyDetailPage() {
 
             {/* 매각일정 */}
             <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-              <div className="bg-white text-black px-6 py-4 border-b border-black">
-                <h3 className="text-lg font-bold">매각일정</h3>
+              <div className="bg-gray-200 text-black px-6 py-4 border-b border-black">
+                <h3 className="text-lg font-bold">매각 일정</h3>
               </div>
               <div className="p-6">
                 <div className="overflow-x-auto">
-                  <table className="w-full">
+                  <table className="w-full text-xs">
                     <thead>
                       <tr className="border-b">
-                        <th className="text-left py-2 text-gray-900">경과</th>
-                        <th className="text-left py-2 text-gray-900">회차</th>
-                        <th className="text-left py-2 text-gray-900">
+                        <th className="text-left py-2 text-gray-900 w-16">
+                          경과
+                        </th>
+                        <th className="text-left py-2 text-gray-900 w-16">
+                          회차
+                        </th>
+                        <th className="text-left py-2 text-gray-900 w-32">
                           매각기일
                         </th>
-                        <th className="text-left py-2 text-gray-900">최저가</th>
-                        <th className="text-left py-2 text-gray-900">비율</th>
-                        <th className="text-left py-2 text-gray-900">상태</th>
+                        <th className="text-left py-2 text-gray-900 w-40">
+                          최저가
+                        </th>
+                        <th className="text-left py-2 text-gray-900 w-20">
+                          비율
+                        </th>
+                        <th className="text-left py-2 text-gray-900 w-24">
+                          상태
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1087,15 +1097,15 @@ export default function PropertyDetailPage() {
 
             {/* 감정평가현황 */}
             <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-              <div className="bg-white text-black px-6 py-4 border-b border-black">
+              <div className="bg-gray-200 text-black px-6 py-4 border-b border-black">
                 <h3 className="text-lg font-bold">감정 평가 현황</h3>
-                <p className="text-black text-sm">
+                <p className="text-black text-xs">
                   [감정원 : 경남감정 / 가격시점 : 2024.02.22]
                 </p>
               </div>
               <div className="p-6">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table className="w-full text-xs">
                     <thead>
                       <tr className="border-b">
                         <th className="text-left py-2">목록</th>
@@ -1108,7 +1118,7 @@ export default function PropertyDetailPage() {
                     </thead>
                     <tbody>
                       <tr>
-                        <td className="py-2">목록1</td>
+                        <td className="py-2">1</td>
                         <td className="py-2">{basicInfo.location}</td>
                         <td className="py-2">
                           {property.propertyDetails?.structure ||
@@ -1135,9 +1145,9 @@ export default function PropertyDetailPage() {
 
             {/* 임차인현황 */}
             <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-              <div className="bg-white text-black px-6 py-4 border-b border-black">
+              <div className="bg-gray-200 text-black px-6 py-4 border-b border-black">
                 <h3 className="text-lg font-bold">임차인 현황</h3>
-                <p className="text-black text-sm">
+                <p className="text-black text-xs">
                   [말소기준권리 : 2014. 8. 28.근저당권. 설정, 배당요구종기일 :
                   2024/05/14]
                 </p>
@@ -1154,7 +1164,7 @@ export default function PropertyDetailPage() {
                   </div>
                 </div>
                 <div className="overflow-x-auto">
-                  <table className="w-full">
+                  <table className="w-full text-xs">
                     <thead>
                       <tr className="border-b">
                         <th className="text-left py-2">임차인</th>
@@ -1217,13 +1227,13 @@ export default function PropertyDetailPage() {
 
             {/* 토지등기부 */}
             <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-              <div className="bg-white text-black px-6 py-4 border-b border-black">
+              <div className="bg-gray-200 text-black px-6 py-4 border-b border-black">
                 <h3 className="text-lg font-bold">토지 등기부</h3>
-                <p className="text-black text-sm">등기부상 권리 현황</p>
+                <p className="text-black text-xs">등기부상 권리 현황</p>
               </div>
               <div className="p-6">
                 <div className="overflow-x-auto">
-                  <table className="w-full">
+                  <table className="w-full text-xs">
                     <thead>
                       <tr className="border-b">
                         <th className="text-left py-2">순위</th>
@@ -1366,9 +1376,9 @@ export default function PropertyDetailPage() {
 
             {/* 예상배당표 */}
             <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-              <div className="bg-white text-black px-6 py-4 border-b border-black">
+              <div className="bg-gray-200 text-black px-6 py-4 border-b border-black">
                 <h3 className="text-lg font-bold">예상배당표</h3>
-                <p className="text-black text-sm">
+                <p className="text-black text-xs">
                   경매 매각대금 배당 순서 및 예상 금액
                 </p>
               </div>
@@ -1381,7 +1391,7 @@ export default function PropertyDetailPage() {
                   </p>
                 </div>
                 <div className="overflow-x-auto">
-                  <table className="w-full">
+                  <table className="w-full text-xs">
                     <thead>
                       <tr className="border-b">
                         <th className="text-left py-2">순위</th>
@@ -1497,9 +1507,9 @@ export default function PropertyDetailPage() {
 
             {/* 지역분석 */}
             <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-              <div className="bg-white text-black px-6 py-4 border-b border-black">
+              <div className="bg-gray-200 text-black px-6 py-4 border-b border-black">
                 <h3 className="text-lg font-bold">지역분석</h3>
-                <p className="text-black text-sm">
+                <p className="text-black text-xs">
                   관할 법원, 등기소, 세무서 정보
                 </p>
               </div>
