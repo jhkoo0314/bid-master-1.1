@@ -40,10 +40,6 @@ export default function HomePage() {
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [touchStartX, setTouchStartX] = useState(0);
   const [touchEndX, setTouchEndX] = useState(0);
-  const [activeTab, setActiveTab] = useState<"basic" | "practice" | "advanced">(
-    "basic"
-  );
-  const [isServicePreparing, setIsServicePreparing] = useState(false);
   const [isExpertColumnPreparing, setIsExpertColumnPreparing] = useState(false);
 
   // 페이지 로드 시 초기 매물 생성
@@ -119,13 +115,6 @@ export default function HomePage() {
   const handleFilterChange = (filters: PropertyFilterOptions) => {
     setCurrentFilters(filters);
     console.log("🔍 [메인페이지] 필터 변경:", filters);
-  };
-
-  // 탭 변경 핸들러
-  const handleTabChange = (tab: "basic" | "practice" | "advanced") => {
-    console.log(`📚 [학습탭] 탭 변경: ${tab} - 서비스 준비중으로 전환`);
-    setActiveTab(tab);
-    setIsServicePreparing(true);
   };
 
   // 필터 적용 핸들러 (내부용)
@@ -244,7 +233,7 @@ export default function HomePage() {
                   console.log("🔔 [사전 알림] 모달 열기 요청");
                   setIsWaitlistModalOpen(true);
                 }}
-                className="inline-flex items-center justify-center px-3 py-1.5 font-medium text-xs transition-all duration-200 hover:bg-gray-100 rounded-md text-gray-900 hover:-translate-y-1 hover:shadow-md"
+                className="inline-flex items-center justify-center px-3 py-1.5 font-medium text-xs transition-all duration-200 bg-secondary text-white rounded-md hover:bg-blue-600 hover:-translate-y-1 hover:shadow-md"
               >
                 사전 알림 신청
               </button>
@@ -279,15 +268,28 @@ export default function HomePage() {
               <button
                 onClick={() => {
                   console.log(
-                    "🏠 [매물보러가기] 버튼 클릭 - 매물 섹션으로 스크롤"
+                    "🏠 [실전경매훈련] 버튼 클릭 - 매물 섹션으로 스크롤"
                   );
                   document.getElementById("properties")?.scrollIntoView({
                     behavior: "smooth",
                   });
                 }}
-                className="inline-flex items-center justify-center px-8 py-4 bg-secondary text-white font-semibold rounded-full hover:bg-secondary/90 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-sm"
+                className="inline-flex items-center justify-center px-8 py-3 bg-white text-gray-900 font-semibold rounded-full hover:bg-gray-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-sm border border-gray-200"
               >
-                <span>매물 보러가기</span>
+                <span>실전 경매 훈련</span>
+                <svg
+                  className="ml-2 w-4 h-4 animate-bounce"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                  />
+                </svg>
               </button>
             </div>
           </div>
@@ -303,167 +305,15 @@ export default function HomePage() {
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-12">
             <div className="mb-6 lg:mb-0">
-              <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-3 tracking-tight text-gray-900">
-                실전 경매 훈련장
-              </h2>
-              <p className="text-base sm:text-lg font-normal leading-relaxed max-w-xl text-gray-600">
-                {activeTab === "basic" &&
-                  "기초부터 차근차근 경매의 핵심을 익혀보세요"}
-                {activeTab === "practice" &&
-                  "실제 상황을 바탕으로 경매 기술을 연습하세요"}
-                {activeTab === "advanced" &&
-                  "고급 전략으로 경매의 달인이 되어보세요"}
-              </p>
-            </div>
-            <div className="flex items-center gap-4">
-              <span className="text-sm font-medium text-gray-500">
-                {remainingRefreshes}
-              </span>
-              <button
-                onClick={handleRefresh}
-                disabled={isLoading}
-                className="inline-flex items-center justify-center px-5 py-2.5 text-gray-700 font-semibold rounded-full hover:bg-gray-100 transition-all duration-200 disabled:bg-gray-300 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-sm border border-gray-300"
-              >
-                <span className="mr-2">🔄</span>
-                <span>매물 새로고침</span>
-              </button>
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-3 tracking-tight text-gray-900"></h2>
             </div>
           </div>
-
-          {/* 학습 단계별 카드 탭들 */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            {/* 기본개념익히기 카드 */}
-            <div
-              onClick={() => handleTabChange("basic")}
-              className={`relative cursor-pointer rounded-xl p-4 transition-all duration-300 transform hover:scale-105 ${
-                activeTab === "basic"
-                  ? "bg-white text-black shadow-xl border-2 border-gray-300"
-                  : "bg-white text-black shadow-md hover:shadow-lg border-2 border-gray-200"
-              }`}
-            >
-              <div className="text-center">
-                <div className="flex items-center justify-center mb-3">
-                  <span className="text-xl mr-2">1️⃣</span>
-                  <h3 className="text-lg font-bold text-black">
-                    기본 개념 익히기
-                  </h3>
-                </div>
-                <p className="text-sm text-gray-600 mb-3 leading-relaxed">
-                  경매의 기본 개념부터 차근차근 학습하세요.
-                </p>
-                <div className="flex items-center justify-center space-x-1 text-xs">
-                  <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full">
-                    초급
-                  </span>
-                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
-                    기초
-                  </span>
-                </div>
-              </div>
-              {activeTab === "basic" && (
-                <div className="absolute top-2 right-2 w-5 h-5 bg-white rounded-full flex items-center justify-center">
-                  <span className="text-black text-xs">✓</span>
-                </div>
-              )}
-            </div>
-
-            {/* 실전적용하기 카드 */}
-            <div
-              onClick={() => handleTabChange("practice")}
-              className={`relative cursor-pointer rounded-xl p-4 transition-all duration-300 transform hover:scale-105 ${
-                activeTab === "practice"
-                  ? "bg-white text-black shadow-xl border-2 border-gray-300"
-                  : "bg-white text-black shadow-md hover:shadow-lg border-2 border-gray-200"
-              }`}
-            >
-              <div className="text-center">
-                <div className="flex items-center justify-center mb-3">
-                  <span className="text-xl mr-2">2️⃣</span>
-                  <h3 className="text-lg font-bold text-black">
-                    실전 적용 하기
-                  </h3>
-                </div>
-                <p className="text-sm text-gray-600 mb-3 leading-relaxed">
-                  실제 상황을 바탕으로 경매 기술을 연습하세요.
-                </p>
-                <div className="flex items-center justify-center space-x-1 text-xs">
-                  <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full">
-                    중급
-                  </span>
-                  <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-full">
-                    실전
-                  </span>
-                </div>
-              </div>
-              {activeTab === "practice" && (
-                <div className="absolute top-2 right-2 w-5 h-5 bg-white rounded-full flex items-center justify-center">
-                  <span className="text-black text-xs">✓</span>
-                </div>
-              )}
-            </div>
-
-            {/* 고급전략세우기 카드 */}
-            <div
-              onClick={() => handleTabChange("advanced")}
-              className={`relative cursor-pointer rounded-xl p-4 transition-all duration-300 transform hover:scale-105 ${
-                activeTab === "advanced"
-                  ? "bg-white text-black shadow-xl border-2 border-gray-300"
-                  : "bg-white text-black shadow-md hover:shadow-lg border-2 border-gray-200"
-              }`}
-            >
-              <div className="text-center">
-                <div className="flex items-center justify-center mb-3">
-                  <span className="text-xl mr-2">3️⃣</span>
-                  <h3 className="text-lg font-bold text-black">
-                    고급 전략 세우기
-                  </h3>
-                </div>
-                <p className="text-sm text-gray-600 mb-3 leading-relaxed">
-                  고급 전략으로 경매의 달인이 되어보세요.
-                </p>
-                <div className="flex items-center justify-center space-x-1 text-xs">
-                  <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full">
-                    고급
-                  </span>
-                  <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full">
-                    전략
-                  </span>
-                </div>
-              </div>
-              {activeTab === "advanced" && (
-                <div className="absolute top-2 right-2 w-5 h-5 bg-white rounded-full flex items-center justify-center">
-                  <span className="text-black text-xs">✓</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* 서비스 준비중 메시지 - 카드 탭 또는 전문가 칼럼 클릭 시 표시 */}
-          {isServicePreparing && (
-            <div className="text-center py-12 mb-8">
-              <div className="text-6xl mb-6">🚧</div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">
-                서비스 준비중입니다
-              </h3>
-              <p className="text-base text-gray-600 mb-6 max-w-md mx-auto">
-                더 나은 서비스로 곧 찾아뵙겠습니다
-              </p>
-              <button
-                onClick={() => {
-                  console.log("🔄 [서비스준비중] 돌아가기 버튼 클릭");
-                  setIsServicePreparing(false);
-                }}
-                className="inline-flex items-center justify-center px-6 py-3 bg-black text-white font-semibold rounded-full hover:bg-gray-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-sm"
-              >
-                돌아가기
-              </button>
-            </div>
-          )}
 
           {/* 필터 컴포넌트 */}
           <PropertyFilter
             onFilterChange={handleFilterChange}
             onApplyFilter={handleApplyFilter}
+            onRefresh={handleRefresh}
             isLoading={isLoading}
           />
 

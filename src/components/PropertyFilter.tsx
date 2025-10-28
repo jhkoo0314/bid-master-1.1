@@ -21,12 +21,14 @@ export interface PropertyFilterOptions {
 interface PropertyFilterProps {
   onFilterChange: (filters: PropertyFilterOptions) => void;
   onApplyFilter: () => void;
+  onRefresh?: () => void;
   isLoading?: boolean;
 }
 
 export function PropertyFilter({
   onFilterChange,
   onApplyFilter,
+  onRefresh,
   isLoading = false,
 }: PropertyFilterProps) {
   const [isFilterExpanded, setIsFilterExpanded] = useState(false);
@@ -254,13 +256,15 @@ export function PropertyFilter({
               <div className="flex justify-end items-center mb-4 gap-2">
                 <button
                   onClick={() => {
-                    console.log("🎲 [랜덤 필터] 랜덤 필터 버튼 클릭");
-                    randomizeFilters();
+                    console.log("🔄 [새 매물 불러오기] 새로고침 버튼 클릭");
+                    if (onRefresh) {
+                      onRefresh();
+                    }
                   }}
                   className="px-3 py-1.5 text-xs bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition-colors flex items-center gap-1"
                 >
-                  <span>🎲</span>
-                  <span>랜덤</span>
+                  <span>🔄</span>
+                  <span>새 매물 불러오기</span>
                 </button>
                 <button
                   onClick={() => {
@@ -269,7 +273,7 @@ export function PropertyFilter({
                   }}
                   className="px-3 py-1.5 text-xs bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
                 >
-                  초기화
+                  필터 초기화
                 </button>
               </div>
 

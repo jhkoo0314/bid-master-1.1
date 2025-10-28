@@ -859,7 +859,7 @@ export default function PropertyDetailPage() {
           <div className="lg:col-span-2">
             {/* 사건 기본정보 */}
             <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-              <div className="bg-gray-200 text-black px-6 py-4 border-b border-black">
+              <div className="bg-blue-100 text-black px-6 py-4 border-b border-black">
                 <h2 className="text-xl font-bold">사건 기본정보</h2>
                 <p className="text-black text-xs">조회수: 1,026</p>
               </div>
@@ -970,7 +970,7 @@ export default function PropertyDetailPage() {
 
             {/* 진행일정 */}
             <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-              <div className="bg-gray-200 text-black px-6 py-4 border-b border-black">
+              <div className="bg-blue-100 text-black px-6 py-4 border-b border-black">
                 <h3 className="text-lg font-bold">진행 일정</h3>
               </div>
               <div className="p-6">
@@ -1020,7 +1020,7 @@ export default function PropertyDetailPage() {
 
             {/* 매각일정 */}
             <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-              <div className="bg-gray-200 text-black px-6 py-4 border-b border-black">
+              <div className="bg-blue-100 text-black px-6 py-4 border-b border-black">
                 <h3 className="text-lg font-bold">매각 일정</h3>
               </div>
               <div className="p-6">
@@ -1097,7 +1097,7 @@ export default function PropertyDetailPage() {
 
             {/* 감정평가현황 */}
             <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-              <div className="bg-gray-200 text-black px-6 py-4 border-b border-black">
+              <div className="bg-blue-100 text-black px-6 py-4 border-b border-black">
                 <h3 className="text-lg font-bold">감정 평가 현황</h3>
                 <p className="text-black text-xs">
                   [감정원 : 경남감정 / 가격시점 : 2024.02.22]
@@ -1145,7 +1145,7 @@ export default function PropertyDetailPage() {
 
             {/* 임차인현황 */}
             <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-              <div className="bg-gray-200 text-black px-6 py-4 border-b border-black">
+              <div className="bg-blue-100 text-black px-6 py-4 border-b border-black">
                 <h3 className="text-lg font-bold">임차인 현황</h3>
                 <p className="text-black text-xs">
                   [말소기준권리 : 2014. 8. 28.근저당권. 설정, 배당요구종기일 :
@@ -1227,7 +1227,7 @@ export default function PropertyDetailPage() {
 
             {/* 토지등기부 */}
             <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-              <div className="bg-gray-200 text-black px-6 py-4 border-b border-black">
+              <div className="bg-blue-100 text-black px-6 py-4 border-b border-black">
                 <h3 className="text-lg font-bold">토지 등기부</h3>
                 <p className="text-black text-xs">등기부상 권리 현황</p>
               </div>
@@ -1376,7 +1376,7 @@ export default function PropertyDetailPage() {
 
             {/* 예상배당표 */}
             <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-              <div className="bg-gray-200 text-black px-6 py-4 border-b border-black">
+              <div className="bg-blue-100 text-black px-6 py-4 border-b border-black">
                 <h3 className="text-lg font-bold">예상배당표</h3>
                 <p className="text-black text-xs">
                   경매 매각대금 배당 순서 및 예상 금액
@@ -1507,7 +1507,7 @@ export default function PropertyDetailPage() {
 
             {/* 지역분석 */}
             <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-              <div className="bg-gray-200 text-black px-6 py-4 border-b border-black">
+              <div className="bg-blue-100 text-black px-6 py-4 border-b border-black">
                 <h3 className="text-lg font-bold">지역분석</h3>
                 <p className="text-black text-xs">
                   관할 법원, 등기소, 세무서 정보

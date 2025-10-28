@@ -7,6 +7,7 @@
 import { useState, useEffect } from "react";
 import { SimulationScenario } from "@/types/simulation";
 import { WaitlistModal } from "./WaitlistModal";
+import { CircularProgressChart } from "./CircularProgressChart";
 
 interface BiddingModalProps {
   property: SimulationScenario;
@@ -660,17 +661,6 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                       {biddingResult.totalBidders}명
                     </span>
                   </div>
-                  <div>
-                    <span className="text-gray-600">낙찰가율:</span>
-                    <span className="ml-2 font-semibold">
-                      {Math.round(
-                        (biddingResult.winningBidPrice /
-                          property.basicInfo.appraisalValue) *
-                          100
-                      )}
-                      %
-                    </span>
-                  </div>
                   {biddingResult.isSuccess && (
                     <div>
                       <span className="text-gray-600">남은 잔금:</span>
@@ -682,11 +672,45 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                       </span>
                     </div>
                   )}
-                  <div>
-                    <span className="text-gray-600">경쟁률:</span>
-                    <span className="ml-2 font-semibold">
-                      {biddingResult.competitionRate}
-                    </span>
+                </div>
+
+                {/* 원형 차트로 주요 지표 표시 */}
+                <div className="mt-6 space-y-4">
+                  <h4 className="font-semibold text-gray-900 mb-3">
+                    📊 입찰 결과 분석
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <CircularProgressChart
+                      label="낙찰가율"
+                      value={Math.round(
+                        (biddingResult.winningBidPrice /
+                          property.basicInfo.appraisalValue) *
+                          100
+                      )}
+                      maxValue={100}
+                      unit="%"
+                      color="#3B82F6"
+                    />
+                    <CircularProgressChart
+                      label="경쟁률"
+                      value={parseInt(
+                        biddingResult.competitionRate.split(":")[0]
+                      )}
+                      maxValue={10}
+                      unit=":1"
+                      color="#10B981"
+                    />
+                    <CircularProgressChart
+                      label="감정가율"
+                      value={Math.round(
+                        (property.basicInfo.minimumBidPrice /
+                          property.basicInfo.appraisalValue) *
+                          100
+                      )}
+                      maxValue={100}
+                      unit="%"
+                      color="#F59E0B"
+                    />
                   </div>
                 </div>
               </div>
