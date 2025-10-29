@@ -8,6 +8,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { SimulationScenario } from "@/types/simulation";
 import { WaitlistModal } from "./WaitlistModal";
 import { CircularProgressChart } from "./CircularProgressChart";
+import { AuctionAnalysisModal } from "./AuctionAnalysisModal";
 import { calculatePoints, calculateAccuracy } from "@/lib/point-calculator";
 import { analyzeRights } from "@/lib/rights-analysis-engine";
 import { useSimulationStore } from "@/store/simulation-store";
@@ -55,7 +56,7 @@ interface BiddingResult {
 }
 
 export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
-  const { dashboardStats, updateDashboardStats } = useSimulationStore();
+  const { dashboardStats, updateDashboardStats, devMode } = useSimulationStore();
 
   // 초기값을 빈 객체로 설정하고 useEffect에서 초기화
   const [formData, setFormData] = useState<BiddingFormData>({
@@ -79,6 +80,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
   );
   const [showRightsAnalysis, setShowRightsAnalysis] = useState(false);
   const [showWaitlistModal, setShowWaitlistModal] = useState(false);
+  const [showAnalysisModal, setShowAnalysisModal] = useState(false);
   
   // 이전 isOpen 값 추적 (무한 루프 방지)
   const prevIsOpenRef = useRef(false);
@@ -1009,10 +1011,24 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                       )}
 
                       <div className="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
-                        <p className="text-sm text-blue-800">
+                        <p className="text-sm text-blue-800 mb-3">
                           💡 <strong>분석 요약:</strong> 13가지 권리유형을 종합 분석하여 안전한 입찰 범위를 제시합니다. 
                           리스크 레벨과 권리금을 고려한 최적 입찰가를 참고하세요.
                         </p>
+                        <button
+                          onClick={() => {
+                            if (devMode.isDevMode) {
+                              setShowAnalysisModal(true);
+                              console.log("📊 [권리분석] 자세히보기 버튼 클릭 - 개발자 모드");
+                            } else {
+                              setShowWaitlistModal(true);
+                              console.log("📊 [권리분석] 자세히보기 버튼 클릭 - 일반 모드 (사전알림 신청)");
+                            }
+                          }}
+                          className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                        >
+                          자세히보기
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -1020,13 +1036,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
               </div>
 
               {/* 버튼들 */}
-              <div className="flex justify-between">
-                <button
-                  onClick={handleWaitlistSignup}
-                  className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
-                >
-                  사전 알림 신청
-                </button>
+              <div className="flex justify-end">
                 <button
                   onClick={handleClose}
                   className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -1043,6 +1053,16 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
       <WaitlistModal
         isOpen={showWaitlistModal}
         onClose={() => setShowWaitlistModal(false)}
+      />
+
+      {/* 권리분석 상세 리포트 모달 */}
+      <AuctionAnalysisModal
+        isOpen={showAnalysisModal}
+        onClose={() => {
+          setShowAnalysisModal(false);
+          console.log("📊 [권리분석] 상세 리포트 모달 닫기");
+        }}
+        property={property}
       />
     </div>
   );
