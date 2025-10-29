@@ -33,6 +33,11 @@ interface SimulationStore {
   educationalProperties: SimulationScenario[];
   setEducationalProperties: (properties: SimulationScenario[]) => void;
 
+  // 매물 데이터 저장소 (caseId로 조회)
+  propertyCache: Map<string, SimulationScenario>;
+  setPropertyCache: (caseId: string, scenario: SimulationScenario) => void;
+  getPropertyFromCache: (caseId: string) => SimulationScenario | null;
+
   // 대시보드 통계
   dashboardStats: DashboardStats;
   updateDashboardStats: (stats: Partial<DashboardStats>) => void;
@@ -51,6 +56,7 @@ export const useSimulationStore = create<SimulationStore>()(
         simulationCount: 0,
       },
       educationalProperties: [],
+      propertyCache: new Map(),
       dashboardStats: {
         points: 0,
         xp: 0,
@@ -97,6 +103,27 @@ export const useSimulationStore = create<SimulationStore>()(
 
       setEducationalProperties: (properties) =>
         set({ educationalProperties: properties }),
+
+      // 매물 캐시 액션
+      setPropertyCache: (caseId, scenario) => {
+        console.log(`💾 [캐시] 매물 데이터 저장: ${caseId}`);
+        set((state) => {
+          const newCache = new Map(state.propertyCache);
+          newCache.set(caseId, scenario);
+          return { propertyCache: newCache };
+        });
+      },
+
+      getPropertyFromCache: (caseId) => {
+        const state = get();
+        const scenario = state.propertyCache.get(caseId);
+        if (scenario) {
+          console.log(`💾 [캐시] 매물 데이터 조회 성공: ${caseId}`);
+        } else {
+          console.log(`💾 [캐시] 매물 데이터 없음: ${caseId}`);
+        }
+        return scenario || null;
+      },
 
       // 대시보드 통계 액션
       updateDashboardStats: (newStats) => {

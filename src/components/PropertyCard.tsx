@@ -270,7 +270,7 @@ export function PropertyCard({
         {/* 버튼 - 컴팩트 Vercel 스타일 */}
         <div className="flex gap-2 mt-auto transition-transform duration-300">
           <Link
-            href={`/property/${property.id}`}
+            href={`/property/${property.basicInfo.caseNumber}`}
             className="flex-1 px-3 py-2 bg-gray-100 text-gray-700 text-center text-xs font-semibold rounded-full hover:bg-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-200 border border-gray-200"
           >
             상세보기

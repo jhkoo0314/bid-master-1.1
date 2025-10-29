@@ -1,8 +1,12 @@
+/**
+ * Bid Master AI - 메인 페이지 (Legacy)
+ */
+
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
-import { DevModeToggle } from "@/components/DevModeToggle";
+import { useEffect, useState, useMemo } from "react";
 import PropertyCard from "@/components/PropertyCard";
+import { DevModeToggle } from "@/components/DevModeToggle";
 import {
   PropertyFilter,
   PropertyFilterOptions,
@@ -17,11 +21,10 @@ import { generateMultipleProperties } from "@/app/actions/generate-simulation";
 import { SimulationScenario, DifficultyLevel } from "@/types/simulation";
 import Link from "next/link";
 
-export default function HomePage() {
+export default function LegacyHomePage() {
   const {
     educationalProperties,
     setEducationalProperties,
-    setPropertyCache,
     devMode,
     incrementRefreshCount,
   } = useSimulationStore();
@@ -122,11 +125,6 @@ export default function HomePage() {
         convertedFilters
       );
       setEducationalProperties(properties);
-
-      // 매물 데이터를 스토어에 저장
-      properties.forEach((property) => {
-        setPropertyCache(property.basicInfo.caseNumber, property);
-      });
 
       console.log(`✅ [메인페이지] 매물 생성 완료 (${properties.length}개)`);
     } catch (err) {
@@ -337,3 +335,6 @@ export default function HomePage() {
     </div>
   );
 }
+
+
+
