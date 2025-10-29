@@ -1,6 +1,6 @@
 /**
  * Bid Master AI - 포인트 계산 엔진
- * pointplan_v1.1.md 문서의 포인트 계산 공식 구현
+ * pointplan_v1.2.md 문서의 포인트 계산 규정 구현
  *
  * 핵심 로그: 포인트 계산 과정의 주요 단계에 로그 추가
  */
@@ -21,6 +21,10 @@ export interface PointCalculationInput {
   winningBidPrice: number;
   isSuccess: boolean; // 낙찰 성공 여부
   roi: number; // 투자수익률 (%)
+  hasResponded?: boolean; // 응답 여부 (기본값: true)
+  riskNoteLength?: number; // 리스크 노트 길이 (자수)
+  sessionParticipants?: number; // 세션 참여자 수 (상위 20% 계산용)
+  userRank?: number; // 사용자 순위 (상위 20% 계산용)
   rightsAnalysisResult?: {
     totalAssumedAmount: number;
     safetyMargin: number;
@@ -33,238 +37,171 @@ export interface PointCalculationInput {
 }
 
 /**
- * 포인트 계산 결과
+ * 포인트 계산 결과 (v1.2 규정)
  */
 export interface PointCalculationResult {
-  base: number;
-  multipliers: {
-    D: number; // 난이도 배수
-    S: number; // 희소성 배수
-    C: number; // 복잡도 배수
-    A: number; // 정확도 배수
-    V: number; // 수익률 배수
-    R: number; // 낙찰 성공 배수
+  basePoints: number; // 원점수 (난이도 계수 적용 전)
+  difficultyMultiplier: number; // 난이도 계수 k∈{0.8, 1.0, 1.2}
+  breakdown: {
+    roundParticipation: number; // 라운드 참여: +2pt
+    accurateHit: number; // 정답 적중(±3%): +10pt
+    closeHit: number; // 근접 적중(±5%): +6pt
+    topPerformance: number; // 상위 20% 성과: +4pt
+    riskNote: number; // 리스크 노트: +2pt
+    noResponse: number; // 무응답: -3pt (차감)
   };
-  bonus: number;
-  penalty: number;
-  totalPoints: number;
+  totalPoints: number; // 최종 포인트 (원점수 × 난이도 계수)
   xp: number; // 획득 XP (포인트와 동일)
 }
 
 /**
- * 기본 포인트 계산 (난이도별)
- */
-function getBasePoints(difficulty: DifficultyLevel): number {
-  const basePoints = {
-    초급: 100,
-    중급: 200,
-    고급: 300,
-  };
-  return basePoints[difficulty];
-}
-
-/**
- * 난이도 배수 계산 (D)
+ * 난이도 계수 계산 (v1.2 규정)
+ * k∈{0.8, 1.0, 1.2}
  */
 function getDifficultyMultiplier(difficulty: DifficultyLevel): number {
   const multipliers = {
-    초급: 1.0,
-    중급: 1.5,
-    고급: 2.0,
+    초급: 0.8,
+    중급: 1.0,
+    고급: 1.2,
   };
+  console.log(`📊 [난이도 계수] ${difficulty}: ${multipliers[difficulty]}`);
   return multipliers[difficulty];
 }
 
 /**
- * 희소성 배수 계산 (S)
- * 매물 유형별 희소성 평가
+ * 정답 적중 여부 계산 (v1.2 규정)
+ * 사용자 입찰가가 낙찰가 범위 ±3% 이내인지 확인
  */
-function getScarcityMultiplier(propertyType: PropertyType): number {
-  // 일반적인 매물 유형: 1.0
-  // 희귀한 매물 유형: 1.2
-  const rareTypes: PropertyType[] = ["상가", "도시형생활주택", "근린주택"];
-  return rareTypes.includes(propertyType) ? 1.2 : 1.0;
-}
-
-/**
- * 복잡도 배수 계산 (C)
- * 권리 개수에 따른 복잡도 평가
- */
-function getComplexityMultiplier(rightsCount: number): number {
-  // 권리 개수에 따른 복잡도 배수
-  // 0개: 1.0, 1-2개: 1.1, 3-4개: 1.2, 5개 이상: 1.3
-  if (rightsCount === 0) return 1.0;
-  if (rightsCount <= 2) return 1.1;
-  if (rightsCount <= 4) return 1.2;
-  return 1.3;
-}
-
-/**
- * 정확도 배수 계산 (A)
- * 사용자 입찰가가 권장 입찰가 범위에 얼마나 가까운지 평가
- */
-function getAccuracyMultiplier(
+function checkAccurateHit(
   userBidPrice: number,
-  recommendedRange: { min: number; max: number; optimal: number } | undefined
-): number {
-  // recommendedRange가 undefined인 경우 기본값 제공
-  if (!recommendedRange) {
-    console.log("⚠️ [정확도 배수] 권장 범위가 없어 기본값 사용");
-    return 1.0; // 기본 배수
-  }
-
-  const { min, max, optimal } = recommendedRange;
-
-  // 최적 입찰가와의 차이 계산
-  const distanceFromOptimal = Math.abs(userBidPrice - optimal);
-  const range = max - min;
-  const normalizedDistance = range > 0 ? distanceFromOptimal / range : 1;
-
-  // 정확도 배수: 0.5 ~ 1.5
-  // 최적가에 가까울수록 높은 배수
-  if (normalizedDistance <= 0.1) return 1.5; // 최적가 ±10% 이내
-  if (normalizedDistance <= 0.2) return 1.3; // 최적가 ±20% 이내
-  if (normalizedDistance <= 0.3) return 1.1; // 최적가 ±30% 이내
-  if (normalizedDistance <= 0.5) return 1.0; // 최적가 ±50% 이내
-  if (normalizedDistance <= 0.7) return 0.8; // 최적가 ±70% 이내
-  return 0.5; // 그 외
+  winningBidPrice: number
+): boolean {
+  const diff = Math.abs(userBidPrice - winningBidPrice);
+  const threshold = winningBidPrice * 0.03; // ±3%
+  return diff <= threshold;
 }
 
 /**
- * 수익률 배수 계산 (V)
- * ROI 기반 배수 계산
+ * 근접 적중 여부 계산 (v1.2 규정)
+ * 사용자 입찰가가 낙찰가 범위 ±5% 이내인지 확인 (±3% 초과)
  */
-function getRoiMultiplier(roi: number): number {
-  // ROI가 높을수록 높은 배수
-  // 1.0 ~ 1.5 범위
-  if (roi >= 20) return 1.5; // ROI 20% 이상
-  if (roi >= 15) return 1.4; // ROI 15% 이상
-  if (roi >= 10) return 1.3; // ROI 10% 이상
-  if (roi >= 5) return 1.2; // ROI 5% 이상
-  if (roi >= 0) return 1.1; // ROI 0% 이상
-  if (roi >= -5) return 1.0; // ROI -5% 이상
-  return 0.9; // ROI -5% 미만
-}
-
-/**
- * 낙찰 성공 배수 계산 (R)
- */
-function getSuccessMultiplier(isSuccess: boolean): number {
-  return isSuccess ? 1.0 : 0.3; // 성공 시 1.0, 실패 시 0.3
-}
-
-/**
- * 보너스 포인트 계산
- * 권리분석 정확도 등에 따른 보너스
- */
-function calculateBonus(
-  scenario: SimulationScenario,
-  rightsAnalysisResult: { totalAssumedAmount: number; safetyMargin: number }
-): number {
-  let bonus = 0;
-
-  // 권리분석 보너스: 복잡한 권리 구조를 정확히 분석한 경우
-  if (scenario.rights.length >= 3) {
-    bonus += 20; // 복잡한 권리 구조 분석 보너스
-  }
-
-  // 임차인 대항력 분석 보너스
-  const tenantsWithDaehangryeok = scenario.tenants.filter(
-    (t) => t.hasDaehangryeok
-  ).length;
-  if (tenantsWithDaehangryeok > 0) {
-    bonus += 15; // 대항력 있는 임차인 분석 보너스
-  }
-
-  return bonus;
-}
-
-/**
- * 패널티 계산
- * 최저가 미만 입찰 시 패널티
- */
-function calculatePenalty(
+function checkCloseHit(
   userBidPrice: number,
-  minimumBidPrice: number
-): number {
-  if (userBidPrice < minimumBidPrice) {
-    return 50; // 최저가 미만 입찰 시 패널티
-  }
-  return 0;
+  winningBidPrice: number
+): boolean {
+  const diff = Math.abs(userBidPrice - winningBidPrice);
+  const closeThreshold = winningBidPrice * 0.05; // ±5%
+  const accurateThreshold = winningBidPrice * 0.03; // ±3%
+  return diff > accurateThreshold && diff <= closeThreshold;
 }
 
 /**
- * 포인트 계산 메인 함수
- * 공식: P = Base × D × S × C × A × V × R + Bonus − Penalty
+ * 상위 20% 성과 여부 계산 (v1.2 규정)
+ */
+function checkTopPerformance(
+  userRank?: number,
+  sessionParticipants?: number
+): boolean {
+  if (!userRank || !sessionParticipants) {
+    return false; // 정보가 없으면 false
+  }
+  const top20PercentThreshold = Math.ceil(sessionParticipants * 0.2);
+  return userRank <= top20PercentThreshold;
+}
+
+/**
+ * 포인트 계산 메인 함수 (v1.2 규정)
+ * 규정:
+ * - 라운드 참여: +2pt
+ * - 정답 낙찰가 범위 적중(±3%): +10pt
+ * - 근접 적중(±5%): +6pt
+ * - 상위 20% 성과(세션 기준): +4pt
+ * - 리스크 노트 제출(200자 이상): +2pt
+ * - 무응답: −3pt
+ * - 난이도 계수 k∈{0.8, 1.0, 1.2}: 최종 포인트 = 원점수 × k
  */
 export function calculatePoints(
   input: PointCalculationInput
 ): PointCalculationResult {
-  console.log("⭐ [포인트 계산] 포인트 계산 시작");
+  console.log("⭐ [포인트 계산] 포인트 계산 시작 (v1.2 규정)");
   console.log(`  - 시나리오 ID: ${input.scenario.id}`);
   console.log(
     `  - 난이도: ${input.scenario.educationalContent?.difficulty || "없음"}`
   );
   console.log(`  - 사용자 입찰가: ${input.userBidPrice.toLocaleString()}원`);
+  console.log(`  - 낙찰가: ${input.winningBidPrice.toLocaleString()}원`);
   console.log(`  - 낙찰 성공: ${input.isSuccess ? "예" : "아니오"}`);
-  console.log(`  - ROI: ${input.roi.toFixed(2)}%`);
-
-  // 권리분석 결과 가져오기
-  const rightsAnalysisResult =
-    input.rightsAnalysisResult || analyzeRights(input.scenario);
 
   const difficulty = input.scenario.educationalContent?.difficulty || "초급";
-  const propertyType = input.scenario.basicInfo.propertyType;
-  const rightsCount = input.scenario.rights.length;
+  const hasResponded = input.hasResponded ?? true; // 기본값: true
+  const riskNoteLength = input.riskNoteLength || 0;
 
-  // 기본 포인트
-  const base = getBasePoints(difficulty);
-  console.log(`  - 기본 포인트 (Base): ${base}`);
+  // 원점수 계산 (난이도 계수 적용 전)
+  let basePoints = 0;
+  const breakdown = {
+    roundParticipation: 0,
+    accurateHit: 0,
+    closeHit: 0,
+    topPerformance: 0,
+    riskNote: 0,
+    noResponse: 0,
+  };
 
-  // 각 배수 계산
-  const D = getDifficultyMultiplier(difficulty);
-  const S = getScarcityMultiplier(propertyType);
-  const C = getComplexityMultiplier(rightsCount);
-  const A = getAccuracyMultiplier(
-    input.userBidPrice,
-    rightsAnalysisResult.recommendedBidRange
-  );
-  const V = getRoiMultiplier(input.roi);
-  const R = getSuccessMultiplier(input.isSuccess);
+  // 1. 라운드 참여: +2pt
+  if (hasResponded) {
+    breakdown.roundParticipation = 2;
+    basePoints += 2;
+    console.log("  ✅ 라운드 참여: +2pt");
+  } else {
+    // 무응답: -3pt
+    breakdown.noResponse = -3;
+    basePoints -= 3;
+    console.log("  ❌ 무응답: -3pt");
+  }
 
-  console.log(`  - 난이도 배수 (D): ${D}`);
-  console.log(`  - 희소성 배수 (S): ${S}`);
-  console.log(`  - 복잡도 배수 (C): ${C}`);
-  console.log(`  - 정확도 배수 (A): ${A}`);
-  console.log(`  - 수익률 배수 (V): ${V}`);
-  console.log(`  - 낙찰 성공 배수 (R): ${R}`);
+  // 2. 정답 적중 확인 (±3%)
+  if (hasResponded && checkAccurateHit(input.userBidPrice, input.winningBidPrice)) {
+    breakdown.accurateHit = 10;
+    basePoints += 10;
+    console.log("  🎯 정답 적중(±3%): +10pt");
+  } else if (hasResponded && checkCloseHit(input.userBidPrice, input.winningBidPrice)) {
+    // 3. 근접 적중 확인 (±5%, ±3% 초과)
+    breakdown.closeHit = 6;
+    basePoints += 6;
+    console.log("  🎯 근접 적중(±5%): +6pt");
+  }
 
-  // 보너스 및 패널티 계산
-  const bonus = calculateBonus(input.scenario, rightsAnalysisResult);
-  const penalty = calculatePenalty(
-    input.userBidPrice,
-    input.scenario.basicInfo.minimumBidPrice
-  );
+  // 4. 상위 20% 성과: +4pt
+  if (checkTopPerformance(input.userRank, input.sessionParticipants)) {
+    breakdown.topPerformance = 4;
+    basePoints += 4;
+    console.log("  🏆 상위 20% 성과: +4pt");
+  }
 
-  console.log(`  - 보너스: ${bonus}`);
-  console.log(`  - 패널티: ${penalty}`);
+  // 5. 리스크 노트 제출(200자 이상): +2pt
+  if (riskNoteLength >= 200) {
+    breakdown.riskNote = 2;
+    basePoints += 2;
+    console.log(`  📝 리스크 노트(${riskNoteLength}자): +2pt`);
+  }
 
-  // 최종 포인트 계산
-  const totalPoints = Math.round(
-    base * D * S * C * A * V * R + bonus - penalty
-  );
+  console.log(`  - 원점수 합계: ${basePoints}pt`);
+
+  // 난이도 계수 적용
+  const difficultyMultiplier = getDifficultyMultiplier(difficulty);
+  const totalPoints = Math.round(basePoints * difficultyMultiplier);
 
   // 포인트는 최소 0 이상
   const finalPoints = Math.max(0, totalPoints);
   const xp = finalPoints; // XP는 포인트와 동일
 
-  console.log(`  ✅ 최종 포인트: ${finalPoints} (XP: ${xp})`);
+  console.log(`  ✅ 최종 포인트: ${finalPoints}pt (원점수 ${basePoints} × 난이도계수 ${difficultyMultiplier})`);
+  console.log(`  ✅ 획득 XP: ${xp}`);
 
   return {
-    base,
-    multipliers: { D, S, C, A, V, R },
-    bonus,
-    penalty,
+    basePoints,
+    difficultyMultiplier,
+    breakdown,
     totalPoints: finalPoints,
     xp,
   };
@@ -337,4 +274,75 @@ export function calculateAverageRoi(rois: number[]): number {
 
   const sum = rois.reduce((a, b) => a + b, 0);
   return sum / rois.length;
+}
+
+/**
+ * 레벨 계산 함수 (v1.2 규정)
+ * L1(0–199), L2(200–499), L3(500–999), L4(1000–1999), L5(2000+)
+ * @param totalPoints 누적 포인트
+ * @returns 레벨 정보
+ */
+export interface LevelInfo {
+  level: number; // 현재 레벨 (L1~L5)
+  currentPoints: number; // 현재 포인트
+  minPoints: number; // 현재 레벨 최소 포인트
+  maxPoints: number; // 현재 레벨 최대 포인트
+  nextLevelPoints: number; // 다음 레벨까지 필요한 포인트
+  progressPercent: number; // 레벨 진행률 (%)
+}
+
+export function updateLevel(totalPoints: number): LevelInfo {
+  console.log("📊 [레벨 계산] 레벨 계산 시작");
+  console.log(`  - 누적 포인트: ${totalPoints}pt`);
+
+  // 레벨 기준 정의 (v1.2 규정)
+  const levelRanges = [
+    { level: 1, min: 0, max: 199 },
+    { level: 2, min: 200, max: 499 },
+    { level: 3, min: 500, max: 999 },
+    { level: 4, min: 1000, max: 1999 },
+    { level: 5, min: 2000, max: Infinity },
+  ];
+
+  // 현재 레벨 찾기
+  let currentLevelInfo = levelRanges[0];
+  for (const range of levelRanges) {
+    if (totalPoints >= range.min && totalPoints <= range.max) {
+      currentLevelInfo = range;
+      break;
+    }
+  }
+
+  const { level, min, max } = currentLevelInfo;
+  const progressPercent =
+    max === Infinity
+      ? 100
+      : ((totalPoints - min) / (max - min + 1)) * 100;
+
+  // 다음 레벨까지 필요한 포인트
+  let nextLevelPoints = 0;
+  const currentIndex = levelRanges.findIndex((r) => r.level === level);
+  if (currentIndex < levelRanges.length - 1) {
+    const nextLevel = levelRanges[currentIndex + 1];
+    nextLevelPoints = Math.max(0, nextLevel.min - totalPoints);
+  }
+
+  const levelInfo: LevelInfo = {
+    level,
+    currentPoints: totalPoints,
+    minPoints: min,
+    maxPoints: max === Infinity ? totalPoints : max,
+    nextLevelPoints,
+    progressPercent: Math.max(0, Math.min(100, progressPercent)),
+  };
+
+  console.log(`  ✅ 현재 레벨: L${level} (${min}~${max}pt)`);
+  console.log(`  - 진행률: ${progressPercent.toFixed(1)}%`);
+  if (nextLevelPoints > 0) {
+    console.log(`  - 다음 레벨까지: ${nextLevelPoints}pt`);
+  } else {
+    console.log(`  - 최고 레벨 도달!`);
+  }
+
+  return levelInfo;
 }

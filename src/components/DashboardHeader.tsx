@@ -6,20 +6,24 @@
 "use client";
 
 import { useSimulationStore } from "@/store/simulation-store";
+import { updateLevel } from "@/lib/point-calculator";
 
 export function DashboardHeader() {
   const { devMode, dashboardStats, updateDashboardStats, resetDashboardStats } =
     useSimulationStore();
 
-  // 레벨 계산 (XP 100당 1레벨)
-  const level = Math.floor(dashboardStats.xp / 100) + 1;
+  // 레벨 계산 (v1.2 규정: L1(0-199), L2(200-499), L3(500-999), L4(1000-1999), L5(2000+))
+  const levelInfo = updateLevel(dashboardStats.points);
 
-  // 현재 레벨의 XP 범위
-  const currentLevelXp = (level - 1) * 100;
-  const nextLevelXp = level * 100;
-  const xpProgress =
-    ((dashboardStats.xp - currentLevelXp) / (nextLevelXp - currentLevelXp)) *
-    100;
+  // 레벨 업데이트 로깅 (한 번만)
+  if (dashboardStats.points > 0) {
+    console.log("📊 [대시보드] 레벨 정보:", {
+      레벨: `L${levelInfo.level}`,
+      누적포인트: levelInfo.currentPoints,
+      진행률: `${levelInfo.progressPercent.toFixed(1)}%`,
+      다음레벨까지: levelInfo.nextLevelPoints > 0 ? `${levelInfo.nextLevelPoints}pt` : "최고 레벨",
+    });
+  }
 
   // 개발자 모드에서 통계 초기화
   const resetStats = () => {
@@ -43,7 +47,6 @@ export function DashboardHeader() {
       {/* 대시보드 제목 */}
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-          <span>📊</span>
           <span>시뮬레이션 통계</span>
         </h3>
 
@@ -71,19 +74,17 @@ export function DashboardHeader() {
         {/* 레벨 카드 */}
         <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors">
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-2xl">🎯</span>
             <span className="text-sm font-medium text-gray-800">레벨</span>
           </div>
-          <div className="text-2xl font-bold text-blue-600">Lv.{level}</div>
+          <div className="text-2xl font-bold text-blue-600">L{levelInfo.level}</div>
           <div className="text-xs text-gray-600 mt-1">
-            XP: {dashboardStats.xp} / {nextLevelXp}
+            포인트: {levelInfo.currentPoints} / {levelInfo.maxPoints}
           </div>
         </div>
 
         {/* 포인트 카드 */}
         <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors">
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-2xl">⭐</span>
             <span className="text-sm font-medium text-gray-800">포인트</span>
           </div>
           <div className="text-2xl font-bold text-blue-600">
@@ -95,7 +96,6 @@ export function DashboardHeader() {
         {/* 정확도 카드 */}
         <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors">
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-2xl">🎯</span>
             <span className="text-sm font-medium text-gray-800">정확도</span>
           </div>
           <div className="text-2xl font-bold text-blue-600">
@@ -107,7 +107,6 @@ export function DashboardHeader() {
         {/* 수익률 카드 */}
         <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors">
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-2xl">💰</span>
             <span className="text-sm font-medium text-gray-800">수익률</span>
           </div>
           <div className="text-2xl font-bold text-blue-600">
@@ -122,14 +121,15 @@ export function DashboardHeader() {
         <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
           <span>다음 레벨까지</span>
           <span>
-            {dashboardStats.xp} / {nextLevelXp} XP
+            {levelInfo.currentPoints} / {levelInfo.maxPoints} 포인트
+            {levelInfo.nextLevelPoints > 0 && ` (${levelInfo.nextLevelPoints}pt 남음)`}
           </span>
         </div>
         <div className="w-full bg-gray-200 rounded-full h-2">
           <div
             className="bg-blue-600 h-2 rounded-full transition-all duration-300"
             style={{
-              width: `${Math.min(100, Math.max(0, xpProgress))}%`,
+              width: `${levelInfo.progressPercent}%`,
             }}
           ></div>
         </div>

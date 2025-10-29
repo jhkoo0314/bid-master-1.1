@@ -62,7 +62,8 @@ export default function HomePage() {
 
     return educationalProperties.map((property) => ({
       ...property,
-      propertyImage: propertyImageMap[property.basicInfo.propertyType] || "/placeholder.png",
+      propertyImage:
+        propertyImageMap[property.basicInfo.propertyType] || "/placeholder.png",
     }));
   }, [educationalProperties]);
 
@@ -259,6 +260,15 @@ export default function HomePage() {
                 className="inline-flex items-center justify-center px-3 py-2 font-medium text-xs transition-all duration-200 hover:bg-gray-100 rounded-md text-gray-900 hover:-translate-y-1 hover:shadow-md"
               >
                 수익 계산기
+              </Link>
+              <Link
+                href="/guide"
+                onClick={() => {
+                  console.log("📖 [실전 가이드] 페이지 이동");
+                }}
+                className="inline-flex items-center justify-center px-3 py-2 font-medium text-xs transition-all duration-200 hover:bg-gray-100 rounded-md text-gray-900 hover:-translate-y-1 hover:shadow-md"
+              >
+                실전 가이드
               </Link>
               <button
                 onClick={() => {

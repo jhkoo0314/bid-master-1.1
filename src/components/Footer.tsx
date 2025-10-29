@@ -41,6 +41,14 @@ export default function Footer() {
             >
               문의하기
             </Link>
+            <div className="w-px h-4 bg-gray-300"></div>
+            <Link
+              href="/guide"
+              onClick={() => handleLinkClick("실전 가이드")}
+              className="text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              실전 가이드
+            </Link>
           </div>
 
           {/* 저작권 정보 */}
