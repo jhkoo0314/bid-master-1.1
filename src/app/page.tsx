@@ -65,7 +65,8 @@ export default function HomePage() {
       .map((property) => ({
         ...property,
         propertyImage:
-          propertyImageMap[property.basicInfo.propertyType] || "/placeholder.png",
+          propertyImageMap[property.basicInfo.propertyType] ||
+          "/placeholder.png",
       }));
   }, [educationalProperties]);
 

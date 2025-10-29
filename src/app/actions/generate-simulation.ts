@@ -100,13 +100,17 @@ export async function generateMultipleProperties(
     // 각 난이도별로 매물 생성
     for (let i = 0; i < difficulties.length; i++) {
       const difficulty = difficulties[i];
-      console.log(`🏠 [서버 액션] 매물 ${i + 1}/${difficulties.length} 생성 중 (${difficulty})`);
+      console.log(
+        `🏠 [서버 액션] 매물 ${i + 1}/${
+          difficulties.length
+        } 생성 중 (${difficulty})`
+      );
 
       try {
         // generateSimulationProperty를 직접 호출하여 매물 생성
         const property = await generateSimulationProperty();
         properties.push(property);
-        
+
         console.log(`✅ [서버 액션] 매물 ${i + 1} 생성 완료`);
       } catch (error) {
         console.error(`❌ [서버 액션] 매물 ${i + 1} 생성 실패:`, error);
@@ -119,8 +123,6 @@ export async function generateMultipleProperties(
     return properties;
   } catch (error) {
     console.error("❌ [서버 액션] 다중 매물 생성 실패:", error);
-    throw new Error(
-      "매물 생성에 실패했습니다. 잠시 후 다시 시도해주세요."
-    );
+    throw new Error("매물 생성에 실패했습니다. 잠시 후 다시 시도해주세요.");
   }
 }

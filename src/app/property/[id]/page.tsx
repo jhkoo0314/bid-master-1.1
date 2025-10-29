@@ -1906,7 +1906,6 @@ export default function PropertyDetailPage() {
               </div>
             )}
 
-
             {/* 액션 버튼 */}
             <div className="mt-6 space-y-3">
               <Link

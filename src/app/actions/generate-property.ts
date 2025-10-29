@@ -67,8 +67,6 @@ export async function generateProperty(
     return scenario;
   } catch (error) {
     console.error("❌ [매물 생성] AI 매물 생성 실패:", error);
-    throw new Error(
-      "매물 생성에 실패했습니다. 잠시 후 다시 시도해주세요."
-    );
+    throw new Error("매물 생성에 실패했습니다. 잠시 후 다시 시도해주세요.");
   }
 }
