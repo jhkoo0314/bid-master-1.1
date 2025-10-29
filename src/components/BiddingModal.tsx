@@ -53,6 +53,15 @@ interface BiddingResult {
       optimal: number;
     };
   };
+  auctionAnalysis: {
+    averageBidPrice: number;
+    highestBidPrice: number;
+    lowestBidPrice: number;
+    bidPriceRange: number;
+    marketTrend: 'hot' | 'normal' | 'cold';
+    competitionLevel: 'high' | 'medium' | 'low';
+    successProbability: number;
+  };
 }
 
 export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
@@ -79,6 +88,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
     null
   );
   const [showRightsAnalysis, setShowRightsAnalysis] = useState(false);
+  const [showAuctionAnalysis, setShowAuctionAnalysis] = useState(false);
   const [showWaitlistModal, setShowWaitlistModal] = useState(false);
   const [showAnalysisModal, setShowAnalysisModal] = useState(false);
   
@@ -338,6 +348,34 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
       ROI: `${roi.toFixed(2)}%`,
     });
 
+    // 경매분석 데이터 계산
+    const allBidPrices = virtualBidders.map(bidder => bidder.bidPrice);
+    const averageBidPrice = Math.round(allBidPrices.reduce((sum, price) => sum + price, 0) / allBidPrices.length);
+    const highestBidPrice = Math.max(...allBidPrices);
+    const lowestBidPrice = Math.min(...allBidPrices);
+    const bidPriceRange = highestBidPrice - lowestBidPrice;
+    
+    // 시장 트렌드 분석
+    const marketTrend = bidPriceRatio > 80 ? 'hot' : bidPriceRatio > 60 ? 'normal' : 'cold';
+    
+    // 경쟁 수준 분석
+    const competitionLevel = totalBidders > 8 ? 'high' : totalBidders > 4 ? 'medium' : 'low';
+    
+    // 성공 확률 계산 (사용자 입찰가가 평균보다 높으면 성공 확률 높음)
+    const successProbability = Math.min(95, Math.max(5, 
+      ((formData.bidPrice - averageBidPrice) / averageBidPrice * 50) + 50
+    ));
+
+    console.log("📊 [경매분석] 경매분석 데이터 계산 완료:", {
+      평균입찰가: formatNumber(averageBidPrice),
+      최고입찰가: formatNumber(highestBidPrice),
+      최저입찰가: formatNumber(lowestBidPrice),
+      입찰가범위: formatNumber(bidPriceRange),
+      시장트렌드: marketTrend,
+      경쟁수준: competitionLevel,
+      성공확률: `${successProbability.toFixed(1)}%`
+    });
+
     const result: BiddingResult = {
       userBidPrice: formData.bidPrice,
       isSuccess: isUserWinner,
@@ -353,6 +391,15 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
           max: property.basicInfo.appraisalValue * 0.8,
           optimal: Math.round((property.basicInfo.minimumBidPrice + property.basicInfo.appraisalValue * 0.8) / 2)
         },
+      },
+      auctionAnalysis: {
+        averageBidPrice,
+        highestBidPrice,
+        lowestBidPrice,
+        bidPriceRange,
+        marketTrend,
+        competitionLevel,
+        successProbability,
       },
     };
 
@@ -420,6 +467,12 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
   const handleRightsAnalysisClick = () => {
     setShowRightsAnalysis(!showRightsAnalysis);
     console.log("📊 [권리분석] 권리분석리포트 요약 클릭됨:", !showRightsAnalysis);
+  };
+
+  // 경매 분석 리포트 클릭 핸들러
+  const handleAuctionAnalysisClick = () => {
+    setShowAuctionAnalysis(!showAuctionAnalysis);
+    console.log("📊 [경매분석] 경매분석리포트 요약 클릭됨:", !showAuctionAnalysis);
   };
 
   // 사전 알림 신청 핸들러
@@ -1026,6 +1079,180 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                             }
                           }}
                           className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                        >
+                          자세히보기
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 경매분석리포트 요약 */}
+              <div>
+                <button
+                  onClick={handleAuctionAnalysisClick}
+                  className="w-full text-left p-4 bg-green-50 hover:bg-green-100 rounded-lg border border-green-200 transition-colors"
+                >
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-semibold text-gray-900">
+                      경매분석리포트 요약
+                    </h4>
+                    <span className="text-green-600 text-sm">
+                      {showAuctionAnalysis ? "접기" : "클릭하여 보기"}
+                    </span>
+                  </div>
+                </button>
+
+                {showAuctionAnalysis && biddingResult && (
+                  <div className="mt-3 p-4 bg-gray-50 rounded-lg border">
+                    {console.log("📊 [경매분석] 경매분석리포트 섹션 표시됨:", {
+                      경쟁률: biddingResult.competitionRate,
+                      총입찰자수: biddingResult.totalBidders,
+                      낙찰가: formatNumber(biddingResult.winningBidPrice),
+                      시장트렌드: biddingResult.auctionAnalysis.marketTrend,
+                      경쟁수준: biddingResult.auctionAnalysis.competitionLevel,
+                      성공확률: `${biddingResult.auctionAnalysis.successProbability.toFixed(1)}%`
+                    })}
+                    <div className="space-y-4">
+                      <h5 className="font-semibold text-gray-900 mb-3">경매분석 결과</h5>
+                      
+                      {/* 경매 기본 정보 */}
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="text-gray-600">경쟁률:</span>
+                          <span className="ml-2 font-semibold text-orange-600">
+                            {biddingResult.competitionRate}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">총 입찰자 수:</span>
+                          <span className="ml-2 font-semibold text-blue-600">
+                            {biddingResult.totalBidders}명
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">낙찰가:</span>
+                          <span className="ml-2 font-semibold text-red-600">
+                            {formatNumber(biddingResult.winningBidPrice)}원
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">사용자 입찰가:</span>
+                          <span className={`ml-2 font-semibold ${
+                            biddingResult.isSuccess ? 'text-green-600' : 'text-gray-600'
+                          }`}>
+                            {formatNumber(biddingResult.userBidPrice)}원
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">평균 입찰가:</span>
+                          <span className="ml-2 font-semibold text-purple-600">
+                            {formatNumber(biddingResult.auctionAnalysis.averageBidPrice)}원
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">입찰가 범위:</span>
+                          <span className="ml-2 font-semibold text-indigo-600">
+                            {formatNumber(biddingResult.auctionAnalysis.bidPriceRange)}원
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* 시장 분석 */}
+                      <div className="mt-4 p-3 rounded border">
+                        <h6 className="font-semibold text-gray-900 mb-3">시장 분석</h6>
+                        <div className="grid grid-cols-3 gap-4 text-sm">
+                          <div className="text-center p-3 rounded border">
+                            <div className="text-lg mb-1">
+                              {biddingResult.auctionAnalysis.marketTrend === 'hot' ? '🔥' : 
+                               biddingResult.auctionAnalysis.marketTrend === 'normal' ? '🌡️' : '❄️'}
+                            </div>
+                            <div className="font-semibold text-gray-700">시장 트렌드</div>
+                            <div className={`text-xs ${
+                              biddingResult.auctionAnalysis.marketTrend === 'hot' ? 'text-red-600' :
+                              biddingResult.auctionAnalysis.marketTrend === 'normal' ? 'text-yellow-600' : 'text-blue-600'
+                            }`}>
+                              {biddingResult.auctionAnalysis.marketTrend === 'hot' ? '매우 뜨거움' :
+                               biddingResult.auctionAnalysis.marketTrend === 'normal' ? '보통' : '차가움'}
+                            </div>
+                          </div>
+                          <div className="text-center p-3 rounded border">
+                            <div className="text-lg mb-1">
+                              {biddingResult.auctionAnalysis.competitionLevel === 'high' ? '⚡' :
+                               biddingResult.auctionAnalysis.competitionLevel === 'medium' ? '⚖️' : '🐌'}
+                            </div>
+                            <div className="font-semibold text-gray-700">경쟁 수준</div>
+                            <div className={`text-xs ${
+                              biddingResult.auctionAnalysis.competitionLevel === 'high' ? 'text-red-600' :
+                              biddingResult.auctionAnalysis.competitionLevel === 'medium' ? 'text-yellow-600' : 'text-green-600'
+                            }`}>
+                              {biddingResult.auctionAnalysis.competitionLevel === 'high' ? '높음' :
+                               biddingResult.auctionAnalysis.competitionLevel === 'medium' ? '보통' : '낮음'}
+                            </div>
+                          </div>
+                          <div className="text-center p-3 rounded border">
+                            <div className="text-lg mb-1">🎯</div>
+                            <div className="font-semibold text-gray-700">성공 확률</div>
+                            <div className={`text-xs ${
+                              biddingResult.auctionAnalysis.successProbability > 70 ? 'text-green-600' :
+                              biddingResult.auctionAnalysis.successProbability > 40 ? 'text-yellow-600' : 'text-red-600'
+                            }`}>
+                              {biddingResult.auctionAnalysis.successProbability.toFixed(1)}%
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 입찰 결과 분석 */}
+                      <div className="mt-4 p-3 rounded border">
+                        <div className={`p-3 rounded ${
+                          biddingResult.isSuccess 
+                            ? 'bg-green-50 border-green-200' 
+                            : 'bg-gray-50 border-gray-200'
+                        }`}>
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-lg">
+                              {biddingResult.isSuccess ? '🎉' : '😔'}
+                            </span>
+                            <h6 className="font-semibold text-gray-900">
+                              입찰 결과: {biddingResult.isSuccess ? '성공' : '실패'}
+                            </h6>
+                          </div>
+                          
+                          <div className="text-sm text-gray-700">
+                            <p className="mb-2">
+                              <strong>분석:</strong> {biddingResult.isSuccess 
+                                ? '축하합니다! 경쟁을 뚫고 낙찰에 성공했습니다.' 
+                                : '아쉽게도 낙찰에 실패했습니다. 다음 기회를 노려보세요.'}
+                            </p>
+                            <p>
+                              <strong>경쟁 상황:</strong> 총 {biddingResult.totalBidders}명의 입찰자 중에서 
+                              {biddingResult.competitionRate}의 경쟁률을 기록했습니다.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+
+                      <div className="mt-4 p-3 bg-green-50 rounded border border-green-200">
+                        <p className="text-sm text-green-800 mb-3">
+                          💡 <strong>분석 요약:</strong> AI가 생성한 가상 입찰자들과의 경쟁을 통해 
+                          실제 경매 상황을 시뮬레이션합니다. 경쟁률과 입찰 패턴을 분석하여 
+                          실전 경매에서의 전략을 학습할 수 있습니다.
+                        </p>
+                        <button
+                          onClick={() => {
+                            console.log("📊 [경매분석] 자세히보기 버튼 클릭됨");
+                            if (devMode.isDevMode) {
+                              setShowAnalysisModal(true);
+                              console.log("📊 [경매분석] 자세히보기 버튼 클릭 - 개발자 모드 (상세 리포트 모달 열기)");
+                            } else {
+                              setShowWaitlistModal(true);
+                              console.log("📊 [경매분석] 자세히보기 버튼 클릭 - 일반 모드 (사전알림 신청 모달 열기)");
+                            }
+                          }}
+                          className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
                         >
                           자세히보기
                         </button>
