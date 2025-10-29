@@ -62,12 +62,14 @@ export default function HomePage() {
         filters ? "필터 적용" : "기본 생성"
       );
 
-      // 초급 1개 + 중급 3개 + 고급 2개 = 총 6개
+      // 초급 2개 + 중급 3개 + 고급 3개 = 총 8개
       const difficulties: DifficultyLevel[] = [
+        "초급",
         "초급",
         "중급",
         "중급",
         "중급",
+        "고급",
         "고급",
         "고급",
       ];
@@ -187,38 +189,42 @@ export default function HomePage() {
       {/* 개발자 모드 토글 - 프로덕션에서는 숨김 */}
       {process.env.NODE_ENV !== "production" && <DevModeToggle />}
 
-      {/* 헤더 - 좌측 로고와 가운데 메뉴 버튼들 */}
-      <header className="border-b border-gray-200 bg-white">
+      {/* 헤더 - 모바일 최적화된 레이아웃 */}
+      <header className="border-b border-gray-200 bg-white sticky top-0 z-40">
         <div className="container mx-auto px-4 max-w-6xl">
-          <div className="flex items-center justify-between py-4">
-            {/* 로고 - 좌측 정렬 */}
-            <div className="flex items-center gap-3">
+          {/* 모바일: 세로 레이아웃, 데스크톱: 가로 레이아웃 */}
+          <div className="flex flex-col sm:flex-row items-center justify-between py-3 sm:py-4 gap-3 sm:gap-0">
+            {/* 로고 - 모바일에서 중앙 정렬, 데스크톱에서 좌측 정렬 */}
+            <div className="flex items-center gap-2 sm:gap-3">
               <img
                 src="/bmlogo.png"
                 alt="Bid Master Logo"
-                className="h-8 w-8 object-contain"
+                className="h-6 w-6 sm:h-8 sm:w-8 object-contain"
               />
               <div className="flex flex-col items-start">
-                <h1 className="text-2xl font-bold text-gray-900">Bid master</h1>
-                <p className="text-xs font-medium tracking-wide text-gray-500">
+                <h1 className="text-lg sm:text-2xl font-bold text-gray-900">
+                  Bid master
+                </h1>
+                <p className="text-xs font-medium tracking-wide text-gray-500 hidden sm:block">
                   Fail, Fast, learn faster
                 </p>
               </div>
             </div>
-            {/* 메뉴 버튼들 - 정확한 가운데 정렬 */}
-            <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-2">
+
+            {/* 메뉴 버튼들 - 모바일에서 2x2 그리드, 데스크톱에서 중앙 정렬 */}
+            <div className="grid grid-cols-2 gap-2 w-full sm:w-auto sm:flex sm:items-center sm:gap-2 sm:absolute sm:left-1/2 sm:transform sm:-translate-x-1/2">
               <button
                 onClick={() => {
                   console.log("📚 [주요경매용어] 모달 열기 요청");
                   setIsAuctionTermsModalOpen(true);
                 }}
-                className="inline-flex items-center justify-center px-3 py-1.5 font-medium text-xs transition-all duration-200 hover:bg-gray-100 rounded-md text-gray-900 hover:-translate-y-1 hover:shadow-md"
+                className="inline-flex items-center justify-center px-3 py-2 font-medium text-xs transition-all duration-200 hover:bg-gray-100 rounded-md text-gray-900 hover:-translate-y-1 hover:shadow-md"
               >
                 경매용어
               </button>
               <Link
                 href="/calculator"
-                className="inline-flex items-center justify-center px-3 py-1.5 font-medium text-xs transition-all duration-200 hover:bg-gray-100 rounded-md text-gray-900 hover:-translate-y-1 hover:shadow-md"
+                className="inline-flex items-center justify-center px-3 py-2 font-medium text-xs transition-all duration-200 hover:bg-gray-100 rounded-md text-gray-900 hover:-translate-y-1 hover:shadow-md"
               >
                 수익 계산기
               </Link>
@@ -227,7 +233,7 @@ export default function HomePage() {
                   console.log("📰 [전문가 칼럼] 서비스 준비중 모달 열기 요청");
                   setIsExpertColumnPreparing(true);
                 }}
-                className="inline-flex items-center justify-center px-3 py-1.5 font-medium text-xs transition-all duration-200 hover:bg-gray-100 rounded-md text-gray-900 hover:-translate-y-1 hover:shadow-md"
+                className="inline-flex items-center justify-center px-3 py-2 font-medium text-xs transition-all duration-200 hover:bg-gray-100 rounded-md text-gray-900 hover:-translate-y-1 hover:shadow-md"
               >
                 전문가 칼럼
               </button>
@@ -236,16 +242,17 @@ export default function HomePage() {
                   console.log("🔔 [사전 알림] 모달 열기 요청");
                   setIsWaitlistModalOpen(true);
                 }}
-                className="inline-flex items-center justify-center px-3 py-1.5 font-medium text-xs transition-all duration-200 bg-secondary text-white rounded-md hover:bg-blue-600 hover:-translate-y-1 hover:shadow-md"
+                className="inline-flex items-center justify-center px-3 py-2 font-medium text-xs transition-all duration-200 bg-blue-600 text-white rounded-md hover:bg-blue-700 hover:-translate-y-1 hover:shadow-md"
               >
                 사전 알림 신청
               </button>
             </div>
-            {/* 로그인 탭 - 우측 상단 (현재 미지원) */}
-            <div className="flex items-center">
-              <div className="inline-flex items-center justify-center px-3 py-1.5 sm:px-4 sm:py-2 font-medium text-xs sm:text-sm bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed opacity-60 hover:bg-gray-400 hover:opacity-80 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200">
+
+            {/* 로그인 버튼 - 모바일에서 숨김, 데스크톱에서 표시 */}
+            <div className="hidden sm:flex items-center">
+              <div className="inline-flex items-center justify-center px-3 py-1.5 font-medium text-xs bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed opacity-60 hover:bg-gray-400 hover:opacity-80 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200">
                 <svg
-                  className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2"
+                  className="w-3 h-3 mr-1.5"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -257,8 +264,7 @@ export default function HomePage() {
                     d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
                   />
                 </svg>
-                <span className="hidden sm:inline">로그인</span>
-                <span className="sm:hidden">로그인</span>
+                <span>로그인</span>
               </div>
             </div>
           </div>
@@ -319,12 +325,6 @@ export default function HomePage() {
         {/* 상단 구분선 */}
         <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-gray-200 to-transparent"></div>
         <div className="container mx-auto px-4 max-w-6xl">
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-12">
-            <div className="mb-6 lg:mb-0">
-              <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-3 tracking-tight text-gray-900"></h2>
-            </div>
-          </div>
-
           {/* 대시보드 헤더 */}
           <DashboardHeader />
 
@@ -366,7 +366,7 @@ export default function HomePage() {
           {!isLoading && educationalProperties.length > 0 && (
             <>
               {/* 데스크톱 그리드 */}
-              <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 gap-4 items-stretch">
+              <div className="hidden md:grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 items-stretch">
                 {educationalProperties.map((property) => (
                   <PropertyCard key={property.id} property={property} />
                 ))}

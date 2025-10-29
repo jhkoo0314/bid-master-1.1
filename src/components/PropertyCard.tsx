@@ -160,9 +160,9 @@ export function PropertyCard({ property }: PropertyCardProps) {
   }, []); // 빈 의존성 배열로 한 번만 실행
 
   return (
-    <div className="bg-white rounded-xl shadow-lg transition-all duration-300 overflow-hidden border border-gray-100 flex flex-col h-full min-h-[350px] group">
+    <div className="bg-white rounded-xl shadow-lg transition-all duration-300 overflow-hidden border border-gray-100 flex flex-col h-full min-h-[280px] group">
       {/* 매물 이미지 */}
-      <div className="aspect-[3/2] relative overflow-hidden">
+      <div className="aspect-[3/1] md:aspect-[4/2] lg:aspect-[5/3] relative overflow-hidden">
         {imageLoading ? (
           // 로딩 상태
           <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
@@ -207,7 +207,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
 
         {/* 매물 유형 오버레이 - 단독주택 가독성 개선 */}
         <div
-          className="absolute top-3 left-3 text-black px-3 py-1.5 rounded-full text-xs font-bold shadow-lg border border-gray-300"
+          className="absolute top-3 left-3 text-black px-1.5 py-0.5 rounded-full text-xs font-normal shadow-lg border border-gray-300"
           style={{ backgroundColor: "rgba(255, 255, 255, 0.3)" }}
         >
           {basicInfo.propertyType}
@@ -215,11 +215,11 @@ export function PropertyCard({ property }: PropertyCardProps) {
       </div>
 
       {/* 매물 정보 - 컴팩트 Vercel 스타일 */}
-      <div className="p-4 flex flex-col flex-grow">
+      <div className="p-3 flex flex-col flex-grow">
         {/* 난이도 뱃지 */}
-        <div className="flex items-center gap-2 mb-3">
+        <div className="flex items-center gap-2 mb-2">
           <span
-            className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${difficultyColor}`}
+            className={`px-2 py-1 rounded-full text-sm font-medium border whitespace-nowrap ${difficultyColor}`}
           >
             {educationalContent ? educationalContent.difficulty : "분석중"}
           </span>
@@ -231,17 +231,17 @@ export function PropertyCard({ property }: PropertyCardProps) {
         </div>
 
         {/* 사건번호 */}
-        <div className="text-xs text-gray-500 mb-2 font-medium">
+        <div className="text-xs text-gray-500 mb-1 font-medium">
           {basicInfo.caseNumber}
         </div>
 
         {/* 소재지 */}
-        <h3 className="font-bold text-gray-900 mb-3 line-clamp-2 text-base leading-tight">
+        <h3 className="font-bold text-gray-900 mb-2 line-clamp-2 text-sm leading-tight">
           {basicInfo.locationShort}
         </h3>
 
         {/* 가격 정보 - 컴팩트 Vercel 스타일 */}
-        <div className="space-y-2 mb-4">
+        <div className="space-y-1.5 mb-3">
           <div className="flex justify-between items-center group">
             <span
               className="text-gray-600 group-hover:text-gray-900 transition-colors cursor-help font-medium text-sm"
@@ -274,7 +274,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
                 {property.rights.slice(0, 2).map((right, index) => (
                   <span
                     key={right.id}
-                    className="px-2 py-1 bg-danger/10 text-danger text-xs rounded-full font-medium border border-danger/30"
+                    className="px-1.5 py-0.5 bg-danger/10 text-danger text-xs rounded-full font-normal border border-danger/30"
                     title={`${right.rightType} - ${
                       right.rightHolder
                     } (${right.claimAmount.toLocaleString()}원)`}
@@ -283,13 +283,13 @@ export function PropertyCard({ property }: PropertyCardProps) {
                   </span>
                 ))}
                 {property.rights.length > 2 && (
-                  <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full font-medium">
+                  <span className="px-1.5 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full font-normal">
                     +{property.rights.length - 2}개
                   </span>
                 )}
               </>
             ) : (
-              <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full font-medium">
+              <span className="px-1.5 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full font-normal">
                 권리 분석중...
               </span>
             )}
