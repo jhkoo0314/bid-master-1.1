@@ -15,6 +15,7 @@ import { WaitlistModal } from "@/components/WaitlistModal";
 import { AuctionTermsModal } from "@/components/AuctionTermsModal";
 import HeroBelow from "@/components/HeroBelow";
 import Footer from "@/components/Footer";
+import { DashboardHeader } from "@/components/DashboardHeader";
 import { useSimulationStore } from "@/store/simulation-store";
 import { generateMultipleProperties } from "@/app/actions/generate-property";
 import { SimulationScenario, DifficultyLevel } from "@/types/simulation";
@@ -323,6 +324,9 @@ export default function HomePage() {
               <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-3 tracking-tight text-gray-900"></h2>
             </div>
           </div>
+
+          {/* 대시보드 헤더 */}
+          <DashboardHeader />
 
           {/* 필터 컴포넌트 */}
           <PropertyFilter

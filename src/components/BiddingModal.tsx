@@ -319,6 +319,10 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
     setBiddingResult(result);
     setIsSubmitting(false);
     console.log("입찰 결과:", result);
+    console.log(
+      "💰 [입찰결과] 감정가 표시:",
+      formatNumber(property.basicInfo.appraisalValue) + "원"
+    );
   };
 
   // 모달 닫기
@@ -653,6 +657,12 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                     <span className="text-gray-600">내 입찰가:</span>
                     <span className="ml-2 font-semibold">
                       {formatNumber(biddingResult.userBidPrice)}원
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">감정가:</span>
+                    <span className="ml-2 font-semibold text-blue-600">
+                      {formatNumber(property.basicInfo.appraisalValue)}원
                     </span>
                   </div>
                   <div>

@@ -268,6 +268,16 @@ export function PropertyFilter({
                 </button>
                 <button
                   onClick={() => {
+                    console.log("🎲 [랜덤 필터] 랜덤 탭 버튼 클릭");
+                    randomizeFilters();
+                  }}
+                  className="px-3 py-1.5 text-xs bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors flex items-center gap-1"
+                >
+                  <span>🎲</span>
+                  <span>랜덤</span>
+                </button>
+                <button
+                  onClick={() => {
                     console.log("🔄 [필터 초기화] 초기화 버튼 클릭");
                     resetFilters();
                   }}

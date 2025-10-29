@@ -6,6 +6,13 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { SimulationScenario, DevModeState } from "@/types/simulation";
 
+interface DashboardStats {
+  points: number;
+  xp: number;
+  accuracy: number;
+  roi: number;
+}
+
 interface SimulationStore {
   // 현재 시뮬레이션
   currentScenario: SimulationScenario | null;
@@ -25,6 +32,11 @@ interface SimulationStore {
   // 교육용 매물 목록 (메인 페이지)
   educationalProperties: SimulationScenario[];
   setEducationalProperties: (properties: SimulationScenario[]) => void;
+
+  // 대시보드 통계
+  dashboardStats: DashboardStats;
+  updateDashboardStats: (stats: Partial<DashboardStats>) => void;
+  resetDashboardStats: () => void;
 }
 
 export const useSimulationStore = create<SimulationStore>()(
@@ -39,6 +51,12 @@ export const useSimulationStore = create<SimulationStore>()(
         simulationCount: 0,
       },
       educationalProperties: [],
+      dashboardStats: {
+        points: 0,
+        xp: 0,
+        accuracy: 0,
+        roi: 0,
+      },
 
       // 액션
       setCurrentScenario: (scenario) => set({ currentScenario: scenario }),
@@ -79,11 +97,32 @@ export const useSimulationStore = create<SimulationStore>()(
 
       setEducationalProperties: (properties) =>
         set({ educationalProperties: properties }),
+
+      // 대시보드 통계 액션
+      updateDashboardStats: (newStats) => {
+        console.log("📊 [대시보드] Zustand store 통계 업데이트:", newStats);
+        set((state) => ({
+          dashboardStats: { ...state.dashboardStats, ...newStats },
+        }));
+      },
+
+      resetDashboardStats: () => {
+        console.log("🔄 [대시보드] Zustand store 통계 초기화");
+        set({
+          dashboardStats: {
+            points: 0,
+            xp: 0,
+            accuracy: 0,
+            roi: 0,
+          },
+        });
+      },
     }),
     {
       name: "bid-master-storage", // LocalStorage 키
       partialize: (state) => ({
         devMode: state.devMode,
+        dashboardStats: state.dashboardStats,
         // currentScenario와 userBidPrice는 세션 데이터이므로 저장하지 않음
       }),
     }

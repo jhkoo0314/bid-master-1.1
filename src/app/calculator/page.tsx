@@ -20,7 +20,6 @@ export default function CalculatorPage() {
             >
               ← 메인으로 돌아가기
             </Link>
-            <h1 className="text-2xl font-bold text-gray-900">수익계산기</h1>
             <div></div>
           </div>
         </div>
