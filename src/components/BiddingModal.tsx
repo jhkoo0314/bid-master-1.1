@@ -4,10 +4,13 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { SimulationScenario } from "@/types/simulation";
 import { WaitlistModal } from "./WaitlistModal";
 import { CircularProgressChart } from "./CircularProgressChart";
+import { calculatePoints, calculateAccuracy } from "@/lib/point-calculator";
+import { analyzeRights } from "@/lib/rights-analysis-engine";
+import { useSimulationStore } from "@/store/simulation-store";
 
 interface BiddingModalProps {
   property: SimulationScenario;
@@ -46,6 +49,7 @@ interface BiddingResult {
     recommendedRange: {
       min: number;
       max: number;
+      optimal: number;
     };
   };
   profitAnalysis: {
@@ -56,25 +60,24 @@ interface BiddingResult {
 }
 
 export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
+  const { dashboardStats, updateDashboardStats } = useSimulationStore();
+
+  // 초기값을 빈 객체로 설정하고 useEffect에서 초기화
   const [formData, setFormData] = useState<BiddingFormData>({
-    courtName: property.regionalAnalysis.court.name,
-    biddingDate: property.schedule.currentAuctionDate,
-    caseNumber: property.basicInfo.caseNumber,
-    propertyNumber: "1", // 기본값으로 1 설정
+    courtName: "",
+    biddingDate: "",
+    caseNumber: "",
+    propertyNumber: "1",
     bidderName: "",
     bidderId: "",
     bidderAddress: "",
     bidderPhone: "",
-    bidPrice: property.basicInfo.minimumBidPrice,
-    depositAmount: Math.round(property.basicInfo.minimumBidPrice * 0.1),
+    bidPrice: 0,
+    depositAmount: 0,
     depositMethod: "cash",
   });
-  const [bidPriceDisplay, setBidPriceDisplay] = useState<string>(
-    property.basicInfo.minimumBidPrice.toLocaleString("ko-KR")
-  );
-  const [depositAmountDisplay, setDepositAmountDisplay] = useState<string>(
-    Math.round(property.basicInfo.minimumBidPrice * 0.1).toLocaleString("ko-KR")
-  );
+  const [bidPriceDisplay, setBidPriceDisplay] = useState<string>("0");
+  const [depositAmountDisplay, setDepositAmountDisplay] = useState<string>("0");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [biddingResult, setBiddingResult] = useState<BiddingResult | null>(
     null
@@ -82,6 +85,12 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
   const [showRightsAnalysis, setShowRightsAnalysis] = useState(false);
   const [showProfitAnalysis, setShowProfitAnalysis] = useState(false);
   const [showWaitlistModal, setShowWaitlistModal] = useState(false);
+  
+  // 이전 isOpen 값 추적 (무한 루프 방지)
+  const prevIsOpenRef = useRef(false);
+  const prevPropertyIdRef = useRef<string | undefined>(undefined);
+
+  // useMemo 제거 - useEffect에서만 초기화
 
   // 숫자 포맷팅 함수
   const formatNumber = (value: number): string => {
@@ -226,18 +235,20 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
 
   // 입찰 제출 핸들러
   const handleSubmitBid = async () => {
-    // 최저 입찰가 검증만 수행 (AI가 자동 설정한 항목들은 검증 불필요)
-    if (formData.bidPrice < property.basicInfo.minimumBidPrice) {
-      alert(
-        `최저 입찰가는 ${formatNumber(
-          property.basicInfo.minimumBidPrice
-        )}원입니다.`
-      );
-      return;
-    }
+    console.log("🚀 [입찰버튼] 입찰 제출 버튼 클릭됨!");
+    try {
+      // 최저 입찰가 검증만 수행 (AI가 자동 설정한 항목들은 검증 불필요)
+      if (formData.bidPrice < property.basicInfo.minimumBidPrice) {
+        alert(
+          `최저 입찰가는 ${formatNumber(
+            property.basicInfo.minimumBidPrice
+          )}원입니다.`
+        );
+        return;
+      }
 
-    setIsSubmitting(true);
-    console.log("입찰표 제출 시작:", formData);
+      setIsSubmitting(true);
+      console.log("입찰표 제출 시작:", formData);
 
     // 2초 대기 (로딩 효과)
     await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -264,21 +275,72 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
       (winningBid / property.basicInfo.appraisalValue) * 100
     );
 
-    // 권리분석 결과 (간단한 계산)
-    const totalAssumedAmount = property.rights
-      .filter((right) => right.willBeAssumed)
-      .reduce((sum, right) => sum + right.claimAmount, 0);
-
-    const totalTenantDeposit = property.tenants
-      .filter((tenant) => tenant.willBeAssumed)
-      .reduce((sum, tenant) => sum + tenant.deposit, 0);
-
-    const safetyMargin = totalAssumedAmount + totalTenantDeposit;
+    // 권리분석 결과 (더 정확한 분석 사용)
+    const rightsAnalysisResult = analyzeRights(property);
+    const recommendedRange = rightsAnalysisResult.recommendedBidRange;
+    const totalAssumedAmount = rightsAnalysisResult.totalAssumedAmount;
+    const safetyMargin = rightsAnalysisResult.safetyMargin;
+    
+    // recommendedRange가 undefined인 경우 기본값 제공
+    if (!recommendedRange) {
+      console.log("⚠️ [입찰결과] 권장 범위가 없어 기본값 사용");
+    }
 
     // 수익 분석
     const totalInvestment = winningBid + safetyMargin + 5000000; // 명도비용 500만원 추가
     const expectedProfit = property.basicInfo.marketValue - totalInvestment;
     const roi = (expectedProfit / totalInvestment) * 100;
+
+    // 포인트 계산
+    console.log("⭐ [입찰결과] 포인트 계산 시작");
+    const pointResult = calculatePoints({
+      scenario: property,
+      userBidPrice: formData.bidPrice,
+      winningBidPrice: winningBid,
+      isSuccess: isUserWinner,
+      roi,
+      rightsAnalysisResult: {
+        totalAssumedAmount: rightsAnalysisResult.totalAssumedAmount,
+        safetyMargin: rightsAnalysisResult.safetyMargin,
+        recommendedRange: recommendedRange || {
+          min: property.basicInfo.minimumBidPrice,
+          max: property.basicInfo.appraisalValue * 0.8,
+          optimal: Math.round((property.basicInfo.minimumBidPrice + property.basicInfo.appraisalValue * 0.8) / 2)
+        },
+      },
+    });
+
+    // 정확도 계산
+    const accuracy = calculateAccuracy(formData.bidPrice, recommendedRange);
+
+    // 대시보드 통계 업데이트
+    const currentPoints = dashboardStats.points + pointResult.totalPoints;
+    const currentXp = dashboardStats.xp + pointResult.xp;
+    
+    // 평균 정확도 및 ROI 계산 (이전 정확도와 ROI를 배열로 저장해야 하지만, 
+    // 여기서는 간단히 이동 평균으로 계산)
+    const newAccuracy = dashboardStats.accuracy === 0 
+      ? accuracy 
+      : (dashboardStats.accuracy * 0.7 + accuracy * 0.3); // 가중 평균
+    const newRoi = dashboardStats.roi === 0 
+      ? roi / 100 
+      : (dashboardStats.roi * 0.7 + (roi / 100) * 0.3); // 가중 평균 (ROI는 %를 소수로 변환)
+
+    updateDashboardStats({
+      points: currentPoints,
+      xp: currentXp,
+      accuracy: newAccuracy,
+      roi: newRoi,
+    });
+
+    console.log("📊 [입찰결과] 대시보드 통계 업데이트 완료:", {
+      포인트: pointResult.totalPoints,
+      XP: pointResult.xp,
+      누적포인트: currentPoints,
+      누적XP: currentXp,
+      정확도: `${(accuracy * 100).toFixed(1)}%`,
+      ROI: `${roi.toFixed(2)}%`,
+    });
 
     const result: BiddingResult = {
       userBidPrice: formData.bidPrice,
@@ -288,11 +350,12 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
       winningBidPrice: winningBid,
       virtualBidders,
       rightsAnalysis: {
-        totalAssumedAmount,
-        safetyMargin,
-        recommendedRange: {
+        totalAssumedAmount: rightsAnalysisResult.totalAssumedAmount,
+        safetyMargin: rightsAnalysisResult.safetyMargin,
+        recommendedRange: recommendedRange || {
           min: property.basicInfo.minimumBidPrice,
-          max: Math.round(property.basicInfo.appraisalValue * 0.9),
+          max: property.basicInfo.appraisalValue * 0.8,
+          optimal: Math.round((property.basicInfo.minimumBidPrice + property.basicInfo.appraisalValue * 0.8) / 2)
         },
       },
       profitAnalysis: {
@@ -323,10 +386,16 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
       "💰 [입찰결과] 감정가 표시:",
       formatNumber(property.basicInfo.appraisalValue) + "원"
     );
+    } catch (error) {
+      console.error("❌ [입찰 에러] 입찰 처리 중 오류 발생:", error);
+      setIsSubmitting(false);
+      alert("입찰 처리 중 오류가 발생했습니다. 다시 시도해주세요.");
+    }
   };
 
   // 모달 닫기
   const handleClose = () => {
+    console.log("🔒 [입찰모달] handleClose 호출됨");
     setBiddingResult(null);
     setFormData({
       courtName: property.regionalAnalysis.court.name,
@@ -352,7 +421,9 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
     setShowRightsAnalysis(false);
     setShowProfitAnalysis(false);
     setShowWaitlistModal(false);
+    console.log("🔒 [입찰모달] onClose 호출 전");
     onClose();
+    console.log("🔒 [입찰모달] onClose 호출 후");
   };
 
   // 권리 분석 리포트 클릭 핸들러
@@ -373,11 +444,61 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
     setShowWaitlistModal(true);
   };
 
+  // 모달이 열릴 때 또는 매물이 변경될 때 formData 초기화 (단일 useEffect로 통합)
+  useEffect(() => {
+    // 모달이 닫혀있으면 아무것도 하지 않음
+    if (!isOpen) {
+      prevIsOpenRef.current = false;
+      return;
+    }
+
+    // 모달이 방금 열린 경우 또는 매물이 변경된 경우에만 초기화
+    const isOpening = !prevIsOpenRef.current;
+    const propertyChanged = property.id !== prevPropertyIdRef.current;
+
+
+    if (isOpening || propertyChanged) {
+      console.log("🔓 [입찰모달] 모달 초기화", { isOpening, propertyChanged, propertyId: property.id });
+
+      // property 객체의 현재 값들을 로컬 변수에 저장하여 무한 루프 방지
+      const courtName = property.regionalAnalysis.court.name;
+      const biddingDate = property.schedule.currentAuctionDate;
+      const caseNumber = property.basicInfo.caseNumber;
+      const minimumBidPrice = property.basicInfo.minimumBidPrice;
+
+      setFormData({
+        courtName,
+        biddingDate,
+        caseNumber,
+        propertyNumber: "1",
+        bidderName: "",
+        bidderId: "",
+        bidderAddress: "",
+        bidderPhone: "",
+        bidPrice: minimumBidPrice,
+        depositAmount: Math.round(minimumBidPrice * 0.1),
+        depositMethod: "cash",
+      });
+      setBidPriceDisplay(minimumBidPrice.toLocaleString("ko-KR"));
+      setDepositAmountDisplay(
+        Math.round(minimumBidPrice * 0.1).toLocaleString("ko-KR")
+      );
+      setBiddingResult(null);
+      setShowRightsAnalysis(false);
+      setShowProfitAnalysis(false);
+      setShowWaitlistModal(false);
+    }
+
+    // 이전 값들 업데이트
+    prevIsOpenRef.current = isOpen;
+    prevPropertyIdRef.current = property.id;
+  }, [isOpen, property.id]); // property.id만 의존성으로 사용하여 무한 루프 방지
+
   // ESC 키로 모달 닫기
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        handleClose();
+        onClose();
       }
     };
 
@@ -390,7 +511,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
       document.removeEventListener("keydown", handleEscape);
       document.body.style.overflow = "unset";
     };
-  }, [isOpen]);
+  }, [isOpen]); // onClose는 effect 안에서 최신 값을 참조하므로 dependency에서 제외
 
   if (!isOpen) return null;
 

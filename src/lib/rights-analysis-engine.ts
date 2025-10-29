@@ -349,18 +349,32 @@ function calculateRecommendedBidRange(
 
   const { minimumBidPrice, appraisalValue } = basicInfo;
 
-  // 최소 입찰가: 최저가 + 안전 마진
-  const min = minimumBidPrice + safetyMargin;
+  // 최소 입찰가: 최저가 (안전 마진은 별도로 고려)
+  const min = minimumBidPrice;
 
   // 최대 입찰가: 감정가의 80% (일반적인 시세)
-  const max = appraisalValue * 0.8;
+  const max = Math.round(appraisalValue * 0.8);
 
-  // 최적 입찰가: 최소와 최대의 중간값
-  const optimal = Math.round((min + max) / 2);
+  // 최적 입찰가: 안전 마진을 고려하여 계산
+  // 안전 마진이 크면 최저가에 가까운 값, 작으면 중간 값
+  const marginRatio = safetyMargin / appraisalValue;
+  let optimal: number;
+
+  if (marginRatio > 0.3) {
+    // 안전 마진이 크면 최저가에 가까운 값
+    optimal = Math.round(min + (max - min) * 0.2);
+  } else if (marginRatio > 0.1) {
+    // 중간 수준이면 중간 값
+    optimal = Math.round((min + max) / 2);
+  } else {
+    // 안전 마진이 작으면 감정가에 가까운 값
+    optimal = Math.round(min + (max - min) * 0.8);
+  }
 
   console.log(`  - 최소 입찰가: ${min.toLocaleString()}원`);
   console.log(`  - 최대 입찰가: ${max.toLocaleString()}원`);
   console.log(`  - 최적 입찰가: ${optimal.toLocaleString()}원`);
+  console.log(`  - 안전 마진 비율: ${(marginRatio * 100).toFixed(1)}%`);
 
   return { min, max, optimal };
 }

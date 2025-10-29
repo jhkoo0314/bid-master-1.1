@@ -10,9 +10,12 @@ interface PropertyData {
   propertyType: string; // 매물 유형
 }
 
-export default function HeroBelow() {
+interface HeroBelowProps {
+  activeUsers: number;
+}
+
+export default function HeroBelow({ activeUsers }: HeroBelowProps) {
   const [selected, setSelected] = useState<string | null>(null);
-  const [activeUsers, setActiveUsers] = useState(37);
   const [isClient, setIsClient] = useState(false);
   const [propertyData, setPropertyData] = useState<{
     A: PropertyData;
@@ -61,7 +64,7 @@ export default function HeroBelow() {
     };
   };
 
-  // 간단한 실시간 유저 카운트 시뮬레이션
+  // 클라이언트 사이드 초기화
   useEffect(() => {
     // 클라이언트 사이드 렌더링 확인
     setIsClient(true);
@@ -72,18 +75,6 @@ export default function HeroBelow() {
 
     // 실패기록 데이터 생성
     setFailLogs(generateFailLogs());
-
-    const interval = setInterval(() => {
-      setActiveUsers((prev) => {
-        const change = Math.random() > 0.5 ? 1 : -1;
-        const newCount = Math.max(10, prev + change);
-        console.log(
-          `👥 [실시간현황] 활성 사용자 수 변경: ${prev} → ${newCount}`
-        );
-        return newCount;
-      });
-    }, 2500);
-    return () => clearInterval(interval);
   }, []);
 
   const testResult = propertyData

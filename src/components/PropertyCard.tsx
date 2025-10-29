@@ -4,7 +4,7 @@
 
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useCallback, memo } from "react";
 import { SimulationScenario } from "@/types/simulation";
 import Link from "next/link";
 import { BiddingModal } from "./BiddingModal";
@@ -67,15 +67,34 @@ function getTermExplanation(term: string, keyPoints: string[] = []): string {
 
 interface PropertyCardProps {
   property: SimulationScenario;
+  propertyImage?: string;
 }
 
-export function PropertyCard({ property }: PropertyCardProps) {
+export function PropertyCard({
+  property,
+  propertyImage: initialPropertyImage,
+}: PropertyCardProps) {
   const { basicInfo, educationalContent } = property;
   const [isBiddingModalOpen, setIsBiddingModalOpen] = useState(false);
-  const [propertyImage, setPropertyImage] = useState<string | null>(null);
   const [imageLoading, setImageLoading] = useState(true);
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
-  const hasLoadedImage = useRef(false);
+
+  // props로 받은 이미지를 사용하거나 기본 이미지 사용
+  const displayImage = initialPropertyImage || "/placeholder.png";
+
+  // 모달 닫기 핸들러 - useCallback으로 메모이제이션하여 불필요한 리렌더링 방지
+  const handleCloseModal = useCallback(() => {
+    console.log("🔒 [매물카드] 입찰 모달 닫기");
+    setIsBiddingModalOpen(false);
+  }, []);
+
+  // 모달 열기 핸들러 - useCallback으로 메모이제이션
+  const handleOpenModal = useCallback(() => {
+    console.log("🔓 [매물카드] 입찰 모달 열기");
+    setIsBiddingModalOpen(true);
+  }, []);
+
+  // 호버 애니메이션 핸들러 제거 - CSS 호버 효과만 사용
 
   // 난이도별 색상 - Bid Master 커스텀 컬러 사용
   const difficultyColors = {
@@ -106,51 +125,13 @@ export function PropertyCard({ property }: PropertyCardProps) {
     };
   }, [isImageViewerOpen]);
 
-  // 매물 이미지 로드 - 한 번만 실행
+  // 이미지 로딩 상태를 즉시 완료로 설정 (이미지가 props로 제공됨)
   useEffect(() => {
-    if (hasLoadedImage.current) {
-      return;
-    }
-
-    const loadPropertyImage = () => {
-      console.log(
-        `🖼️ [매물카드] 이미지 로드 시작 - ${basicInfo.propertyType} (${property.id})`
-      );
-      hasLoadedImage.current = true;
-
-      // 매물 유형별 하드코딩된 이미지 매핑
-      const propertyImageMap: Record<string, string> = {
-        아파트: "/apartment.jpg",
-        오피스텔: "/officetel.png", // TODO: 이미지 파일 추가 필요
-        단독주택: "/dandok.jpg",
-        빌라: "/villa.jpg",
-        원룸: "/oneroom.jpg",
-        주택: "/dandok.jpg",
-        다가구주택: "/manyapart.png",
-        근린주택: "/greenapart.jpg",
-        도시형생활주택: "/cityapart.png",
-      };
-
-      const imagePath = propertyImageMap[basicInfo.propertyType] || "/placeholder.png";
-      
-      console.log(`🖼️ [매물카드] ${basicInfo.propertyType} 고정 이미지 사용: ${imagePath}`);
-      setPropertyImage(imagePath);
-      setImageLoading(false);
-    };
-
-    loadPropertyImage();
-  }, []); // 빈 의존성 배열로 한 번만 실행
+    setImageLoading(false);
+  }, []);
 
   return (
-    <div
-      className="bg-white rounded-xl shadow-lg transition-all duration-300 overflow-hidden border border-gray-100 flex flex-col h-full min-h-[280px] group hover:shadow-2xl hover:-translate-y-2 hover:scale-[1.02]"
-      onMouseEnter={() =>
-        console.log("🎨 [매물카드] 호버 애니메이션 시작 - 플로팅 효과")
-      }
-      onMouseLeave={() =>
-        console.log("🎨 [매물카드] 호버 애니메이션 종료 - 원래 위치로")
-      }
-    >
+    <div className="bg-white rounded-xl shadow-lg transition-all duration-300 overflow-hidden border border-gray-100 flex flex-col h-full min-h-[280px]">
       {/* 매물 이미지 */}
       <div className="aspect-[3/1] md:aspect-[4/2] lg:aspect-[5/3] relative overflow-hidden">
         {imageLoading ? (
@@ -163,18 +144,18 @@ export function PropertyCard({ property }: PropertyCardProps) {
               </div>
             </div>
           </div>
-        ) : propertyImage ? (
+        ) : displayImage ? (
           // 실제 이미지
           <img
-            src={propertyImage}
+            src={displayImage}
             alt={`${basicInfo.propertyType} - ${basicInfo.locationShort}`}
-            className="w-full h-full object-cover transition-transform duration-300 hover:scale-105 cursor-pointer"
+            className="w-full h-full object-cover transition-transform duration-300 cursor-pointer hover:scale-105"
             onClick={() => {
               console.log("🖼️ [매물카드] 이미지 클릭 - 풀스크린 뷰어 열기");
               setIsImageViewerOpen(true);
             }}
             onError={(e) => {
-              console.log(`❌ [매물카드] 이미지 로드 실패: ${propertyImage}`);
+              console.log(`❌ [매물카드] 이미지 로드 실패: ${displayImage}`);
               e.currentTarget.style.display = "none";
               e.currentTarget.nextElementSibling?.classList.remove("hidden");
             }}
@@ -184,7 +165,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
         {/* 이미지 로드 실패 시 기본 표시 */}
         <div
           className={`absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center ${
-            propertyImage ? "hidden" : ""
+            displayImage ? "hidden" : ""
           }`}
         >
           <div className="text-center">
@@ -205,7 +186,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
       </div>
 
       {/* 매물 정보 - 컴팩트 Vercel 스타일 */}
-      <div className="p-3 flex flex-col flex-grow group-hover:bg-gradient-to-br group-hover:from-gray-50 group-hover:to-white transition-all duration-300">
+      <div className="p-3 flex flex-col flex-grow transition-all duration-300">
         {/* 난이도 뱃지 */}
         <div className="flex items-center gap-2 mb-2">
           <span
@@ -231,26 +212,26 @@ export function PropertyCard({ property }: PropertyCardProps) {
         </h3>
 
         {/* 가격 정보 - 컴팩트 Vercel 스타일 */}
-        <div className="space-y-1.5 mb-3 group-hover:bg-white/50 group-hover:rounded-lg group-hover:p-2 group-hover:-mx-2 transition-all duration-300">
+        <div className="space-y-1.5 mb-3 transition-all duration-300">
           <div className="flex justify-between items-center group">
             <span
-              className="text-gray-600 group-hover:text-gray-900 transition-colors cursor-help font-medium text-sm"
+              className="text-gray-600 transition-colors cursor-help font-medium text-sm"
               title={getTermExplanation("감정가")}
             >
               감정가
             </span>
-            <span className="text-black text-sm font-semibold group-hover:text-primary transition-colors duration-300">
+            <span className="text-black text-sm font-semibold transition-colors duration-300">
               {basicInfo.appraisalValue.toLocaleString("ko-KR")}원
             </span>
           </div>
           <div className="flex justify-between items-center group">
             <span
-              className="text-gray-600 group-hover:text-gray-900 transition-colors cursor-help font-medium text-sm"
+              className="text-gray-600 transition-colors cursor-help font-medium text-sm"
               title={getTermExplanation("최저가")}
             >
               최저가
             </span>
-            <span className="text-black text-sm font-semibold group-hover:text-primary transition-colors duration-300">
+            <span className="text-black text-sm font-semibold transition-colors duration-300">
               {basicInfo.minimumBidPrice.toLocaleString("ko-KR")}원
             </span>
           </div>
@@ -287,16 +268,16 @@ export function PropertyCard({ property }: PropertyCardProps) {
         </div>
 
         {/* 버튼 - 컴팩트 Vercel 스타일 */}
-        <div className="flex gap-2 mt-auto group-hover:scale-105 transition-transform duration-300">
+        <div className="flex gap-2 mt-auto transition-transform duration-300">
           <Link
             href={`/property/${property.id}`}
-            className="flex-1 px-3 py-2 bg-gray-100 text-gray-700 text-center text-xs font-semibold rounded-full hover:bg-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-200 border border-gray-200 group-hover:border-gray-300"
+            className="flex-1 px-3 py-2 bg-gray-100 text-gray-700 text-center text-xs font-semibold rounded-full hover:bg-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-200 border border-gray-200"
           >
             상세보기
           </Link>
           <button
-            onClick={() => setIsBiddingModalOpen(true)}
-            className="flex-1 px-3 py-2 bg-secondary text-white text-center text-xs font-semibold rounded-full hover:bg-secondary/90 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 group-hover:shadow-2xl"
+            onClick={handleOpenModal}
+            className="flex-1 px-3 py-2 bg-secondary text-white text-center text-xs font-semibold rounded-full hover:bg-secondary/90 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
           >
             경매입찰
           </button>
@@ -307,11 +288,11 @@ export function PropertyCard({ property }: PropertyCardProps) {
       <BiddingModal
         property={property}
         isOpen={isBiddingModalOpen}
-        onClose={() => setIsBiddingModalOpen(false)}
+        onClose={handleCloseModal}
       />
 
       {/* 풀스크린 이미지 뷰어 */}
-      {isImageViewerOpen && propertyImage && (
+      {isImageViewerOpen && displayImage && (
         <div
           className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center"
           onClick={(e) => {
@@ -336,7 +317,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
               ✕
             </button>
             <img
-              src={propertyImage}
+              src={displayImage}
               alt={`${basicInfo.propertyType} - ${basicInfo.locationShort}`}
               className="max-w-full max-h-full object-contain"
               onClick={(e) => e.stopPropagation()}
@@ -347,3 +328,5 @@ export function PropertyCard({ property }: PropertyCardProps) {
     </div>
   );
 }
+
+export default memo(PropertyCard);

@@ -4,8 +4,8 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
-import { PropertyCard } from "@/components/PropertyCard";
+import { useEffect, useState, useMemo } from "react";
+import PropertyCard from "@/components/PropertyCard";
 import { DevModeToggle } from "@/components/DevModeToggle";
 import {
   PropertyFilter,
@@ -44,12 +44,44 @@ export default function HomePage() {
   const [touchStartX, setTouchStartX] = useState(0);
   const [touchEndX, setTouchEndX] = useState(0);
   const [isExpertColumnPreparing, setIsExpertColumnPreparing] = useState(false);
+  const [activeUsers, setActiveUsers] = useState(37);
+
+  // 매물 데이터 메모이제이션 - 무한 루프 방지
+  const memoizedProperties = useMemo(() => {
+    const propertyImageMap: Record<string, string> = {
+      아파트: "/apartment.jpg",
+      오피스텔: "/officetel.png",
+      단독주택: "/dandok.jpg",
+      빌라: "/villa.jpg",
+      원룸: "/oneroom.jpg",
+      주택: "/dandok.jpg",
+      다가구주택: "/manyapart.png",
+      근린주택: "/greenapart.jpg",
+      도시형생활주택: "/cityapart.png",
+    };
+
+    return educationalProperties.map((property) => ({
+      ...property,
+      propertyImage: propertyImageMap[property.basicInfo.propertyType] || "/placeholder.png",
+    }));
+  }, [educationalProperties]);
 
   // 페이지 로드 시 초기 매물 생성
   useEffect(() => {
     if (educationalProperties.length === 0) {
       loadInitialProperties();
     }
+  }, []);
+
+  // 실시간 사용자 수 업데이트 (무한 루프 방지)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveUsers((prev) => {
+        const change = Math.random() > 0.5 ? 1 : -1;
+        return Math.max(10, prev + change);
+      });
+    }, 2500);
+    return () => clearInterval(interval);
   }, []);
 
   const loadInitialProperties = async (filters?: PropertyFilterOptions) => {
@@ -174,7 +206,7 @@ export default function HomePage() {
     const isLeftSwipe = distance > 50;
     const isRightSwipe = distance < -50;
 
-    if (isLeftSwipe && currentCardIndex < educationalProperties.length - 1) {
+    if (isLeftSwipe && currentCardIndex < memoizedProperties.length - 1) {
       console.log("📱 [스와이프] 왼쪽 스와이프 - 다음 카드");
       setCurrentCardIndex(currentCardIndex + 1);
     }
@@ -318,7 +350,7 @@ export default function HomePage() {
       </section>
 
       {/* HeroBelow 컴포넌트 - 실패 보관소, 감각 테스트, 실시간 현황 */}
-      <HeroBelow />
+      <HeroBelow activeUsers={activeUsers} />
 
       {/* 경매 입찰 섹션 - 컴팩트 Vercel 스타일 */}
       <section id="properties" className="py-12 relative bg-white">
@@ -363,12 +395,16 @@ export default function HomePage() {
           )}
 
           {/* 매물 그리드 */}
-          {!isLoading && educationalProperties.length > 0 && (
+          {!isLoading && memoizedProperties.length > 0 && (
             <>
               {/* 데스크톱 그리드 */}
               <div className="hidden md:grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 items-stretch">
-                {educationalProperties.map((property) => (
-                  <PropertyCard key={property.id} property={property} />
+                {memoizedProperties.map((property) => (
+                  <PropertyCard
+                    key={property.id}
+                    property={property}
+                    propertyImage={property.propertyImage}
+                  />
                 ))}
               </div>
 
@@ -386,12 +422,15 @@ export default function HomePage() {
                       transform: `translateX(-${currentCardIndex * 100}%)`,
                     }}
                   >
-                    {educationalProperties.map((property) => (
+                    {memoizedProperties.map((property) => (
                       <div
                         key={property.id}
                         className="w-full flex-shrink-0 px-2"
                       >
-                        <PropertyCard property={property} />
+                        <PropertyCard
+                          property={property}
+                          propertyImage={property.propertyImage}
+                        />
                       </div>
                     ))}
                   </div>
@@ -399,7 +438,7 @@ export default function HomePage() {
 
                 {/* 스와이프 인디케이터 */}
                 <div className="flex justify-center mt-4 space-x-2">
-                  {educationalProperties.map((_, index) => (
+                  {memoizedProperties.map((_, index) => (
                     <button
                       key={index}
                       onClick={() => {
@@ -421,7 +460,7 @@ export default function HomePage() {
           )}
 
           {/* 빈 상태 - 컴팩트 Vercel 스타일 */}
-          {!isLoading && educationalProperties.length === 0 && !error && (
+          {!isLoading && memoizedProperties.length === 0 && !error && (
             <div className="text-center py-16">
               <div className="text-6xl mb-6">📦</div>
               <h3 className="text-xl font-bold text-gray-900 mb-3">

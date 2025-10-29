@@ -28,7 +28,7 @@ export function CircularProgressChart({
 
   return (
     <div className="flex items-center space-x-4">
-      <div className="w-16 h-16">
+      <div className="w-16 h-16 min-w-[64px] min-h-[64px]">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
