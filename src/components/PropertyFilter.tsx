@@ -16,6 +16,7 @@ export interface PropertyFilterOptions {
   };
   difficultyLevel: string;
   rightTypes: string[];
+  propertyCategory: string; // 새로운 매물유형 필터
 }
 
 interface PropertyFilterProps {
@@ -34,6 +35,7 @@ export function PropertyFilter({
   const [isRightTypesExpanded, setIsRightTypesExpanded] = useState(false);
   const [isPropertyTypeExpanded, setIsPropertyTypeExpanded] = useState(false);
   const [isDifficultyExpanded, setIsDifficultyExpanded] = useState(false);
+  const [isPropertyCategoryExpanded, setIsPropertyCategoryExpanded] = useState(false);
 
   // 필터 상태
   const [filters, setFilters] = useState<PropertyFilterOptions>({
@@ -42,6 +44,7 @@ export function PropertyFilter({
     priceRange: { min: 0, max: 5000000000 },
     difficultyLevel: "",
     rightTypes: [],
+    propertyCategory: "",
   });
 
   // 필터 옵션들
@@ -52,6 +55,10 @@ export function PropertyFilter({
     { value: "단독주택", label: "단독주택" },
     { value: "빌라", label: "빌라" },
     { value: "원룸", label: "원룸" },
+    { value: "주택", label: "주택" },
+    { value: "다가구주택", label: "다가구주택" },
+    { value: "근린주택", label: "근린주택" },
+    { value: "도시형생활주택", label: "도시형생활주택" },
   ];
 
   const regionOptions = [
@@ -88,6 +95,15 @@ export function PropertyFilter({
     { value: "분묘기지권", label: "분묘기지권" },
   ];
 
+  // 새로운 매물유형 카테고리 옵션들
+  const propertyCategoryOptions = [
+    { value: "주거용", label: "주거용" },
+    { value: "상업용", label: "상업용" },
+    { value: "업무용", label: "업무용" },
+    { value: "공업용", label: "공업용" },
+    { value: "기타", label: "기타" },
+  ];
+
   // 가격 범위 옵션
   const priceRanges = [
     { label: "1억 이하", min: 0, max: 100000000 },
@@ -108,7 +124,7 @@ export function PropertyFilter({
 
   // 토글 버튼 선택 함수
   const selectFilter = (
-    key: "propertyType" | "region" | "difficultyLevel",
+    key: "propertyType" | "region" | "difficultyLevel" | "propertyCategory",
     value: string
   ) => {
     const currentValue = filters[key] as string;
@@ -161,6 +177,7 @@ export function PropertyFilter({
       priceRange: { min: 0, max: 5000000000 }, // 가격범위는 항상 전체로 설정 (랜덤 생성)
       difficultyLevel: randomDifficulty,
       rightTypes: randomRightTypes,
+      propertyCategory: "", // 매물유형 카테고리도 빈 값으로 설정
     };
 
     setFilters(randomFilters);
@@ -176,6 +193,7 @@ export function PropertyFilter({
       priceRange: { min: 0, max: 5000000000 },
       difficultyLevel: "",
       rightTypes: [],
+      propertyCategory: "",
     };
     setFilters(defaultFilters);
     onFilterChange(defaultFilters);
@@ -194,7 +212,70 @@ export function PropertyFilter({
       <div className="flex items-center justify-between gap-4">
         {/* 좌측: 필터 옵션들 */}
         <div className="flex items-center gap-3 flex-1">
-          {/* 매물 유형 */}
+          {/* 새로운 매물유형 토글 필터 */}
+          <div className="relative">
+            <button
+              onClick={() => {
+                console.log(
+                  "🏢 [매물유형 토글] 토글 클릭:",
+                  !isPropertyCategoryExpanded
+                );
+                setIsPropertyCategoryExpanded(!isPropertyCategoryExpanded);
+              }}
+              className="px-2 py-1.5 text-left bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-all duration-200 flex items-center justify-between min-w-[120px]"
+            >
+              <div className="flex items-center gap-1 text-xs text-gray-700">
+                <span>🏢</span>
+                <span>{filters.propertyCategory || "매물유형"}</span>
+              </div>
+              <svg
+                className={`w-3 h-3 text-gray-400 transition-transform duration-200 ${
+                  isPropertyCategoryExpanded ? "rotate-180" : ""
+                }`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </button>
+
+            {isPropertyCategoryExpanded && (
+              <div className="absolute z-10 mt-1 w-full border border-gray-300 rounded-md bg-white shadow-lg">
+                <div className="p-2">
+                  {propertyCategoryOptions.map((option) => (
+                    <label
+                      key={option.value}
+                      className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-1 rounded"
+                    >
+                      <input
+                        type="radio"
+                        name="propertyCategory"
+                        value={option.value}
+                        checked={filters.propertyCategory === option.value}
+                        onChange={() => {
+                          console.log("🏢 [매물유형] 선택:", option.value);
+                          selectFilter("propertyCategory", option.value);
+                          setIsPropertyCategoryExpanded(false);
+                        }}
+                        className="text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-xs text-gray-700">
+                        {option.label}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 기존 매물 유형 */}
           <div className="relative">
             <button
               onClick={() => {
@@ -208,7 +289,7 @@ export function PropertyFilter({
             >
               <div className="flex items-center gap-1 text-xs text-gray-700">
                 <span>🏠</span>
-                <span>{filters.propertyType || "매물유형"}</span>
+                <span>{filters.propertyType || "주거용 부동산"}</span>
               </div>
               <svg
                 className={`w-3 h-3 text-gray-400 transition-transform duration-200 ${

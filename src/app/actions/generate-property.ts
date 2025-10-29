@@ -41,6 +41,78 @@ function generateRealisticPriceRanges(propertyType: string, region: string) {
       제주: { min: 1.5, max: 5 },
       기타: { min: 1, max: 4 },
     },
+    주택: {
+      "서울 강남": { min: 6, max: 20 },
+      "서울 비강남": { min: 3, max: 10 },
+      "경기 신도시": { min: 2, max: 8 },
+      인천: { min: 1.5, max: 6 },
+      부산: { min: 1, max: 5 },
+      대구: { min: 0.8, max: 4 },
+      대전: { min: 1, max: 4.5 },
+      광주: { min: 0.6, max: 3 },
+      울산: { min: 0.8, max: 3.5 },
+      세종: { min: 1.2, max: 5 },
+      강원: { min: 0.5, max: 2.5 },
+      충청: { min: 0.6, max: 3 },
+      전라: { min: 0.5, max: 2.8 },
+      경상: { min: 0.6, max: 3.2 },
+      제주: { min: 1, max: 4 },
+      기타: { min: 0.6, max: 3 },
+    },
+    다가구주택: {
+      "서울 강남": { min: 4, max: 12 },
+      "서울 비강남": { min: 2.5, max: 8 },
+      "경기 신도시": { min: 2, max: 6 },
+      인천: { min: 1.5, max: 5 },
+      부산: { min: 1, max: 4 },
+      대구: { min: 0.8, max: 3.5 },
+      대전: { min: 1, max: 4 },
+      광주: { min: 0.6, max: 2.5 },
+      울산: { min: 0.8, max: 3 },
+      세종: { min: 1, max: 4 },
+      강원: { min: 0.4, max: 2 },
+      충청: { min: 0.5, max: 2.5 },
+      전라: { min: 0.4, max: 2.2 },
+      경상: { min: 0.5, max: 2.8 },
+      제주: { min: 0.8, max: 3.5 },
+      기타: { min: 0.5, max: 2.5 },
+    },
+    근린주택: {
+      "서울 강남": { min: 5, max: 15 },
+      "서울 비강남": { min: 2.5, max: 8 },
+      "경기 신도시": { min: 2, max: 6 },
+      인천: { min: 1.5, max: 5 },
+      부산: { min: 1, max: 4 },
+      대구: { min: 0.8, max: 3.5 },
+      대전: { min: 1, max: 4 },
+      광주: { min: 0.6, max: 2.5 },
+      울산: { min: 0.8, max: 3 },
+      세종: { min: 1, max: 4 },
+      강원: { min: 0.4, max: 2 },
+      충청: { min: 0.5, max: 2.5 },
+      전라: { min: 0.4, max: 2.2 },
+      경상: { min: 0.5, max: 2.8 },
+      제주: { min: 0.8, max: 3.5 },
+      기타: { min: 0.5, max: 2.5 },
+    },
+    도시형생활주택: {
+      "서울 강남": { min: 3, max: 10 },
+      "서울 비강남": { min: 2, max: 6 },
+      "경기 신도시": { min: 1.5, max: 5 },
+      인천: { min: 1.2, max: 4 },
+      부산: { min: 0.8, max: 3 },
+      대구: { min: 0.6, max: 2.5 },
+      대전: { min: 0.8, max: 3 },
+      광주: { min: 0.5, max: 2 },
+      울산: { min: 0.6, max: 2.5 },
+      세종: { min: 0.8, max: 3 },
+      강원: { min: 0.3, max: 1.5 },
+      충청: { min: 0.4, max: 2 },
+      전라: { min: 0.3, max: 1.8 },
+      경상: { min: 0.4, max: 2.2 },
+      제주: { min: 0.6, max: 2.5 },
+      기타: { min: 0.4, max: 2 },
+    },
     오피스텔: {
       "서울 강남": { min: 3, max: 8 },
       "서울 비강남": { min: 2, max: 5 },
@@ -182,6 +254,14 @@ function generateRealisticPriceRanges(propertyType: string, region: string) {
         return 0.35; // ±17.5% (중간-높음)
       case "원룸":
         return 0.3; // ±15% (중간)
+      case "주택":
+        return 0.25; // ±12.5% (중간)
+      case "다가구주택":
+        return 0.3; // ±15% (중간)
+      case "근린주택":
+        return 0.28; // ±14% (중간)
+      case "도시형생활주택":
+        return 0.32; // ±16% (중간-높음)
       default:
         return 0.25; // ±12.5% (기본값)
     }
@@ -398,6 +478,78 @@ function getPropertyTypeInfo(
           "임대 수요",
         ],
       };
+    case "주택":
+      return {
+        typeDescription: `${location} ${priceCategory} 주택`,
+        characteristics: [
+          "일반 주거용 건물",
+          "개별 소유",
+          "다양한 규모",
+          "거주용 부동산",
+          "투자 가능",
+        ],
+        marketFactors: [
+          "지역 개발",
+          "교통 편의",
+          "환경",
+          "학교",
+          "상업시설",
+        ],
+      };
+    case "다가구주택":
+      return {
+        typeDescription: `${location} ${priceCategory} 다가구주택`,
+        characteristics: [
+          "여러 가구 거주",
+          "투자용 부동산",
+          "임대 수익",
+          "관리 필요",
+          "다양한 임차인",
+        ],
+        marketFactors: [
+          "임대 수요",
+          "교통편의",
+          "상업시설",
+          "학원가",
+          "투자 수익률",
+        ],
+      };
+    case "근린주택":
+      return {
+        typeDescription: `${location} ${priceCategory} 근린주택`,
+        characteristics: [
+          "근린생활시설 포함",
+          "상업+주거 복합",
+          "투자용 부동산",
+          "임대 수익",
+          "상권 의존",
+        ],
+        marketFactors: [
+          "상권 활성도",
+          "유동인구",
+          "교통편의",
+          "임대 수요",
+          "투자 수익률",
+        ],
+      };
+    case "도시형생활주택":
+      return {
+        typeDescription: `${location} ${priceCategory} 도시형생활주택`,
+        characteristics: [
+          "도시형 주거시설",
+          "소형 주거공간",
+          "1-2인 가구",
+          "투자용 부동산",
+          "임대 수익",
+        ],
+        marketFactors: [
+          "대학가",
+          "직장인",
+          "교통편의",
+          "상업시설",
+          "임대 수요",
+        ],
+      };
     default:
       return {
         typeDescription: `${location} ${priceCategory} 부동산`,
@@ -531,6 +683,86 @@ function generatePropertySpecificAnalysis(
       baseAnalysis.strategy =
         "지역 개발 전망과 개별 특성을 고려한 장기적 관점 입찰";
       break;
+
+    case "주택":
+      baseAnalysis.learningGoal = "일반 주택의 거주용 특성과 투자 가치 분석";
+      baseAnalysis.keyPoints = [
+        "거주용 특성",
+        "투자 가능성",
+        "지역 개발",
+        "교통 편의",
+        "환경 변화",
+      ];
+      baseAnalysis.risks = [
+        "거주용 한계",
+        "지역 쇠퇴",
+        "교통 불편",
+        "환경 악화",
+        "투자 실패",
+      ];
+      baseAnalysis.strategy =
+        "거주용과 투자용 가치를 모두 고려한 균형적 입찰";
+      break;
+
+    case "다가구주택":
+      baseAnalysis.learningGoal = "다가구주택의 임대 수익과 관리 복잡성 분석";
+      baseAnalysis.keyPoints = [
+        "임대 수익률",
+        "다양한 임차인",
+        "관리 복잡성",
+        "교통편의",
+        "상업시설",
+      ];
+      baseAnalysis.risks = [
+        "임차인 관리",
+        "공실 위험",
+        "관리비 부담",
+        "임대료 하락",
+        "투자 실패",
+      ];
+      baseAnalysis.strategy =
+        "임대 수익률과 관리 부담을 고려한 현실적 입찰";
+      break;
+
+    case "근린주택":
+      baseAnalysis.learningGoal = "근린주택의 상업+주거 복합 특성과 상권 의존성 분석";
+      baseAnalysis.keyPoints = [
+        "상업+주거 복합",
+        "상권 의존성",
+        "임대 수익",
+        "유동인구",
+        "상권 변화",
+      ];
+      baseAnalysis.risks = [
+        "상권 쇠퇴",
+        "임대료 하락",
+        "공실 증가",
+        "상권 이전",
+        "투자 실패",
+      ];
+      baseAnalysis.strategy =
+        "상권 분석과 복합 용도 특성을 고려한 상업적 가치 평가";
+      break;
+
+    case "도시형생활주택":
+      baseAnalysis.learningGoal = "도시형생활주택의 소형 주거 특성과 임대 수익 분석";
+      baseAnalysis.keyPoints = [
+        "소형 주거공간",
+        "1-2인 가구",
+        "임대 수익",
+        "교통편의",
+        "상업시설",
+      ];
+      baseAnalysis.risks = [
+        "소형 공간 한계",
+        "임대 수요 변화",
+        "공실 위험",
+        "관리비 부담",
+        "투자 실패",
+      ];
+      baseAnalysis.strategy =
+        "소형 주거 특성과 임대 수익을 고려한 투자적 관점 입찰";
+      break;
   }
 
   // 난이도별 복잡도 추가
@@ -589,6 +821,30 @@ function generateStepByStepGuide(propertyType: string, complexity: any) {
       baseSteps.step3 = "환경 변화와 장기적 가치 평가하기";
       baseSteps.step4 = "지역 쇠퇴와 개발 지연 리스크 점검하기";
       break;
+    case "주택":
+      baseSteps.step1 = "거주용 특성과 투자 가능성 분석하기";
+      baseSteps.step2 = "지역 개발과 교통 편의성 확인하기";
+      baseSteps.step3 = "환경 변화와 장기적 가치 평가하기";
+      baseSteps.step4 = "거주용 한계와 투자 실패 리스크 점검하기";
+      break;
+    case "다가구주택":
+      baseSteps.step1 = "임대 수익률과 임차인 현황 분석하기";
+      baseSteps.step2 = "관리 복잡성과 교통편의성 확인하기";
+      baseSteps.step3 = "상업시설과 임대 수요 평가하기";
+      baseSteps.step4 = "임차인 관리와 공실 위험 점검하기";
+      break;
+    case "근린주택":
+      baseSteps.step1 = "상권 활성도와 유동인구 분석하기";
+      baseSteps.step2 = "상업+주거 복합 특성 확인하기";
+      baseSteps.step3 = "임대 수익과 상권 변화 전망 평가하기";
+      baseSteps.step4 = "상권 쇠퇴와 공실 증가 리스크 점검하기";
+      break;
+    case "도시형생활주택":
+      baseSteps.step1 = "소형 주거공간과 1-2인 가구 특성 분석하기";
+      baseSteps.step2 = "교통편의성과 상업시설 확인하기";
+      baseSteps.step3 = "임대 수익과 임대 수요 평가하기";
+      baseSteps.step4 = "소형 공간 한계와 공실 위험 점검하기";
+      break;
   }
 
   return baseSteps;
@@ -631,6 +887,34 @@ function generateProTips(
         "지역 개발 계획을 확인하세요",
         "교통 편의성을 정확히 파악하세요",
         "개별 관리 부담을 고려하세요"
+      );
+      break;
+    case "주택":
+      baseTips.push(
+        "거주용과 투자용 가치를 모두 고려하세요",
+        "지역 개발 전망을 확인하세요",
+        "교통 편의성을 정확히 파악하세요"
+      );
+      break;
+    case "다가구주택":
+      baseTips.push(
+        "임대 수익률을 현실적으로 계산하세요",
+        "임차인 관리 부담을 고려하세요",
+        "공실 위험을 정확히 평가하세요"
+      );
+      break;
+    case "근린주택":
+      baseTips.push(
+        "상권 활성도를 정확히 파악하세요",
+        "유동인구와 상권 변화를 분석하세요",
+        "상업+주거 복합 특성을 고려하세요"
+      );
+      break;
+    case "도시형생활주택":
+      baseTips.push(
+        "소형 주거공간의 한계를 고려하세요",
+        "1-2인 가구 수요를 분석하세요",
+        "임대 수익과 공실 위험을 평가하세요"
       );
       break;
   }
@@ -687,6 +971,26 @@ function generateLegalTerms(propertyType: string, complexity: any) {
       baseTerms["개별관리"] = "단독주택의 개별적인 관리와 유지보수";
       baseTerms["확장가능성"] = "단독주택을 확장하거나 개조할 수 있는 가능성";
       baseTerms["지역개발"] = "해당 지역의 개발 계획과 전망";
+      break;
+    case "주택":
+      baseTerms["거주용특성"] = "일반 주택의 거주용 부동산 특성";
+      baseTerms["투자가능성"] = "주택의 투자용 부동산으로 활용 가능한 정도";
+      baseTerms["지역개발"] = "해당 지역의 개발 계획과 전망";
+      break;
+    case "다가구주택":
+      baseTerms["임대수익률"] = "다가구주택의 임대료 수익을 투자금액으로 나눈 비율";
+      baseTerms["임차인관리"] = "여러 가구의 임차인들을 관리하는 복잡성";
+      baseTerms["공실위험"] = "임차인이 없어서 발생하는 수익 손실 위험";
+      break;
+    case "근린주택":
+      baseTerms["상권의존성"] = "근린주택이 상권 활성도에 의존하는 정도";
+      baseTerms["복합용도"] = "상업과 주거가 복합된 부동산 용도";
+      baseTerms["유동인구"] = "근린주택 주변을 지나다니는 사람들의 수";
+      break;
+    case "도시형생활주택":
+      baseTerms["소형주거공간"] = "도시형생활주택의 작은 주거 공간 특성";
+      baseTerms["1-2인이구"] = "도시형생활주택의 주요 거주 대상 가구";
+      baseTerms["임대수요"] = "도시형생활주택에 대한 임대 수요의 정도";
       break;
   }
 
@@ -1732,6 +2036,522 @@ export async function generateProperty(
             structure: "철근콘크리트조",
             usage: "빌라",
             floor: "5층",
+          },
+        ],
+      },
+      {
+        propertyType: "주택",
+        locations: [
+          // 서울
+          { full: "서울특별시 강남구 도곡동 123-45", short: "서울 강남구" },
+          { full: "서울특별시 서초구 반포동 456-78", short: "서울 서초구" },
+          { full: "서울특별시 송파구 잠실동 789-12", short: "서울 송파구" },
+          { full: "서울특별시 마포구 상암동 101-23", short: "서울 마포구" },
+          { full: "서울특별시 영등포구 여의도동 202-34", short: "서울 영등포구" },
+          { full: "서울특별시 용산구 이태원동 303-45", short: "서울 용산구" },
+          // 경기도
+          { full: "경기도 성남시 분당구 정자동 202-34", short: "경기 성남시" },
+          { full: "경기도 수원시 영통구 광교동 303-45", short: "경기 수원시" },
+          { full: "경기도 고양시 일산동구 정발산로 404-56", short: "경기 고양시" },
+          { full: "경기도 부천시 원미구 상동 505-67", short: "경기 부천시" },
+          { full: "경기도 안양시 동안구 시민대로 606-78", short: "경기 안양시" },
+          // 인천
+          { full: "인천광역시 연수구 송도국제대로 707-89", short: "인천 연수구" },
+          { full: "인천광역시 남동구 구월로 808-90", short: "인천 남동구" },
+          { full: "인천광역시 서구 청라국제대로 909-01", short: "인천 서구" },
+          // 부산
+          { full: "부산광역시 해운대구 센텀중앙로 101-12", short: "부산 해운대구" },
+          { full: "부산광역시 사상구 낙동대로 202-23", short: "부산 사상구" },
+          { full: "부산광역시 금정구 중앙대로 303-34", short: "부산 금정구" },
+          // 대구
+          { full: "대구광역시 수성구 동대구로 404-45", short: "대구 수성구" },
+          { full: "대구광역시 달서구 성서공단로 505-56", short: "대구 달서구" },
+          { full: "대구광역시 동구 동부로 606-67", short: "대구 동구" },
+          // 대전
+          { full: "대전광역시 유성구 대학로 707-78", short: "대전 유성구" },
+          { full: "대전광역시 서구 둔산로 808-89", short: "대전 서구" },
+          { full: "대전광역시 중구 중앙로 909-90", short: "대전 중구" },
+          // 광주
+          { full: "광주광역시 서구 상무대로 101-01", short: "광주 서구" },
+          { full: "광주광역시 북구 첨단과기로 202-12", short: "광주 북구" },
+          { full: "광주광역시 남구 제봉로 303-23", short: "광주 남구" },
+          // 울산
+          { full: "울산광역시 남구 삼산로 404-34", short: "울산 남구" },
+          { full: "울산광역시 동구 방어진순환도로 505-45", short: "울산 동구" },
+          { full: "울산광역시 북구 화봉로 606-56", short: "울산 북구" },
+          // 세종
+          { full: "세종특별자치시 한누리대로 707-67", short: "세종시" },
+          { full: "세종특별자치시 도움3로 808-78", short: "세종시" },
+          // 강원도
+          { full: "강원도 춘천시 중앙로 909-89", short: "강원 춘천시" },
+          { full: "강원도 원주시 원일로 101-10", short: "강원 원주시" },
+          { full: "강원도 강릉시 중앙로 202-21", short: "강원 강릉시" },
+          { full: "강원도 속초시 중앙로 303-32", short: "강원 속초시" },
+          // 충청북도
+          { full: "충청북도 청주시 상당구 상당로 404-43", short: "충북 청주시" },
+          { full: "충청북도 충주시 중앙로 505-54", short: "충북 충주시" },
+          { full: "충청북도 제천시 의림대로 606-65", short: "충북 제천시" },
+          // 충청남도
+          { full: "충청남도 천안시 동남구 신부동 707-76", short: "충남 천안시" },
+          { full: "충청남도 공주시 봉황로 808-87", short: "충남 공주시" },
+          { full: "충청남도 아산시 신창면 순천향로 909-98", short: "충남 아산시" },
+          // 전라북도
+          { full: "전라북도 전주시 완산구 효자로 101-09", short: "전북 전주시" },
+          { full: "전라북도 군산시 해망로 202-18", short: "전북 군산시" },
+          { full: "전라북도 익산시 익산대로 303-27", short: "전북 익산시" },
+          // 전라남도
+          { full: "전라남도 목포시 해안로 404-36", short: "전남 목포시" },
+          { full: "전라남도 여수시 중앙로 505-45", short: "전남 여수시" },
+          { full: "전라남도 순천시 중앙로 606-54", short: "전남 순천시" },
+          // 경상북도
+          { full: "경상북도 포항시 남구 대잠동 707-63", short: "경북 포항시" },
+          { full: "경상북도 경주시 원화로 808-72", short: "경북 경주시" },
+          { full: "경상북도 구미시 구미대로 909-81", short: "경북 구미시" },
+          // 경상남도
+          { full: "경상남도 창원시 의창구 중앙대로 101-90", short: "경남 창원시" },
+          { full: "경상남도 진주시 진주대로 202-99", short: "경남 진주시" },
+          { full: "경상남도 김해시 김해대로 303-08", short: "경남 김해시" },
+          // 제주도
+          { full: "제주특별자치도 제주시 연동 404-17", short: "제주 제주시" },
+          { full: "제주특별자치도 서귀포시 중앙로 505-26", short: "제주 서귀포시" },
+        ],
+        propertyDetails: [
+          {
+            landArea: 165.3,
+            landAreaPyeong: 50.0,
+            buildingArea: 99.2,
+            buildingAreaPyeong: 30.0,
+            buildingType: "30평형",
+            structure: "철근콘크리트조",
+            usage: "주택",
+            floor: "2층",
+          },
+          {
+            landArea: 132.2,
+            landAreaPyeong: 40.0,
+            buildingArea: 82.6,
+            buildingAreaPyeong: 25.0,
+            buildingType: "25평형",
+            structure: "철근콘크리트조",
+            usage: "주택",
+            floor: "2층",
+          },
+          {
+            landArea: 198.3,
+            landAreaPyeong: 60.0,
+            buildingArea: 115.7,
+            buildingAreaPyeong: 35.0,
+            buildingType: "35평형",
+            structure: "철근콘크리트조",
+            usage: "주택",
+            floor: "3층",
+          },
+          {
+            landArea: 99.2,
+            landAreaPyeong: 30.0,
+            buildingArea: 66.1,
+            buildingAreaPyeong: 20.0,
+            buildingType: "20평형",
+            structure: "철근콘크리트조",
+            usage: "주택",
+            floor: "2층",
+          },
+          {
+            landArea: 231.4,
+            landAreaPyeong: 70.0,
+            buildingArea: 132.2,
+            buildingAreaPyeong: 40.0,
+            buildingType: "40평형",
+            structure: "철근콘크리트조",
+            usage: "주택",
+            floor: "3층",
+          },
+        ],
+      },
+      {
+        propertyType: "다가구주택",
+        locations: [
+          // 서울
+          { full: "서울특별시 강남구 역삼동 123-45", short: "서울 강남구" },
+          { full: "서울특별시 서초구 서초동 456-78", short: "서울 서초구" },
+          { full: "서울특별시 송파구 잠실동 789-12", short: "서울 송파구" },
+          { full: "서울특별시 마포구 상암동 101-23", short: "서울 마포구" },
+          { full: "서울특별시 영등포구 여의도동 202-34", short: "서울 영등포구" },
+          { full: "서울특별시 용산구 이태원동 303-45", short: "서울 용산구" },
+          // 경기도
+          { full: "경기도 성남시 분당구 정자동 202-34", short: "경기 성남시" },
+          { full: "경기도 수원시 영통구 광교동 303-45", short: "경기 수원시" },
+          { full: "경기도 고양시 일산동구 정발산로 404-56", short: "경기 고양시" },
+          { full: "경기도 부천시 원미구 상동 505-67", short: "경기 부천시" },
+          { full: "경기도 안양시 동안구 시민대로 606-78", short: "경기 안양시" },
+          // 인천
+          { full: "인천광역시 연수구 송도국제대로 707-89", short: "인천 연수구" },
+          { full: "인천광역시 남동구 구월로 808-90", short: "인천 남동구" },
+          { full: "인천광역시 서구 청라국제대로 909-01", short: "인천 서구" },
+          // 부산
+          { full: "부산광역시 해운대구 센텀중앙로 101-12", short: "부산 해운대구" },
+          { full: "부산광역시 사상구 낙동대로 202-23", short: "부산 사상구" },
+          { full: "부산광역시 금정구 중앙대로 303-34", short: "부산 금정구" },
+          // 대구
+          { full: "대구광역시 수성구 동대구로 404-45", short: "대구 수성구" },
+          { full: "대구광역시 달서구 성서공단로 505-56", short: "대구 달서구" },
+          { full: "대구광역시 동구 동부로 606-67", short: "대구 동구" },
+          // 대전
+          { full: "대전광역시 유성구 대학로 707-78", short: "대전 유성구" },
+          { full: "대전광역시 서구 둔산로 808-89", short: "대전 서구" },
+          { full: "대전광역시 중구 중앙로 909-90", short: "대전 중구" },
+          // 광주
+          { full: "광주광역시 서구 상무대로 101-01", short: "광주 서구" },
+          { full: "광주광역시 북구 첨단과기로 202-12", short: "광주 북구" },
+          { full: "광주광역시 남구 제봉로 303-23", short: "광주 남구" },
+          // 울산
+          { full: "울산광역시 남구 삼산로 404-34", short: "울산 남구" },
+          { full: "울산광역시 동구 방어진순환도로 505-45", short: "울산 동구" },
+          { full: "울산광역시 북구 화봉로 606-56", short: "울산 북구" },
+          // 세종
+          { full: "세종특별자치시 한누리대로 707-67", short: "세종시" },
+          { full: "세종특별자치시 도움3로 808-78", short: "세종시" },
+          // 강원도
+          { full: "강원도 춘천시 중앙로 909-89", short: "강원 춘천시" },
+          { full: "강원도 원주시 원일로 101-10", short: "강원 원주시" },
+          { full: "강원도 강릉시 중앙로 202-21", short: "강원 강릉시" },
+          { full: "강원도 속초시 중앙로 303-32", short: "강원 속초시" },
+          // 충청북도
+          { full: "충청북도 청주시 상당구 상당로 404-43", short: "충북 청주시" },
+          { full: "충청북도 충주시 중앙로 505-54", short: "충북 충주시" },
+          { full: "충청북도 제천시 의림대로 606-65", short: "충북 제천시" },
+          // 충청남도
+          { full: "충청남도 천안시 동남구 신부동 707-76", short: "충남 천안시" },
+          { full: "충청남도 공주시 봉황로 808-87", short: "충남 공주시" },
+          { full: "충청남도 아산시 신창면 순천향로 909-98", short: "충남 아산시" },
+          // 전라북도
+          { full: "전라북도 전주시 완산구 효자로 101-09", short: "전북 전주시" },
+          { full: "전라북도 군산시 해망로 202-18", short: "전북 군산시" },
+          { full: "전라북도 익산시 익산대로 303-27", short: "전북 익산시" },
+          // 전라남도
+          { full: "전라남도 목포시 해안로 404-36", short: "전남 목포시" },
+          { full: "전라남도 여수시 중앙로 505-45", short: "전남 여수시" },
+          { full: "전라남도 순천시 중앙로 606-54", short: "전남 순천시" },
+          // 경상북도
+          { full: "경상북도 포항시 남구 대잠동 707-63", short: "경북 포항시" },
+          { full: "경상북도 경주시 원화로 808-72", short: "경북 경주시" },
+          { full: "경상북도 구미시 구미대로 909-81", short: "경북 구미시" },
+          // 경상남도
+          { full: "경상남도 창원시 의창구 중앙대로 101-90", short: "경남 창원시" },
+          { full: "경상남도 진주시 진주대로 202-99", short: "경남 진주시" },
+          { full: "경상남도 김해시 김해대로 303-08", short: "경남 김해시" },
+          // 제주도
+          { full: "제주특별자치도 제주시 연동 404-17", short: "제주 제주시" },
+          { full: "제주특별자치도 서귀포시 중앙로 505-26", short: "제주 서귀포시" },
+        ],
+        propertyDetails: [
+          {
+            landArea: 99.2,
+            landAreaPyeong: 30.0,
+            buildingArea: 132.2,
+            buildingAreaPyeong: 40.0,
+            buildingType: "40평형",
+            structure: "철근콘크리트조",
+            usage: "다가구주택",
+            floor: "3층",
+          },
+          {
+            landArea: 82.6,
+            landAreaPyeong: 25.0,
+            buildingArea: 115.7,
+            buildingAreaPyeong: 35.0,
+            buildingType: "35평형",
+            structure: "철근콘크리트조",
+            usage: "다가구주택",
+            floor: "3층",
+          },
+          {
+            landArea: 115.7,
+            landAreaPyeong: 35.0,
+            buildingArea: 148.8,
+            buildingAreaPyeong: 45.0,
+            buildingType: "45평형",
+            structure: "철근콘크리트조",
+            usage: "다가구주택",
+            floor: "4층",
+          },
+          {
+            landArea: 66.1,
+            landAreaPyeong: 20.0,
+            buildingArea: 99.2,
+            buildingAreaPyeong: 30.0,
+            buildingType: "30평형",
+            structure: "철근콘크리트조",
+            usage: "다가구주택",
+            floor: "2층",
+          },
+          {
+            landArea: 132.2,
+            landAreaPyeong: 40.0,
+            buildingArea: 165.3,
+            buildingAreaPyeong: 50.0,
+            buildingType: "50평형",
+            structure: "철근콘크리트조",
+            usage: "다가구주택",
+            floor: "4층",
+          },
+        ],
+      },
+      {
+        propertyType: "근린주택",
+        locations: [
+          // 서울
+          { full: "서울특별시 강남구 가로수길 123-45", short: "서울 강남구" },
+          { full: "서울특별시 마포구 홍대입구역 456-78", short: "서울 마포구" },
+          { full: "서울특별시 종로구 인사동 789-12", short: "서울 종로구" },
+          { full: "서울특별시 송파구 잠실동 101-23", short: "서울 송파구" },
+          { full: "서울특별시 영등포구 여의도동 202-34", short: "서울 영등포구" },
+          { full: "서울특별시 용산구 이태원동 303-45", short: "서울 용산구" },
+          // 경기도
+          { full: "경기도 부천시 원미구 상동 202-34", short: "경기 부천시" },
+          { full: "경기도 성남시 분당구 정자동 303-45", short: "경기 성남시" },
+          { full: "경기도 수원시 영통구 광교동 404-56", short: "경기 수원시" },
+          { full: "경기도 고양시 일산동구 정발산로 505-67", short: "경기 고양시" },
+          { full: "경기도 안양시 동안구 시민대로 606-78", short: "경기 안양시" },
+          // 인천
+          { full: "인천광역시 연수구 송도국제대로 707-89", short: "인천 연수구" },
+          { full: "인천광역시 남동구 구월로 808-90", short: "인천 남동구" },
+          { full: "인천광역시 서구 청라국제대로 909-01", short: "인천 서구" },
+          // 부산
+          { full: "부산광역시 해운대구 센텀중앙로 101-12", short: "부산 해운대구" },
+          { full: "부산광역시 사상구 낙동대로 202-23", short: "부산 사상구" },
+          { full: "부산광역시 금정구 중앙대로 303-34", short: "부산 금정구" },
+          // 대구
+          { full: "대구광역시 수성구 동대구로 404-45", short: "대구 수성구" },
+          { full: "대구광역시 달서구 성서공단로 505-56", short: "대구 달서구" },
+          { full: "대구광역시 동구 동부로 606-67", short: "대구 동구" },
+          // 대전
+          { full: "대전광역시 유성구 대학로 707-78", short: "대전 유성구" },
+          { full: "대전광역시 서구 둔산로 808-89", short: "대전 서구" },
+          { full: "대전광역시 중구 중앙로 909-90", short: "대전 중구" },
+          // 광주
+          { full: "광주광역시 서구 상무대로 101-01", short: "광주 서구" },
+          { full: "광주광역시 북구 첨단과기로 202-12", short: "광주 북구" },
+          { full: "광주광역시 남구 제봉로 303-23", short: "광주 남구" },
+          // 울산
+          { full: "울산광역시 남구 삼산로 404-34", short: "울산 남구" },
+          { full: "울산광역시 동구 방어진순환도로 505-45", short: "울산 동구" },
+          { full: "울산광역시 북구 화봉로 606-56", short: "울산 북구" },
+          // 세종
+          { full: "세종특별자치시 한누리대로 707-67", short: "세종시" },
+          { full: "세종특별자치시 도움3로 808-78", short: "세종시" },
+          // 강원도
+          { full: "강원도 춘천시 중앙로 909-89", short: "강원 춘천시" },
+          { full: "강원도 원주시 원일로 101-10", short: "강원 원주시" },
+          { full: "강원도 강릉시 중앙로 202-21", short: "강원 강릉시" },
+          { full: "강원도 속초시 중앙로 303-32", short: "강원 속초시" },
+          // 충청북도
+          { full: "충청북도 청주시 상당구 상당로 404-43", short: "충북 청주시" },
+          { full: "충청북도 충주시 중앙로 505-54", short: "충북 충주시" },
+          { full: "충청북도 제천시 의림대로 606-65", short: "충북 제천시" },
+          // 충청남도
+          { full: "충청남도 천안시 동남구 신부동 707-76", short: "충남 천안시" },
+          { full: "충청남도 공주시 봉황로 808-87", short: "충남 공주시" },
+          { full: "충청남도 아산시 신창면 순천향로 909-98", short: "충남 아산시" },
+          // 전라북도
+          { full: "전라북도 전주시 완산구 효자로 101-09", short: "전북 전주시" },
+          { full: "전라북도 군산시 해망로 202-18", short: "전북 군산시" },
+          { full: "전라북도 익산시 익산대로 303-27", short: "전북 익산시" },
+          // 전라남도
+          { full: "전라남도 목포시 해안로 404-36", short: "전남 목포시" },
+          { full: "전라남도 여수시 중앙로 505-45", short: "전남 여수시" },
+          { full: "전라남도 순천시 중앙로 606-54", short: "전남 순천시" },
+          // 경상북도
+          { full: "경상북도 포항시 남구 대잠동 707-63", short: "경북 포항시" },
+          { full: "경상북도 경주시 원화로 808-72", short: "경북 경주시" },
+          { full: "경상북도 구미시 구미대로 909-81", short: "경북 구미시" },
+          // 경상남도
+          { full: "경상남도 창원시 의창구 중앙대로 101-90", short: "경남 창원시" },
+          { full: "경상남도 진주시 진주대로 202-99", short: "경남 진주시" },
+          { full: "경상남도 김해시 김해대로 303-08", short: "경남 김해시" },
+          // 제주도
+          { full: "제주특별자치도 제주시 연동 404-17", short: "제주 제주시" },
+          { full: "제주특별자치도 서귀포시 중앙로 505-26", short: "제주 서귀포시" },
+        ],
+        propertyDetails: [
+          {
+            landArea: 66.1,
+            landAreaPyeong: 20.0,
+            buildingArea: 99.2,
+            buildingAreaPyeong: 30.0,
+            buildingType: "30평형",
+            structure: "철근콘크리트조",
+            usage: "근린주택",
+            floor: "2층",
+          },
+          {
+            landArea: 49.6,
+            landAreaPyeong: 15.0,
+            buildingArea: 82.6,
+            buildingAreaPyeong: 25.0,
+            buildingType: "25평형",
+            structure: "철근콘크리트조",
+            usage: "근린주택",
+            floor: "2층",
+          },
+          {
+            landArea: 82.6,
+            landAreaPyeong: 25.0,
+            buildingArea: 115.7,
+            buildingAreaPyeong: 35.0,
+            buildingType: "35평형",
+            structure: "철근콘크리트조",
+            usage: "근린주택",
+            floor: "3층",
+          },
+          {
+            landArea: 33.1,
+            landAreaPyeong: 10.0,
+            buildingArea: 66.1,
+            buildingAreaPyeong: 20.0,
+            buildingType: "20평형",
+            structure: "철근콘크리트조",
+            usage: "근린주택",
+            floor: "2층",
+          },
+          {
+            landArea: 99.2,
+            landAreaPyeong: 30.0,
+            buildingArea: 132.2,
+            buildingAreaPyeong: 40.0,
+            buildingType: "40평형",
+            structure: "철근콘크리트조",
+            usage: "근린주택",
+            floor: "3층",
+          },
+        ],
+      },
+      {
+        propertyType: "도시형생활주택",
+        locations: [
+          // 서울
+          { full: "서울특별시 강남구 역삼동 123-45", short: "서울 강남구" },
+          { full: "서울특별시 서초구 서초동 456-78", short: "서울 서초구" },
+          { full: "서울특별시 송파구 잠실동 789-12", short: "서울 송파구" },
+          { full: "서울특별시 마포구 상암동 101-23", short: "서울 마포구" },
+          { full: "서울특별시 영등포구 여의도동 202-34", short: "서울 영등포구" },
+          { full: "서울특별시 용산구 이태원동 303-45", short: "서울 용산구" },
+          // 경기도
+          { full: "경기도 성남시 분당구 정자동 202-34", short: "경기 성남시" },
+          { full: "경기도 수원시 영통구 광교동 303-45", short: "경기 수원시" },
+          { full: "경기도 고양시 일산동구 정발산로 404-56", short: "경기 고양시" },
+          { full: "경기도 부천시 원미구 상동 505-67", short: "경기 부천시" },
+          { full: "경기도 안양시 동안구 시민대로 606-78", short: "경기 안양시" },
+          // 인천
+          { full: "인천광역시 연수구 송도국제대로 707-89", short: "인천 연수구" },
+          { full: "인천광역시 남동구 구월로 808-90", short: "인천 남동구" },
+          { full: "인천광역시 서구 청라국제대로 909-01", short: "인천 서구" },
+          // 부산
+          { full: "부산광역시 해운대구 센텀중앙로 101-12", short: "부산 해운대구" },
+          { full: "부산광역시 사상구 낙동대로 202-23", short: "부산 사상구" },
+          { full: "부산광역시 금정구 중앙대로 303-34", short: "부산 금정구" },
+          // 대구
+          { full: "대구광역시 수성구 동대구로 404-45", short: "대구 수성구" },
+          { full: "대구광역시 달서구 성서공단로 505-56", short: "대구 달서구" },
+          { full: "대구광역시 동구 동부로 606-67", short: "대구 동구" },
+          // 대전
+          { full: "대전광역시 유성구 대학로 707-78", short: "대전 유성구" },
+          { full: "대전광역시 서구 둔산로 808-89", short: "대전 서구" },
+          { full: "대전광역시 중구 중앙로 909-90", short: "대전 중구" },
+          // 광주
+          { full: "광주광역시 서구 상무대로 101-01", short: "광주 서구" },
+          { full: "광주광역시 북구 첨단과기로 202-12", short: "광주 북구" },
+          { full: "광주광역시 남구 제봉로 303-23", short: "광주 남구" },
+          // 울산
+          { full: "울산광역시 남구 삼산로 404-34", short: "울산 남구" },
+          { full: "울산광역시 동구 방어진순환도로 505-45", short: "울산 동구" },
+          { full: "울산광역시 북구 화봉로 606-56", short: "울산 북구" },
+          // 세종
+          { full: "세종특별자치시 한누리대로 707-67", short: "세종시" },
+          { full: "세종특별자치시 도움3로 808-78", short: "세종시" },
+          // 강원도
+          { full: "강원도 춘천시 중앙로 909-89", short: "강원 춘천시" },
+          { full: "강원도 원주시 원일로 101-10", short: "강원 원주시" },
+          { full: "강원도 강릉시 중앙로 202-21", short: "강원 강릉시" },
+          { full: "강원도 속초시 중앙로 303-32", short: "강원 속초시" },
+          // 충청북도
+          { full: "충청북도 청주시 상당구 상당로 404-43", short: "충북 청주시" },
+          { full: "충청북도 충주시 중앙로 505-54", short: "충북 충주시" },
+          { full: "충청북도 제천시 의림대로 606-65", short: "충북 제천시" },
+          // 충청남도
+          { full: "충청남도 천안시 동남구 신부동 707-76", short: "충남 천안시" },
+          { full: "충청남도 공주시 봉황로 808-87", short: "충남 공주시" },
+          { full: "충청남도 아산시 신창면 순천향로 909-98", short: "충남 아산시" },
+          // 전라북도
+          { full: "전라북도 전주시 완산구 효자로 101-09", short: "전북 전주시" },
+          { full: "전라북도 군산시 해망로 202-18", short: "전북 군산시" },
+          { full: "전라북도 익산시 익산대로 303-27", short: "전북 익산시" },
+          // 전라남도
+          { full: "전라남도 목포시 해안로 404-36", short: "전남 목포시" },
+          { full: "전라남도 여수시 중앙로 505-45", short: "전남 여수시" },
+          { full: "전라남도 순천시 중앙로 606-54", short: "전남 순천시" },
+          // 경상북도
+          { full: "경상북도 포항시 남구 대잠동 707-63", short: "경북 포항시" },
+          { full: "경상북도 경주시 원화로 808-72", short: "경북 경주시" },
+          { full: "경상북도 구미시 구미대로 909-81", short: "경북 구미시" },
+          // 경상남도
+          { full: "경상남도 창원시 의창구 중앙대로 101-90", short: "경남 창원시" },
+          { full: "경상남도 진주시 진주대로 202-99", short: "경남 진주시" },
+          { full: "경상남도 김해시 김해대로 303-08", short: "경남 김해시" },
+          // 제주도
+          { full: "제주특별자치도 제주시 연동 404-17", short: "제주 제주시" },
+          { full: "제주특별자치도 서귀포시 중앙로 505-26", short: "제주 서귀포시" },
+        ],
+        propertyDetails: [
+          {
+            landArea: 19.8,
+            landAreaPyeong: 6.0,
+            buildingArea: 19.8,
+            buildingAreaPyeong: 6.0,
+            buildingType: "6평형",
+            structure: "철근콘크리트조",
+            usage: "도시형생활주택",
+            floor: "8층",
+          },
+          {
+            landArea: 16.5,
+            landAreaPyeong: 5.0,
+            buildingArea: 16.5,
+            buildingAreaPyeong: 5.0,
+            buildingType: "5평형",
+            structure: "철근콘크리트조",
+            usage: "도시형생활주택",
+            floor: "12층",
+          },
+          {
+            landArea: 23.1,
+            landAreaPyeong: 7.0,
+            buildingArea: 23.1,
+            buildingAreaPyeong: 7.0,
+            buildingType: "7평형",
+            structure: "철근콘크리트조",
+            usage: "도시형생활주택",
+            floor: "15층",
+          },
+          {
+            landArea: 13.2,
+            landAreaPyeong: 4.0,
+            buildingArea: 13.2,
+            buildingAreaPyeong: 4.0,
+            buildingType: "4평형",
+            structure: "철근콘크리트조",
+            usage: "도시형생활주택",
+            floor: "6층",
+          },
+          {
+            landArea: 26.4,
+            landAreaPyeong: 8.0,
+            buildingArea: 26.4,
+            buildingAreaPyeong: 8.0,
+            buildingType: "8평형",
+            structure: "철근콘크리트조",
+            usage: "도시형생활주택",
+            floor: "18층",
           },
         ],
       },

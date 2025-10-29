@@ -7,10 +7,23 @@
 // 1. 기본 정보 (사건 기본 정보)
 // ============================================
 
+// 매물 유형 정의
+export type PropertyType = 
+  | "아파트"
+  | "오피스텔" 
+  | "상가"
+  | "단독주택"
+  | "빌라"
+  | "원룸"
+  | "주택"
+  | "다가구주택"
+  | "근린주택"
+  | "도시형생활주택";
+
 export interface CaseBasicInfo {
   caseNumber: string; // 사건번호 (예: "2025타경52051")
   court: string; // 관할법원 (예: "수원지방법원 경매2계")
-  propertyType: string; // 물건종별 (예: "아파트", "상가", "토지")
+  propertyType: PropertyType; // 물건종별 (예: "아파트", "상가", "토지")
   location: string; // 소재지 (전체 주소)
   locationShort: string; // 소재지 (간략 주소)
   marketValue: number; // 시장가 (원) - 실제 시장 거래가격
