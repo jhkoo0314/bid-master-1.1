@@ -83,7 +83,6 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
     null
   );
   const [showRightsAnalysis, setShowRightsAnalysis] = useState(false);
-  const [showProfitAnalysis, setShowProfitAnalysis] = useState(false);
   const [showWaitlistModal, setShowWaitlistModal] = useState(false);
   
   // 이전 isOpen 값 추적 (무한 루프 방지)
@@ -419,7 +418,6 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
       )
     );
     setShowRightsAnalysis(false);
-    setShowProfitAnalysis(false);
     setShowWaitlistModal(false);
     console.log("🔒 [입찰모달] onClose 호출 전");
     onClose();
@@ -428,14 +426,8 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
 
   // 권리 분석 리포트 클릭 핸들러
   const handleRightsAnalysisClick = () => {
-    setShowRightsAnalysis(true);
-    console.log("권리 분석 리포트 클릭됨");
-  };
-
-  // 수익 분석 클릭 핸들러
-  const handleProfitAnalysisClick = () => {
-    setShowProfitAnalysis(true);
-    console.log("수익 분석 클릭됨");
+    setShowRightsAnalysis(!showRightsAnalysis);
+    console.log("📊 [권리분석] 권리분석리포트 요약 클릭됨:", !showRightsAnalysis);
   };
 
   // 사전 알림 신청 핸들러
@@ -485,7 +477,6 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
       );
       setBiddingResult(null);
       setShowRightsAnalysis(false);
-      setShowProfitAnalysis(false);
       setShowWaitlistModal(false);
     }
 
@@ -879,7 +870,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                 </div>
               </div>
 
-              {/* 권리분석 리포트 */}
+              {/* 권리분석리포트 요약 */}
               <div>
                 <button
                   onClick={handleRightsAnalysisClick}
@@ -887,40 +878,53 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                 >
                   <div className="flex items-center justify-between">
                     <h4 className="font-semibold text-gray-900">
-                      권리분석 리포트
+                      권리분석리포트 요약
                     </h4>
-                    <span className="text-blue-600 text-sm">클릭하여 보기</span>
-                  </div>
-                </button>
-
-                {showRightsAnalysis && (
-                  <div className="mt-3 p-4 bg-gray-50 rounded-lg border">
-                    <p className="text-center text-gray-600">
-                      서비스 준비중 입니다.
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* 수익 분석 */}
-              <div>
-                <button
-                  onClick={handleProfitAnalysisClick}
-                  className="w-full text-left p-4 bg-green-50 hover:bg-green-100 rounded-lg border border-green-200 transition-colors"
-                >
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-semibold text-gray-900">수익 분석</h4>
-                    <span className="text-green-600 text-sm">
-                      클릭하여 보기
+                    <span className="text-blue-600 text-sm">
+                      {showRightsAnalysis ? "접기" : "클릭하여 보기"}
                     </span>
                   </div>
                 </button>
 
-                {showProfitAnalysis && (
+                {showRightsAnalysis && biddingResult && (
                   <div className="mt-3 p-4 bg-gray-50 rounded-lg border">
-                    <p className="text-center text-gray-600">
-                      서비스 준비중 입니다.
-                    </p>
+                    <div className="space-y-3">
+                      <h5 className="font-semibold text-gray-900 mb-3">권리분석 결과</h5>
+                      
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="text-gray-600">총 인수 권리금:</span>
+                          <span className="ml-2 font-semibold text-blue-600">
+                            {formatNumber(biddingResult.rightsAnalysis.totalAssumedAmount)}원
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">안전 마진:</span>
+                          <span className="ml-2 font-semibold text-green-600">
+                            {formatNumber(biddingResult.rightsAnalysis.safetyMargin)}원
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">권장 입찰 범위:</span>
+                          <span className="ml-2 font-semibold">
+                            {formatNumber(biddingResult.rightsAnalysis.recommendedRange.min)}원 ~ {formatNumber(biddingResult.rightsAnalysis.recommendedRange.max)}원
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">최적 입찰가:</span>
+                          <span className="ml-2 font-semibold text-purple-600">
+                            {formatNumber(biddingResult.rightsAnalysis.recommendedRange.optimal)}원
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
+                        <p className="text-sm text-blue-800">
+                          💡 <strong>분석 요약:</strong> 권리분석 결과를 바탕으로 안전한 입찰 범위를 제시합니다. 
+                          권리금과 안전 마진을 고려한 최적 입찰가를 참고하세요.
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
