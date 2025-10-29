@@ -160,7 +160,15 @@ export function PropertyCard({ property }: PropertyCardProps) {
   }, []); // 빈 의존성 배열로 한 번만 실행
 
   return (
-    <div className="bg-white rounded-xl shadow-lg transition-all duration-300 overflow-hidden border border-gray-100 flex flex-col h-full min-h-[280px] group">
+    <div
+      className="bg-white rounded-xl shadow-lg transition-all duration-300 overflow-hidden border border-gray-100 flex flex-col h-full min-h-[280px] group hover:shadow-2xl hover:-translate-y-2 hover:scale-[1.02]"
+      onMouseEnter={() =>
+        console.log("🎨 [매물카드] 호버 애니메이션 시작 - 플로팅 효과")
+      }
+      onMouseLeave={() =>
+        console.log("🎨 [매물카드] 호버 애니메이션 종료 - 원래 위치로")
+      }
+    >
       {/* 매물 이미지 */}
       <div className="aspect-[3/1] md:aspect-[4/2] lg:aspect-[5/3] relative overflow-hidden">
         {imageLoading ? (
@@ -215,7 +223,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
       </div>
 
       {/* 매물 정보 - 컴팩트 Vercel 스타일 */}
-      <div className="p-3 flex flex-col flex-grow">
+      <div className="p-3 flex flex-col flex-grow group-hover:bg-gradient-to-br group-hover:from-gray-50 group-hover:to-white transition-all duration-300">
         {/* 난이도 뱃지 */}
         <div className="flex items-center gap-2 mb-2">
           <span
@@ -241,7 +249,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
         </h3>
 
         {/* 가격 정보 - 컴팩트 Vercel 스타일 */}
-        <div className="space-y-1.5 mb-3">
+        <div className="space-y-1.5 mb-3 group-hover:bg-white/50 group-hover:rounded-lg group-hover:p-2 group-hover:-mx-2 transition-all duration-300">
           <div className="flex justify-between items-center group">
             <span
               className="text-gray-600 group-hover:text-gray-900 transition-colors cursor-help font-medium text-sm"
@@ -249,7 +257,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
             >
               감정가
             </span>
-            <span className="text-black text-sm font-semibold">
+            <span className="text-black text-sm font-semibold group-hover:text-primary transition-colors duration-300">
               {basicInfo.appraisalValue.toLocaleString("ko-KR")}원
             </span>
           </div>
@@ -260,7 +268,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
             >
               최저가
             </span>
-            <span className="text-black text-sm font-semibold">
+            <span className="text-black text-sm font-semibold group-hover:text-primary transition-colors duration-300">
               {basicInfo.minimumBidPrice.toLocaleString("ko-KR")}원
             </span>
           </div>
@@ -297,16 +305,16 @@ export function PropertyCard({ property }: PropertyCardProps) {
         </div>
 
         {/* 버튼 - 컴팩트 Vercel 스타일 */}
-        <div className="flex gap-2 mt-auto">
+        <div className="flex gap-2 mt-auto group-hover:scale-105 transition-transform duration-300">
           <Link
             href={`/property/${property.id}`}
-            className="flex-1 px-3 py-2 bg-gray-100 text-gray-700 text-center text-xs font-semibold rounded-full hover:bg-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-200 border border-gray-200"
+            className="flex-1 px-3 py-2 bg-gray-100 text-gray-700 text-center text-xs font-semibold rounded-full hover:bg-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-200 border border-gray-200 group-hover:border-gray-300"
           >
             상세보기
           </Link>
           <button
             onClick={() => setIsBiddingModalOpen(true)}
-            className="flex-1 px-3 py-2 bg-secondary text-white text-center text-xs font-semibold rounded-full hover:bg-secondary/90 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+            className="flex-1 px-3 py-2 bg-secondary text-white text-center text-xs font-semibold rounded-full hover:bg-secondary/90 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 group-hover:shadow-2xl"
           >
             경매입찰
           </button>
