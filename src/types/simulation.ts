@@ -85,14 +85,21 @@ export interface BiddingHistory {
 // ============================================
 
 export type RightType =
-  | "근저당권"
-  | "가압류"
-  | "전세권"
-  | "지상권"
-  | "임차권"
-  | "압류"
-  | "가등기"
-  | "예고등기";
+  | "근저당권"        // 1. 은행 등 금융기관의 담보권
+  | "저당권"          // 2. 개인 또는 법인의 담보권
+  | "압류"            // 3. 법원의 강제집행권
+  | "가압류"          // 4. 미리 압류하는 권리
+  | "담보가등기"      // 5. 담보를 위한 가등기
+  | "소유권이전청구권가등기" // 6. 소유권 이전 청구권 가등기
+  | "가등기"          // 7. 일반 가등기
+  | "예고등기"        // 8. 소유권 보전을 위한 등기
+  | "전세권"          // 9. 전세권자 보호권
+  | "주택임차권"      // 10. 주택 임차권
+  | "상가임차권"      // 11. 상가 임차권
+  | "가처분"          // 12. 임시 처분권
+  | "유치권"          // 13. 점유자의 유치권
+  | "법정지상권"      // 14. 법적으로 인정되는 지상권
+  | "분묘기지권";     // 15. 분묘 보호권
 
 export interface RightRecord {
   id: string; // 고유 ID
@@ -231,6 +238,12 @@ export interface RightsAnalysisResult {
     min: number; // 최소 입찰가 (원)
     max: number; // 최대 입찰가 (원)
     optimal: number; // 최적 입찰가 (원)
+  };
+  riskAnalysis: {
+    overallRiskLevel: 'high' | 'medium' | 'low'; // 전체 리스크 레벨
+    riskScore: number; // 리스크 점수 (0-100)
+    riskFactors: string[]; // 리스크 요인들
+    recommendations: string[]; // 권장사항들
   };
 }
 

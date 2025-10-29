@@ -52,11 +52,6 @@ interface BiddingResult {
       optimal: number;
     };
   };
-  profitAnalysis: {
-    expectedProfit: number;
-    roi: number;
-    totalInvestment: number;
-  };
 }
 
 export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
@@ -285,7 +280,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
       console.log("⚠️ [입찰결과] 권장 범위가 없어 기본값 사용");
     }
 
-    // 수익 분석
+    // ROI 계산 (간단한 버전)
     const totalInvestment = winningBid + safetyMargin + 5000000; // 명도비용 500만원 추가
     const expectedProfit = property.basicInfo.marketValue - totalInvestment;
     const roi = (expectedProfit / totalInvestment) * 100;
@@ -356,11 +351,6 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
           max: property.basicInfo.appraisalValue * 0.8,
           optimal: Math.round((property.basicInfo.minimumBidPrice + property.basicInfo.appraisalValue * 0.8) / 2)
         },
-      },
-      profitAnalysis: {
-        expectedProfit,
-        roi,
-        totalInvestment,
       },
     };
 
@@ -436,6 +426,55 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
     setShowWaitlistModal(true);
   };
 
+  // 권리분석 요약 생성 함수
+  const generateRightsAnalysisSummary = (property: SimulationScenario, rightsAnalysis: any) => {
+    console.log("📊 [권리분석] 요약 생성 시작");
+    
+    const { totalAssumedAmount, safetyMargin, recommendedRange } = rightsAnalysis;
+    const { minimumBidPrice, appraisalValue } = property.basicInfo;
+    
+    // 실제 권리분석 엔진을 사용하여 정확한 결과 계산
+    const actualRightsAnalysis = analyzeRights(property);
+    const actualSafetyMargin = actualRightsAnalysis.safetyMargin;
+    const actualTotalAssumedAmount = actualRightsAnalysis.totalAssumedAmount;
+    const actualAssumedRights = actualRightsAnalysis.assumedRights.length;
+    const actualAssumedTenants = actualRightsAnalysis.assumedTenants.length;
+    
+    console.log("📊 [권리분석] 실제 분석 결과:", {
+      안전마진: actualSafetyMargin,
+      인수권리총액: actualTotalAssumedAmount,
+      인수권리개수: actualAssumedRights,
+      인수임차인수: actualAssumedTenants,
+      감정가: appraisalValue,
+      안전마진비율: `${((actualSafetyMargin / appraisalValue) * 100).toFixed(1)}%`
+    });
+    
+    // 안전 마진 비율 계산 (실제 값 사용)
+    const marginRatio = (actualSafetyMargin / appraisalValue) * 100;
+    
+    let title = "";
+    let content = "";
+    let details = "";
+    
+    if (marginRatio > 30) {
+      title = "⚠️ 고위험 매물";
+      content = `안전마진이 ${marginRatio.toFixed(1)}%로 매우 높아 주의가 필요합니다.`;
+      details = `인수권리 ${actualAssumedRights}개, 임차인 ${actualAssumedTenants}명으로 총 ${actualSafetyMargin.toLocaleString()}원 추가 부담 예상`;
+    } else if (marginRatio > 15) {
+      title = "⚡ 중위험 매물";
+      content = `안전마진이 ${marginRatio.toFixed(1)}%로 적당한 수준입니다.`;
+      details = `인수권리 ${actualAssumedRights}개, 임차인 ${actualAssumedTenants}명으로 총 ${actualSafetyMargin.toLocaleString()}원 추가 부담 예상`;
+    } else {
+      title = "✅ 안전한 매물";
+      content = `안전마진이 ${marginRatio.toFixed(1)}%로 낮아 상대적으로 안전합니다.`;
+      details = `인수권리 ${actualAssumedRights}개, 임차인 ${actualAssumedTenants}명으로 총 ${actualSafetyMargin.toLocaleString()}원 추가 부담 예상`;
+    }
+    
+    console.log("📊 [권리분석] 요약 생성 완료:", { title, content, details });
+    
+    return { title, content, details };
+  };
+
   // 모달이 열릴 때 또는 매물이 변경될 때 formData 초기화 (단일 useEffect로 통합)
   useEffect(() => {
     // 모달이 닫혀있으면 아무것도 하지 않음
@@ -453,7 +492,8 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
       console.log("🔓 [입찰모달] 모달 초기화", { isOpening, propertyChanged, propertyId: property.id });
 
       // property 객체의 현재 값들을 로컬 변수에 저장하여 무한 루프 방지
-      const courtName = property.regionalAnalysis.court.name;
+      // regionalAnalysis가 없는 경우를 대비한 안전성 검사
+      const courtName = property.regionalAnalysis?.court?.name || "법원 정보 없음";
       const biddingDate = property.schedule.currentAuctionDate;
       const caseNumber = property.basicInfo.caseNumber;
       const minimumBidPrice = property.basicInfo.minimumBidPrice;
@@ -888,9 +928,10 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
 
                 {showRightsAnalysis && biddingResult && (
                   <div className="mt-3 p-4 bg-gray-50 rounded-lg border">
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       <h5 className="font-semibold text-gray-900 mb-3">권리분석 결과</h5>
                       
+                      {/* 기본 분석 정보 */}
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
                           <span className="text-gray-600">총 인수 권리금:</span>
@@ -918,10 +959,59 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                         </div>
                       </div>
 
+                      {/* 리스크 분석 */}
+                      {biddingResult.rightsAnalysis.riskAnalysis && (
+                        <div className="mt-4 p-3 rounded border">
+                          <div className={`p-3 rounded ${
+                            biddingResult.rightsAnalysis.riskAnalysis.overallRiskLevel === 'high' 
+                              ? 'bg-red-50 border-red-200' 
+                              : biddingResult.rightsAnalysis.riskAnalysis.overallRiskLevel === 'medium'
+                              ? 'bg-yellow-50 border-yellow-200'
+                              : 'bg-green-50 border-green-200'
+                          }`}>
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="text-lg">
+                                {biddingResult.rightsAnalysis.riskAnalysis.overallRiskLevel === 'high' ? '🔴' : 
+                                 biddingResult.rightsAnalysis.riskAnalysis.overallRiskLevel === 'medium' ? '🟡' : '🟢'}
+                              </span>
+                              <h6 className="font-semibold text-gray-900">
+                                리스크 분석 ({biddingResult.rightsAnalysis.riskAnalysis.riskScore}/100점)
+                              </h6>
+                            </div>
+                            
+                            {biddingResult.rightsAnalysis.riskAnalysis.riskFactors.length > 0 && (
+                              <div className="mb-2">
+                                <p className="text-sm text-gray-700 mb-1">
+                                  <strong>리스크 요인:</strong>
+                                </p>
+                                <ul className="text-xs text-gray-600 list-disc list-inside">
+                                  {biddingResult.rightsAnalysis.riskAnalysis.riskFactors.map((factor, index) => (
+                                    <li key={index}>{factor}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+
+                            {biddingResult.rightsAnalysis.riskAnalysis.recommendations.length > 0 && (
+                              <div>
+                                <p className="text-sm text-gray-700 mb-1">
+                                  <strong>권장사항:</strong>
+                                </p>
+                                <ul className="text-xs text-gray-600 list-disc list-inside">
+                                  {biddingResult.rightsAnalysis.riskAnalysis.recommendations.map((rec, index) => (
+                                    <li key={index}>{rec}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
                       <div className="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
                         <p className="text-sm text-blue-800">
-                          💡 <strong>분석 요약:</strong> 권리분석 결과를 바탕으로 안전한 입찰 범위를 제시합니다. 
-                          권리금과 안전 마진을 고려한 최적 입찰가를 참고하세요.
+                          💡 <strong>분석 요약:</strong> 13가지 권리유형을 종합 분석하여 안전한 입찰 범위를 제시합니다. 
+                          리스크 레벨과 권리금을 고려한 최적 입찰가를 참고하세요.
                         </p>
                       </div>
                     </div>

@@ -13,6 +13,7 @@ import {
   TenantRecord,
 } from "@/types/simulation";
 import { v4 as uuidv4 } from "uuid";
+import { generateRegionalAnalysis } from "@/lib/regional-analysis";
 
 // OpenAI 클라이언트 초기화 (개발 모드에서는 API 키 없이도 작동)
 const openai = new OpenAI({
@@ -451,7 +452,7 @@ export async function generateEducationalProperty(
 // ============================================
 
 /**
- * 매물 유형별 권리를 생성합니다.
+ * 매물 유형별 13가지 권리유형을 동적으로 생성합니다.
  */
 function generateSimulationRights(
   propertyType: string,
@@ -465,72 +466,117 @@ function generateSimulationRights(
   const baseClaimAmount = Math.floor(claimAmount * 0.7); // 청구금액의 70%
   const secondaryClaimAmount = Math.floor(claimAmount * 0.3); // 청구금액의 30%
 
-  // 기본 근저당권 (1순위)
-  rights.push({
-    id: "right-1",
-    registrationDate: "2018-05-15",
-    rightType: "근저당권",
-    rightHolder: "신한은행",
-    claimAmount: baseClaimAmount,
-    priority: 1,
-    isMalsoBaseRight: false,
-    willBeExtinguished: false,
-    willBeAssumed: false,
-  });
+  // 매물 유형별 권리 생성 확률 설정
+  const propertyRightProbabilities: Record<string, Record<string, number>> = {
+    '아파트': {
+      '근저당권': 0.9, '저당권': 0.3, '압류': 0.4, '가압류': 0.2,
+      '담보가등기': 0.3, '소유권이전청구권가등기': 0.1, '가등기': 0.2, '예고등기': 0.1,
+      '전세권': 0.6, '주택임차권': 0.4, '상가임차권': 0.1,
+      '가처분': 0.2, '유치권': 0.1, '법정지상권': 0.1, '분묘기지권': 0.05
+    },
+    '오피스텔': {
+      '근저당권': 0.8, '저당권': 0.4, '압류': 0.5, '가압류': 0.3,
+      '담보가등기': 0.4, '소유권이전청구권가등기': 0.2, '가등기': 0.3, '예고등기': 0.1,
+      '전세권': 0.3, '주택임차권': 0.2, '상가임차권': 0.7,
+      '가처분': 0.3, '유치권': 0.2, '법정지상권': 0.1, '분묘기지권': 0.05
+    },
+    '상가': {
+      '근저당권': 0.7, '저당권': 0.5, '압류': 0.6, '가압류': 0.4,
+      '담보가등기': 0.5, '소유권이전청구권가등기': 0.3, '가등기': 0.4, '예고등기': 0.2,
+      '전세권': 0.2, '주택임차권': 0.1, '상가임차권': 0.8,
+      '가처분': 0.4, '유치권': 0.3, '법정지상권': 0.2, '분묘기지권': 0.1
+    },
+    '단독주택': {
+      '근저당권': 0.8, '저당권': 0.2, '압류': 0.3, '가압류': 0.2,
+      '담보가등기': 0.2, '소유권이전청구권가등기': 0.1, '가등기': 0.1, '예고등기': 0.05,
+      '전세권': 0.4, '주택임차권': 0.3, '상가임차권': 0.1,
+      '가처분': 0.1, '유치권': 0.1, '법정지상권': 0.3, '분묘기지권': 0.2
+    },
+    '빌라': {
+      '근저당권': 0.7, '저당권': 0.3, '압류': 0.4, '가압류': 0.2,
+      '담보가등기': 0.3, '소유권이전청구권가등기': 0.1, '가등기': 0.2, '예고등기': 0.1,
+      '전세권': 0.5, '주택임차권': 0.4, '상가임차권': 0.2,
+      '가처분': 0.2, '유치권': 0.1, '법정지상권': 0.2, '분묘기지권': 0.1
+    },
+    '토지': {
+      '근저당권': 0.6, '저당권': 0.4, '압류': 0.5, '가압류': 0.3,
+      '담보가등기': 0.4, '소유권이전청구권가등기': 0.2, '가등기': 0.3, '예고등기': 0.1,
+      '전세권': 0.1, '주택임차권': 0.1, '상가임차권': 0.2,
+      '가처분': 0.3, '유치권': 0.2, '법정지상권': 0.8, '분묘기지권': 0.3
+    }
+  };
 
-  // 매물 유형별 추가 권리
-  switch (propertyType) {
-    case "아파트":
-      // 아파트는 관리비 관련 권리가 있을 수 있음
-      if (Math.random() > 0.5) {
-        rights.push({
-          id: "right-2",
-          registrationDate: "2019-03-20",
-          rightType: "가압류",
-          rightHolder: "하나은행",
-          claimAmount: secondaryClaimAmount,
-          priority: 2,
-          isMalsoBaseRight: false,
-          willBeExtinguished: false,
-          willBeAssumed: false,
-        });
+  const probabilities = propertyRightProbabilities[propertyType] || propertyRightProbabilities['아파트'];
+  const rightTypes: RightType[] = [
+    "근저당권", "저당권", "압류", "가압류", "담보가등기", "소유권이전청구권가등기",
+    "가등기", "예고등기", "전세권", "주택임차권", "상가임차권", "가처분",
+    "유치권", "법정지상권", "분묘기지권"
+  ];
+
+  let rightId = 1;
+  const baseDate = "2018-05-15";
+
+  // 권리 생성
+  rightTypes.forEach((rightType, index) => {
+    const probability = probabilities[rightType] || 0;
+    
+    if (Math.random() < probability) {
+      const registrationDate = new Date(baseDate);
+      registrationDate.setDate(registrationDate.getDate() + Math.floor(Math.random() * 365 * 2)); // 2년 내 랜덤
+      
+      // 권리별 청구금액 계산
+      let claimAmount = 0;
+      if (rightType === "근저당권" || rightType === "저당권") {
+        claimAmount = Math.floor(baseClaimAmount * (0.8 + Math.random() * 0.4)); // 80-120%
+      } else if (rightType === "압류" || rightType === "가압류") {
+        claimAmount = Math.floor(baseClaimAmount * (0.3 + Math.random() * 0.4)); // 30-70%
+      } else if (rightType.includes("임차권") || rightType === "전세권") {
+        claimAmount = Math.floor(baseClaimAmount * (0.05 + Math.random() * 0.15)); // 5-20%
+      } else {
+        claimAmount = Math.floor(baseClaimAmount * (0.1 + Math.random() * 0.3)); // 10-40%
       }
-      break;
 
-    case "오피스텔":
-      // 오피스텔은 상업용 대출이 많음
+      // 권리자 이름 생성
+      const rightHolders: Record<string, string[]> = {
+        '근저당권': ['신한은행', '하나은행', '국민은행', '우리은행', '농협은행'],
+        '저당권': ['김개인', '이투자', '박부동산', '최개발', '정수익'],
+        '압류': ['서울중앙지방법원', '서울남부지방법원', '서울북부지방법원'],
+        '가압류': ['서울중앙지방법원', '서울남부지방법원', '서울북부지방법원'],
+        '담보가등기': ['신한은행', '하나은행', '국민은행'],
+        '소유권이전청구권가등기': ['김소유권', '이소유권', '박소유권'],
+        '가등기': ['김가등기', '이가등기', '박가등기'],
+        '예고등기': ['김예고', '이예고', '박예고'],
+        '전세권': ['김전세', '이전세', '박전세', '최전세'],
+        '주택임차권': ['김주택', '이주택', '박주택', '최주택'],
+        '상가임차권': ['김상가', '이상가', '박상가', '최상가'],
+        '가처분': ['서울중앙지방법원', '서울남부지방법원'],
+        '유치권': ['김유치', '이유치', '박유치'],
+        '법정지상권': ['김지상', '이지상', '박지상'],
+        '분묘기지권': ['김분묘', '이분묘', '박분묘']
+      };
+
+      const holders = rightHolders[rightType] || ['알 수 없는 권리자'];
+      const rightHolder = holders[Math.floor(Math.random() * holders.length)];
+
       rights.push({
-        id: "right-2",
-        registrationDate: "2019-03-20",
-        rightType: "근저당권",
-        rightHolder: "하나은행",
-        claimAmount: secondaryClaimAmount,
-        priority: 2,
+        id: `right-${rightId++}`,
+        registrationDate: registrationDate.toISOString().split('T')[0],
+        rightType,
+        rightHolder,
+        claimAmount,
+        priority: index + 1,
         isMalsoBaseRight: false,
         willBeExtinguished: false,
         willBeAssumed: false,
       });
-      break;
 
-    case "단독주택":
-      // 단독주택은 개인 대출이 많음
-      if (Math.random() > 0.4) {
-        rights.push({
-          id: "right-2",
-          registrationDate: "2019-03-20",
-          rightType: "근저당권",
-          rightHolder: "하나은행",
-          claimAmount: secondaryClaimAmount,
-          priority: 2,
-          isMalsoBaseRight: false,
-          willBeExtinguished: false,
-          willBeAssumed: false,
-        });
-      }
-      break;
-  }
+      console.log(`  ✅ ${rightType} 생성: ${rightHolder}, ${claimAmount.toLocaleString()}원`);
+    }
+  });
 
-  console.log(`✅ [시뮬레이션 권리 생성] 생성된 권리 개수: ${rights.length}`);
+  console.log(`✅ [시뮬레이션 권리 생성] 생성된 권리 개수: ${rights.length}개`);
+  console.log(`📊 [권리분석] 권리 유형별 분포:`, rights.map(r => r.rightType).join(', '));
+  
   return rights;
 }
 
@@ -1361,7 +1407,34 @@ export async function generateSimulationProperty(): Promise<SimulationScenario> 
     return {
       id: uuidv4(),
       type: "simulation",
-      ...dummyData,
+      basicInfo: {
+        caseNumber: dummyData.caseNumber,
+        court: dummyData.court,
+        propertyType: dummyData.propertyType,
+        location: dummyData.location,
+        locationShort: dummyData.locationShort,
+        appraisalValue: dummyData.appraisalValue,
+        minimumBidPrice: dummyData.minimumBidPrice,
+        bidDeposit: dummyData.bidDeposit,
+        claimAmount: dummyData.claimAmount,
+        debtor: dummyData.debtor,
+        owner: dummyData.owner,
+        creditor: dummyData.creditor,
+        auctionType: dummyData.auctionType,
+        biddingMethod: dummyData.biddingMethod,
+        status: dummyData.status,
+        daysUntilBid: dummyData.daysUntilBid,
+      },
+      propertyDetails: dummyData.propertyDetails,
+      schedule: dummyData.schedule,
+      biddingHistory: dummyData.biddingHistory,
+      rights: dummyData.rights,
+      tenants: dummyData.tenants,
+      similarSales: dummyData.similarSales,
+      regionalAnalysis: (() => {
+        console.log("🗺️ [개발모드] 지역분석 생성:", dummyData.location);
+        return generateRegionalAnalysis(dummyData.location);
+      })(),
       createdAt: new Date().toISOString(),
     };
   }
@@ -1437,6 +1510,10 @@ export async function generateSimulationProperty(): Promise<SimulationScenario> 
         willBeAssumed: false,
       })),
       similarSales: data.similarSales,
+      regionalAnalysis: (() => {
+        console.log("🗺️ [OpenAI] 지역분석 생성:", data.location);
+        return generateRegionalAnalysis(data.location);
+      })(),
       createdAt: new Date().toISOString(),
     };
 

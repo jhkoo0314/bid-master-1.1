@@ -17,7 +17,7 @@ import HeroBelow from "@/components/HeroBelow";
 import Footer from "@/components/Footer";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { useSimulationStore } from "@/store/simulation-store";
-import { generateMultipleProperties } from "@/app/actions/generate-property";
+import { generateMultipleProperties } from "@/app/actions/generate-simulation";
 import { SimulationScenario, DifficultyLevel } from "@/types/simulation";
 import Link from "next/link";
 
@@ -60,11 +60,13 @@ export default function HomePage() {
       도시형생활주택: "/cityapart.png",
     };
 
-    return educationalProperties.map((property) => ({
-      ...property,
-      propertyImage:
-        propertyImageMap[property.basicInfo.propertyType] || "/placeholder.png",
-    }));
+    return educationalProperties
+      .filter((property) => property && property.basicInfo) // 안전한 필터링
+      .map((property) => ({
+        ...property,
+        propertyImage:
+          propertyImageMap[property.basicInfo.propertyType] || "/placeholder.png",
+      }));
   }, [educationalProperties]);
 
   // 페이지 로드 시 초기 매물 생성
