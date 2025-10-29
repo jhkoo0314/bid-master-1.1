@@ -566,15 +566,15 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
     let details = "";
     
     if (marginRatio > 30) {
-      title = "⚠️ 고위험 매물";
+      title = "고위험 매물";
       content = `안전마진이 ${marginRatio.toFixed(1)}%로 매우 높아 주의가 필요합니다.`;
       details = `인수권리 ${actualAssumedRights}개, 임차인 ${actualAssumedTenants}명으로 총 ${actualSafetyMargin.toLocaleString()}원 추가 부담 예상`;
     } else if (marginRatio > 15) {
-      title = "⚡ 중위험 매물";
+      title = "중위험 매물";
       content = `안전마진이 ${marginRatio.toFixed(1)}%로 적당한 수준입니다.`;
       details = `인수권리 ${actualAssumedRights}개, 임차인 ${actualAssumedTenants}명으로 총 ${actualSafetyMargin.toLocaleString()}원 추가 부담 예상`;
     } else {
-      title = "✅ 안전한 매물";
+      title = "안전한 매물";
       content = `안전마진이 ${marginRatio.toFixed(1)}%로 낮아 상대적으로 안전합니다.`;
       details = `인수권리 ${actualAssumedRights}개, 임차인 ${actualAssumedTenants}명으로 총 ${actualSafetyMargin.toLocaleString()}원 추가 부담 예상`;
     }
@@ -895,7 +895,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
               >
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-2xl">
-                    {biddingResult.isSuccess ? "🎉" : "😔"}
+                    {biddingResult.isSuccess ? "성공" : "실패"}
                   </span>
                   <h3
                     className={`font-bold ${
@@ -948,7 +948,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                 {/* 원형 차트로 주요 지표 표시 */}
                 <div className="mt-6 space-y-4">
                   <h4 className="font-semibold text-gray-900 mb-3">
-                    📊 입찰 결과 분석
+                    입찰 결과 분석
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <CircularProgressChart
@@ -1079,10 +1079,6 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                               : 'bg-green-50 border-green-200'
                           }`}>
                             <div className="flex items-center gap-2 mb-2">
-                              <span className="text-lg">
-                                {biddingResult.rightsAnalysis.riskAnalysis.overallRiskLevel === 'high' ? '🔴' : 
-                                 biddingResult.rightsAnalysis.riskAnalysis.overallRiskLevel === 'medium' ? '🟡' : '🟢'}
-                              </span>
                               <h6 className="font-semibold text-gray-900">
                                 리스크 분석 ({biddingResult.rightsAnalysis.riskAnalysis.riskScore}/100점)
                               </h6>
@@ -1119,7 +1115,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
 
                       <div className="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
                         <p className="text-sm text-blue-800 mb-3">
-                          💡 <strong>분석 요약:</strong> 13가지 권리유형을 종합 분석하여 안전한 입찰 범위를 제시합니다. 
+                          <strong>분석 요약:</strong> 13가지 권리유형을 종합 분석하여 안전한 입찰 범위를 제시합니다. 
                           리스크 레벨과 권리금을 고려한 최적 입찰가를 참고하세요.
                         </p>
                         <button
@@ -1218,10 +1214,6 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                         <h6 className="font-semibold text-gray-900 mb-3">시장 분석</h6>
                         <div className="grid grid-cols-3 gap-4 text-sm">
                           <div className="text-center p-3 rounded border">
-                            <div className="text-lg mb-1">
-                              {biddingResult.auctionAnalysis.marketTrend === 'hot' ? '🔥' : 
-                               biddingResult.auctionAnalysis.marketTrend === 'normal' ? '🌡️' : '❄️'}
-                            </div>
                             <div className="font-semibold text-gray-700">시장 트렌드</div>
                             <div className={`text-xs ${
                               biddingResult.auctionAnalysis.marketTrend === 'hot' ? 'text-red-600' :
@@ -1232,10 +1224,6 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                             </div>
                           </div>
                           <div className="text-center p-3 rounded border">
-                            <div className="text-lg mb-1">
-                              {biddingResult.auctionAnalysis.competitionLevel === 'high' ? '⚡' :
-                               biddingResult.auctionAnalysis.competitionLevel === 'medium' ? '⚖️' : '🐌'}
-                            </div>
                             <div className="font-semibold text-gray-700">경쟁 수준</div>
                             <div className={`text-xs ${
                               biddingResult.auctionAnalysis.competitionLevel === 'high' ? 'text-red-600' :
@@ -1246,7 +1234,6 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                             </div>
                           </div>
                           <div className="text-center p-3 rounded border">
-                            <div className="text-lg mb-1">🎯</div>
                             <div className="font-semibold text-gray-700">성공 확률</div>
                             <div className={`text-xs ${
                               biddingResult.auctionAnalysis.successProbability > 70 ? 'text-green-600' :
@@ -1266,9 +1253,6 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                             : 'bg-gray-50 border-gray-200'
                         }`}>
                           <div className="flex items-center gap-2 mb-2">
-                            <span className="text-lg">
-                              {biddingResult.isSuccess ? '🎉' : '😔'}
-                            </span>
                             <h6 className="font-semibold text-gray-900">
                               입찰 결과: {biddingResult.isSuccess ? '성공' : '실패'}
                             </h6>
@@ -1277,8 +1261,8 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                           <div className="text-sm text-gray-700">
                             <p className="mb-2">
                               <strong>분석:</strong> {biddingResult.isSuccess 
-                                ? '축하합니다! 경쟁을 뚫고 낙찰에 성공했습니다.' 
-                                : '아쉽게도 낙찰에 실패했습니다. 다음 기회를 노려보세요.'}
+                                ? '경쟁을 뚫고 낙찰에 성공했습니다.' 
+                                : '낙찰에 실패했습니다. 다음 기회를 노려보세요.'}
                             </p>
                             <p>
                               <strong>경쟁 상황:</strong> 총 {biddingResult.totalBidders}명의 입찰자 중에서 
@@ -1394,7 +1378,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
 
                       <div className="mt-4 p-3 bg-green-50 rounded border border-green-200">
                         <p className="text-sm text-green-800 mb-3">
-                          💡 <strong>분석 요약:</strong> AI가 생성한 가상 입찰자들과의 경쟁을 통해 
+                          <strong>분석 요약:</strong> AI가 생성한 가상 입찰자들과의 경쟁을 통해 
                           실제 경매 상황을 시뮬레이션합니다. 경쟁률과 입찰 패턴을 분석하여 
                           실전 경매에서의 전략을 학습할 수 있습니다.
                         </p>

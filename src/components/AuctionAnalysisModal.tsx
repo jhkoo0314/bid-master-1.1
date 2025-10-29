@@ -53,7 +53,7 @@ export function AuctionAnalysisModal({
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold mb-2">
-                📊 매물 상세 분석 리포트
+                매물 상세 분석 리포트
               </h2>
               <p className="text-blue-100">{property.basicInfo.location}</p>
             </div>
@@ -83,8 +83,8 @@ export function AuctionAnalysisModal({
           <div className="space-y-8">
             {/* 매물 기본 정보 */}
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border-l-4 border-blue-500">
-              <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
-                📋 매물 정보 요약
+              <h3 className="text-xl font-bold text-gray-800 mb-4">
+                매물 정보 요약
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="bg-white p-4 rounded-lg shadow-sm">
@@ -124,8 +124,8 @@ export function AuctionAnalysisModal({
 
             {/* 권리 현황 상세 분석 */}
             <div className="bg-gradient-to-r from-red-50 to-pink-50 p-6 rounded-xl border-l-4 border-red-500">
-              <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
-                ⚖️ 권리 현황 상세 체크
+              <h3 className="text-xl font-bold text-gray-800 mb-4">
+                권리 현황 분석
               </h3>
 
               {/* 권리 개요 */}
@@ -214,8 +214,8 @@ export function AuctionAnalysisModal({
 
             {/* 임차인 현황 상세 분석 */}
             <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border-l-4 border-green-500">
-              <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
-                🏠 임차인 현황 상세 체크
+              <h3 className="text-xl font-bold text-gray-800 mb-4">
+                임차인 현황 분석
               </h3>
 
               {/* 임차인 개요 */}
@@ -302,8 +302,8 @@ export function AuctionAnalysisModal({
 
             {/* 투자 분석 및 리스크 평가 */}
             <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-6 rounded-xl border-l-4 border-purple-500">
-              <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
-                💰 투자 기회 및 리스크 체크
+              <h3 className="text-xl font-bold text-gray-800 mb-4">
+                투자 분석 및 리스크 평가
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -377,8 +377,8 @@ export function AuctionAnalysisModal({
 
             {/* 권장 입찰 전략 */}
             <div className="bg-gradient-to-r from-orange-50 to-yellow-50 p-6 rounded-xl border-l-4 border-orange-500">
-              <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
-                📈 입찰 전략 가이드
+              <h3 className="text-xl font-bold text-gray-800 mb-4">
+                입찰 전략 분석
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -435,21 +435,21 @@ export function AuctionAnalysisModal({
 
             {/* 상세 분석 설명 */}
             <div className="bg-gradient-to-r from-gray-50 to-slate-50 p-6 rounded-xl border-l-4 border-gray-500">
-              <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
-                📝 분석 결과 요약
+              <h3 className="text-xl font-bold text-gray-800 mb-6">
+                분석 결과 요약
               </h3>
 
               <div className="space-y-6">
                 {/* 매물 기본 정보 설명 */}
                 <div className="bg-white p-5 rounded-lg shadow-sm">
-                  <h4 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
-                    🏠 매물 기본 정보 해석
+                  <h4 className="text-lg font-semibold text-gray-800 mb-3">
+                    매물 기본 정보 해석
                   </h4>
                   <div className="space-y-3 text-gray-700">
                     <p>
                       <strong>감정가와 최저가의 의미:</strong> 감정가는 전문
                       감정평가사가 정한 시장가치이며, 최저가는 경매에서 시작하는
-                      가격입니다. 할인율이 높을수록 매력적인 투자 기회가 될 수
+                      가격입니다. 할인율이 높을수록 투자 기회가 될 수
                       있지만, 동시에 숨겨진 문제가 있을 가능성도 높아집니다.
                     </p>
                     <p>
@@ -466,8 +466,8 @@ export function AuctionAnalysisModal({
 
                 {/* 권리 현황 설명 */}
                 <div className="bg-white p-5 rounded-lg shadow-sm">
-                  <h4 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
-                    ⚖️ 권리 현황 상세 해석
+                  <h4 className="text-lg font-semibold text-gray-800 mb-3">
+                    권리 현황 상세 해석
                   </h4>
                   <div className="space-y-3 text-gray-700">
                     <p>
@@ -510,8 +510,7 @@ export function AuctionAnalysisModal({
                     {totalRights === 0 && (
                       <div className="bg-green-50 p-4 rounded-lg">
                         <p className="font-semibold text-green-800">
-                          ✅ 권리 부담이 없는 깨끗한 매물입니다. 이는 매우
-                          매력적인 투자 기회를 의미합니다.
+                          권리 부담이 없는 매물입니다. 이는 투자 기회를 의미합니다.
                         </p>
                       </div>
                     )}
@@ -520,8 +519,8 @@ export function AuctionAnalysisModal({
 
                 {/* 임차인 현황 설명 */}
                 <div className="bg-white p-5 rounded-lg shadow-sm">
-                  <h4 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
-                    🏠 임차인 현황 상세 해석
+                  <h4 className="text-lg font-semibold text-gray-800 mb-3">
+                    임차인 현황 상세 해석
                   </h4>
                   <div className="space-y-3 text-gray-700">
                     <p>
@@ -561,7 +560,7 @@ export function AuctionAnalysisModal({
                     ) : (
                       <div className="bg-green-50 p-4 rounded-lg">
                         <p className="font-semibold text-green-800">
-                          ✅ 임차인이 없는 매물로, 추가 부담 없이 투자할 수
+                          임차인이 없는 매물로, 추가 부담 없이 투자할 수
                           있습니다.
                         </p>
                       </div>
@@ -571,14 +570,14 @@ export function AuctionAnalysisModal({
 
                 {/* 투자 분석 설명 */}
                 <div className="bg-white p-5 rounded-lg shadow-sm">
-                  <h4 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
-                    💰 투자 분석 상세 해석
+                  <h4 className="text-lg font-semibold text-gray-800 mb-3">
+                    투자 분석 상세 해석
                   </h4>
                   <div className="space-y-3 text-gray-700">
                     <p>
                       <strong>할인율의 의미:</strong> {discountRate}%의 할인율은
                       {discountRate > 50
-                        ? "매우 높은 할인으로 매력적인 투자 기회이지만, 숨겨진 문제가 있을 가능성이 높습니다."
+                        ? "높은 할인으로 투자 기회이지만, 숨겨진 문제가 있을 가능성이 높습니다."
                         : discountRate > 30
                         ? "적당한 할인으로 균형잡힌 투자 기회입니다."
                         : "낮은 할인으로 경쟁이 치열할 것으로 예상됩니다."}
@@ -625,8 +624,8 @@ export function AuctionAnalysisModal({
 
                 {/* 입찰 전략 설명 */}
                 <div className="bg-white p-5 rounded-lg shadow-sm">
-                  <h4 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
-                    📈 입찰 전략 상세 가이드
+                  <h4 className="text-lg font-semibold text-gray-800 mb-3">
+                    입찰 전략 상세 가이드
                   </h4>
                   <div className="space-y-3 text-gray-700">
                     <p>
