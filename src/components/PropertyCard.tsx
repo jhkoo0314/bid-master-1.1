@@ -8,10 +8,6 @@ import { useState, useEffect, useRef } from "react";
 import { SimulationScenario } from "@/types/simulation";
 import Link from "next/link";
 import { BiddingModal } from "./BiddingModal";
-import {
-  searchUniquePropertyImage,
-  clearCommercialPropertyCache,
-} from "@/lib/unsplash-client";
 
 // 용어 설명 함수 - 핵심분석에 나오는 용어들만 설명
 function getTermExplanation(term: string, keyPoints: string[] = []): string {
@@ -116,44 +112,30 @@ export function PropertyCard({ property }: PropertyCardProps) {
       return;
     }
 
-    const loadPropertyImage = async () => {
-      try {
-        console.log(
-          `🖼️ [매물카드] 이미지 로드 시작 - ${basicInfo.propertyType} (${property.id})`
-        );
-        hasLoadedImage.current = true;
+    const loadPropertyImage = () => {
+      console.log(
+        `🖼️ [매물카드] 이미지 로드 시작 - ${basicInfo.propertyType} (${property.id})`
+      );
+      hasLoadedImage.current = true;
 
-        // 상가 매물 유형인 경우 고정 이미지 사용
-        if (basicInfo.propertyType === "상가") {
-          const commercialImageUrl =
-            "https://images.unsplash.com/photo-1677933416890-14c28bc64052?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixlib=rb-4.1.0&q=80&w=1080";
-          setPropertyImage(commercialImageUrl);
-          setImageLoading(false);
-          return;
-        }
+      // 매물 유형별 하드코딩된 이미지 매핑
+      const propertyImageMap: Record<string, string> = {
+        아파트: "/apartment.jpg",
+        오피스텔: "/officetel.png", // TODO: 이미지 파일 추가 필요
+        단독주택: "/dandok.jpg",
+        빌라: "/villa.jpg",
+        원룸: "/oneroom.jpg",
+        주택: "/dandok.jpg",
+        다가구주택: "/manyapart.png",
+        근린주택: "/greenapart.jpg",
+        도시형생활주택: "/cityapart.png",
+      };
 
-        // 빌라 매물 유형인 경우 고정 이미지 사용
-        if (basicInfo.propertyType === "빌라") {
-          const villaImageUrl =
-            "https://images.unsplash.com/photo-1760129745103-91c4022ed5fb?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixlib=rb-4.1.0&q=80&w=1080";
-          setPropertyImage(villaImageUrl);
-          setImageLoading(false);
-          return;
-        }
-
-        const imageUrl = await searchUniquePropertyImage(
-          basicInfo.propertyType,
-          basicInfo.locationShort
-        );
-
-        if (imageUrl) {
-          setPropertyImage(imageUrl);
-        }
-      } catch (error) {
-        console.error(`❌ [매물카드] 이미지 로드 오류:`, error);
-      } finally {
-        setImageLoading(false);
-      }
+      const imagePath = propertyImageMap[basicInfo.propertyType] || "/placeholder.png";
+      
+      console.log(`🖼️ [매물카드] ${basicInfo.propertyType} 고정 이미지 사용: ${imagePath}`);
+      setPropertyImage(imagePath);
+      setImageLoading(false);
     };
 
     loadPropertyImage();
