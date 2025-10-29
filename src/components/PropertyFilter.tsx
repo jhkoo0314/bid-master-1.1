@@ -35,7 +35,8 @@ export function PropertyFilter({
   const [isRightTypesExpanded, setIsRightTypesExpanded] = useState(false);
   const [isPropertyTypeExpanded, setIsPropertyTypeExpanded] = useState(false);
   const [isDifficultyExpanded, setIsDifficultyExpanded] = useState(false);
-  const [isPropertyCategoryExpanded, setIsPropertyCategoryExpanded] = useState(false);
+  const [isPropertyCategoryExpanded, setIsPropertyCategoryExpanded] =
+    useState(false);
 
   // 필터 상태
   const [filters, setFilters] = useState<PropertyFilterOptions>({
@@ -47,19 +48,8 @@ export function PropertyFilter({
     propertyCategory: "",
   });
 
-  // 필터 옵션들
-  const propertyTypeOptions = [
-    { value: "아파트", label: "아파트" },
-    { value: "오피스텔", label: "오피스텔" },
-    { value: "상가", label: "상가" },
-    { value: "단독주택", label: "단독주택" },
-    { value: "빌라", label: "빌라" },
-    { value: "원룸", label: "원룸" },
-    { value: "주택", label: "주택" },
-    { value: "다가구주택", label: "다가구주택" },
-    { value: "근린주택", label: "근린주택" },
-    { value: "도시형생활주택", label: "도시형생활주택" },
-  ];
+  // 필터 옵션들 (사용하지 않음, propertyCategory에 따라 동적으로 표시)
+  const propertyTypeOptions: never[] = [];
 
   const regionOptions = [
     { value: "서울", label: "서울특별시" },
@@ -95,14 +85,27 @@ export function PropertyFilter({
     { value: "분묘기지권", label: "분묘기지권" },
   ];
 
-  // 새로운 매물유형 카테고리 옵션들
+  // 매물유형 카테고리 옵션들 (주거용/상업용)
   const propertyCategoryOptions = [
     { value: "주거용", label: "주거용" },
-    { value: "상업용", label: "상업용" },
-    { value: "업무용", label: "업무용" },
-    { value: "공업용", label: "공업용" },
-    { value: "기타", label: "기타" },
+    { value: "상업용", label: "상업용 (준비중)" },
   ];
+
+  // 주거용 매물 유형들
+  const residentialPropertyOptions = [
+    { value: "아파트", label: "아파트" },
+    { value: "오피스텔", label: "오피스텔" },
+    { value: "단독주택", label: "단독주택" },
+    { value: "다가구주택", label: "다가구주택" },
+    { value: "근린주택", label: "근린주택" },
+    { value: "주택", label: "주택" },
+    { value: "원룸", label: "원룸" },
+    { value: "빌라", label: "빌라" },
+    { value: "도시형생활주택", label: "도시형생활주택" },
+  ];
+
+  // 상업용 매물 유형들 (현재 준비중)
+  const commercialPropertyOptions: never[] = [];
 
   // 가격 범위 옵션
   const priceRanges = [
@@ -131,6 +134,25 @@ export function PropertyFilter({
     const newValue = currentValue === value ? "" : value;
     updateFilter(key, newValue);
     console.log(`🔘 [토글 선택] ${key}: ${newValue || "선택 해제"}`);
+
+    // 매물유형 카테고리를 선택했을 때, 기존에 선택된 매물 유형이 해당 카테고리에 없는 경우 초기화
+    if (key === "propertyCategory" && filters.propertyType) {
+      const availableOptions =
+        value === "주거용"
+          ? residentialPropertyOptions
+          : value === "상업용"
+          ? commercialPropertyOptions
+          : [...residentialPropertyOptions, ...commercialPropertyOptions];
+
+      const isAvailable = availableOptions.some(
+        (option) => option.value === filters.propertyType
+      );
+
+      if (!isAvailable) {
+        updateFilter("propertyType", "");
+        console.log("🔄 [매물유형 초기화] 선택된 카테고리에 맞지 않아 초기화");
+      }
+    }
   };
 
   // 권리유형 체크박스 토글 함수
@@ -154,10 +176,21 @@ export function PropertyFilter({
 
   // 랜덤 필터 선택
   const randomizeFilters = () => {
-    const randomPropertyType =
-      propertyTypeOptions[
-        Math.floor(Math.random() * propertyTypeOptions.length)
+    // 매물유형 카테고리 랜덤 선택 (주거용 또는 상업용)
+    const randomCategory =
+      propertyCategoryOptions[
+        Math.floor(Math.random() * propertyCategoryOptions.length)
       ].value;
+
+    // 선택된 카테고리에 따라 매물 유형 선택
+    const availableOptions =
+      randomCategory === "주거용"
+        ? residentialPropertyOptions
+        : commercialPropertyOptions;
+    const randomPropertyType =
+      availableOptions[Math.floor(Math.random() * availableOptions.length)]
+        .value;
+
     const randomDifficulty =
       difficultyOptions[Math.floor(Math.random() * difficultyOptions.length)]
         .value;
@@ -177,7 +210,7 @@ export function PropertyFilter({
       priceRange: { min: 0, max: 5000000000 }, // 가격범위는 항상 전체로 설정 (랜덤 생성)
       difficultyLevel: randomDifficulty,
       rightTypes: randomRightTypes,
-      propertyCategory: "", // 매물유형 카테고리도 빈 값으로 설정
+      propertyCategory: randomCategory,
     };
 
     setFilters(randomFilters);
@@ -289,7 +322,7 @@ export function PropertyFilter({
             >
               <div className="flex items-center gap-1 text-xs text-gray-700">
                 <span>🏠</span>
-                <span>{filters.propertyType || "주거용 부동산"}</span>
+                {filters.propertyType && <span>{filters.propertyType}</span>}
               </div>
               <svg
                 className={`w-3 h-3 text-gray-400 transition-transform duration-200 ${
@@ -311,7 +344,16 @@ export function PropertyFilter({
             {isPropertyTypeExpanded && (
               <div className="absolute z-10 mt-1 w-full border border-gray-300 rounded-md bg-white shadow-lg">
                 <div className="p-2">
-                  {propertyTypeOptions.map((option) => (
+                  {/* 선택된 카테고리에 따라 다른 옵션 표시 */}
+                  {(filters.propertyCategory === "주거용"
+                    ? residentialPropertyOptions
+                    : filters.propertyCategory === "상업용"
+                    ? commercialPropertyOptions
+                    : [
+                        ...residentialPropertyOptions,
+                        ...commercialPropertyOptions,
+                      ]
+                  ).map((option) => (
                     <label
                       key={option.value}
                       className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-1 rounded"

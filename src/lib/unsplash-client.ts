@@ -22,17 +22,6 @@ export function clearPropertyImageCache(propertyType?: string) {
 }
 
 /**
- * 상가 매물 유형의 이미지 캐시를 강제로 초기화합니다.
- * 새로운 상가 이미지 검색어 적용을 위해 사용
- */
-export function clearCommercialPropertyCache() {
-  propertyImageCache.delete("상가");
-  console.log(
-    `🏢 [캐시 초기화] 상가 매물 유형 캐시 강제 삭제됨 - 새로운 이미지 검색어 적용`
-  );
-}
-
-/**
  * 단독주택 매물 유형의 이미지 캐시를 강제로 초기화합니다.
  * 새로운 모던한 단독주택 이미지 검색어 적용을 위해 사용
  */
@@ -83,18 +72,6 @@ const getPropertySearchTerms = (propertyType: string): string[] => {
       "glass skyscrapers urban landscape",
       "modern cityscape buildings",
       "urban skyline contemporary buildings",
-    ],
-    상가: [
-      "korean commercial building exterior",
-      "korean shopping street exterior",
-      "korean retail building facade",
-      "korean commercial district street view",
-      "korean shopping center exterior",
-      "korean commercial plaza building",
-      "korean retail complex exterior",
-      "korean commercial street building",
-      "korean shopping mall exterior",
-      "korean commercial building front",
     ],
     단독주택: [
       "modern contemporary house exterior",
@@ -285,7 +262,7 @@ const getPriceBasedSearchTerms = (marketValue: number): string[] => {
  * 매물 유형별 고유 이미지를 검색합니다.
  * 중복 방지를 위해 캐시를 사용합니다.
  *
- * @param propertyType 매물 유형 (아파트, 오피스텔, 상가, 단독주택, 빌라, 원룸)
+ * @param propertyType 매물 유형 (아파트, 오피스텔, 단독주택, 빌라, 원룸, 주택, 다가구주택, 근린주택, 도시형생활주택)
  * @param location 지역명
  * @returns 고유한 이미지 URL 또는 null
  */
@@ -385,7 +362,7 @@ export async function searchUniquePropertyImage(
 /**
  * 매물 이미지를 검색합니다. (기존 함수 - 호환성 유지)
  *
- * @param propertyType 매물 유형 (아파트, 오피스텔, 상가, 단독주택, 빌라, 원룸)
+ * @param propertyType 매물 유형 (아파트, 오피스텔, 단독주택, 빌라, 원룸, 주택, 다가구주택, 근린주택, 도시형생활주택)
  * @param location 지역명
  * @param marketValue 시장가
  * @returns 이미지 URL 또는 null
@@ -471,15 +448,17 @@ export function getDefaultPropertyImage(propertyType: string): string {
       "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
     오피스텔:
       "https://images.unsplash.com/photo-1722299547563-03e2d21fe289?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4MTU3OTV8MHwxfHNlYXJjaHw4fHxnbGFzcyUyMHNreXNjcmFwZXIlMjBtb2Rlcm58ZW58MHwwfHx8MTc2MTU3MjkzNXww&ixlib=rb-4.1.0&q=85",
-    상가: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
     단독주택:
       "https://images.unsplash.com/photo-1686164748506-4311ba437c24?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MTU3OTV8MHwxfHNlYXJjaHw3fHxtb2Rlcm4lMjBjb250ZW1wb3JhcnklMjBob3VzZSUyMGV4dGVyaW9yJTIwYXJjaGl0ZWN0dXJlfGVufDF8MHx8fDE3NjE1NzMzODl8MA&ixlib=rb-4.1.0&q=80&w=1080",
     빌라: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
     원룸: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
     주택: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    다가구주택: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    근린주택: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    도시형생활주택: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+    다가구주택:
+      "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+    근린주택:
+      "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+    도시형생활주택:
+      "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
   };
 
   const selectedImage = defaultImages[propertyType] || defaultImages.아파트;

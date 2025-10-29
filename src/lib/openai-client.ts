@@ -170,7 +170,7 @@ function getEducationalPropertyPrompt(difficulty: DifficultyLevel): string {
       rightsCount: "5개 이상 (근저당 3개 + 가압류 2개 + 전세권 또는 지상권)",
       tenantsComplexity:
         "대항력 있는 임차인 2-3명 + 소액임차인 우선변제권 고려",
-      propertyTypes: "상가, 근린주택, 토지+건물",
+      propertyTypes: "근린주택, 토지+건물",
       auctionRounds: "3-5회 (최저가 40-60%)",
       educationGoals: [
         "복잡한 권리관계 완전 분석",
@@ -512,34 +512,6 @@ function generateSimulationRights(
       });
       break;
 
-    case "상가":
-      // 상가는 상업용 대출과 임대 관련 권리
-      rights.push({
-        id: "right-2",
-        registrationDate: "2019-03-20",
-        rightType: "근저당권",
-        rightHolder: "하나은행",
-        claimAmount: secondaryClaimAmount,
-        priority: 2,
-        isMalsoBaseRight: false,
-        willBeExtinguished: false,
-        willBeAssumed: false,
-      });
-      if (Math.random() > 0.6) {
-        rights.push({
-          id: "right-3",
-          registrationDate: "2020-07-10",
-          rightType: "전세권",
-          rightHolder: "김영수",
-          claimAmount: Math.floor(claimAmount * 0.2),
-          priority: 3,
-          isMalsoBaseRight: false,
-          willBeExtinguished: false,
-          willBeAssumed: false,
-        });
-      }
-      break;
-
     case "단독주택":
       // 단독주택은 개인 대출이 많음
       if (Math.random() > 0.4) {
@@ -600,22 +572,6 @@ function generateSimulationTenants(
         monthlyRent: 0,
         moveInDate: "2021-01-10",
         confirmationDate: "2021-01-10",
-        hasDaehangryeok: true,
-        isSmallTenant: false,
-        priorityPaymentAmount: 0,
-        willBeAssumed: false,
-      });
-      break;
-
-    case "상가":
-      // 상가는 상업용 임차인
-      tenants.push({
-        id: "tenant-1",
-        tenantName: "박민수",
-        deposit: 80000000,
-        monthlyRent: 0,
-        moveInDate: "2019-12-01",
-        confirmationDate: "2019-12-01",
         hasDaehangryeok: true,
         isSmallTenant: false,
         priorityPaymentAmount: 0,
@@ -701,13 +657,6 @@ function generateSimulationPriceRanges(propertyType: string, region: string) {
       "경기 신도시": { min: 1.5, max: 4 },
       "지방 광역시": { min: 0.8, max: 3 },
       기타: { min: 1, max: 4 },
-    },
-    상가: {
-      "서울 강남": { min: 5, max: 15 },
-      "서울 비강남": { min: 2, max: 8 },
-      "경기 신도시": { min: 1.5, max: 6 },
-      "지방 광역시": { min: 0.8, max: 4 },
-      기타: { min: 1, max: 5 },
     },
     단독주택: {
       "서울 강남": { min: 6, max: 20 },
@@ -931,69 +880,6 @@ export async function generateSimulationProperty(): Promise<SimulationScenario> 
             structure: "철근콘크리트조",
             usage: "오피스텔",
             floor: "18층",
-          },
-        ],
-      },
-      {
-        propertyType: "상가",
-        locations: [
-          { full: "서울특별시 강남구 가로수길 123-45", short: "서울 강남구" },
-          { full: "서울특별시 마포구 홍대입구역 456-78", short: "서울 마포구" },
-          { full: "서울특별시 종로구 인사동 789-12", short: "서울 종로구" },
-          { full: "서울특별시 송파구 잠실동 101-23", short: "서울 송파구" },
-          { full: "경기도 부천시 원미구 상동 202-34", short: "경기 부천시" },
-        ],
-        priceRanges: generateSimulationPriceRanges("상가", "서울 강남"),
-        propertyDetails: [
-          {
-            landArea: 49.6,
-            landAreaPyeong: 15.0,
-            buildingArea: 49.6,
-            buildingAreaPyeong: 15.0,
-            buildingType: "15평형",
-            structure: "철근콘크리트조",
-            usage: "상가",
-            floor: "1층",
-          },
-          {
-            landArea: 33.1,
-            landAreaPyeong: 10.0,
-            buildingArea: 33.1,
-            buildingAreaPyeong: 10.0,
-            buildingType: "10평형",
-            structure: "철근콘크리트조",
-            usage: "상가",
-            floor: "1층",
-          },
-          {
-            landArea: 66.1,
-            landAreaPyeong: 20.0,
-            buildingArea: 66.1,
-            buildingAreaPyeong: 20.0,
-            buildingType: "20평형",
-            structure: "철근콘크리트조",
-            usage: "상가",
-            floor: "1층",
-          },
-          {
-            landArea: 24.8,
-            landAreaPyeong: 7.5,
-            buildingArea: 24.8,
-            buildingAreaPyeong: 7.5,
-            buildingType: "7.5평형",
-            structure: "철근콘크리트조",
-            usage: "상가",
-            floor: "1층",
-          },
-          {
-            landArea: 82.6,
-            landAreaPyeong: 25.0,
-            buildingArea: 82.6,
-            buildingAreaPyeong: 25.0,
-            buildingType: "25평형",
-            structure: "철근콘크리트조",
-            usage: "상가",
-            floor: "1층",
           },
         ],
       },
@@ -1261,7 +1147,10 @@ export async function generateSimulationProperty(): Promise<SimulationScenario> 
           { full: "서울특별시 마포구 상암동 101-23", short: "서울 마포구" },
           { full: "경기도 성남시 분당구 정자동 202-34", short: "경기 성남시" },
         ],
-        priceRanges: generateSimulationPriceRanges("도시형생활주택", "서울 강남"),
+        priceRanges: generateSimulationPriceRanges(
+          "도시형생활주택",
+          "서울 강남"
+        ),
         propertyDetails: [
           {
             landArea: 19.8,
