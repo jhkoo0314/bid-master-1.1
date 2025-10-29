@@ -61,6 +61,17 @@ interface BiddingResult {
     marketTrend: 'hot' | 'normal' | 'cold';
     competitionLevel: 'high' | 'medium' | 'low';
     successProbability: number;
+    // 수익모델 분석 데이터 (권리유형 13가지 반영)
+    profitAnalysis: {
+      totalInvestment: number; // 총 투자금액 (낙찰가 + 인수권리금 + 임차보증금)
+      netProfit: number; // 순수익 (감정가 - 총투자금액)
+      roi: number; // ROI (%)
+      breakEvenPrice: number; // 손익분기점 가격
+      profitMargin: number; // 수익률 (%)
+      riskLevel: 'high' | 'medium' | 'low';
+      riskFactors: string[];
+      investmentRecommendation: 'strong_buy' | 'buy' | 'hold' | 'avoid';
+    };
   };
 }
 
@@ -292,10 +303,10 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
       console.log("⚠️ [입찰결과] 권장 범위가 없어 기본값 사용");
     }
 
-    // ROI 계산 (간단한 버전)
-    const totalInvestment = winningBid + safetyMargin + 5000000; // 명도비용 500만원 추가
-    const expectedProfit = property.basicInfo.marketValue - totalInvestment;
-    const roi = (expectedProfit / totalInvestment) * 100;
+    // ROI 계산 (간단한 버전) - 임시 변수로 계산
+    const tempTotalInvestment = winningBid + safetyMargin + 5000000; // 명도비용 500만원 추가
+    const expectedProfit = property.basicInfo.marketValue - tempTotalInvestment;
+    const tempRoi = (expectedProfit / tempTotalInvestment) * 100;
 
     // 포인트 계산
     console.log("⭐ [입찰결과] 포인트 계산 시작");
@@ -304,7 +315,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
       userBidPrice: formData.bidPrice,
       winningBidPrice: winningBid,
       isSuccess: isUserWinner,
-      roi,
+      roi: tempRoi,
       rightsAnalysisResult: {
         totalAssumedAmount: rightsAnalysisResult.totalAssumedAmount,
         safetyMargin: rightsAnalysisResult.safetyMargin,
@@ -329,8 +340,8 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
       ? accuracy 
       : (dashboardStats.accuracy * 0.7 + accuracy * 0.3); // 가중 평균
     const newRoi = dashboardStats.roi === 0 
-      ? roi / 100 
-      : (dashboardStats.roi * 0.7 + (roi / 100) * 0.3); // 가중 평균 (ROI는 %를 소수로 변환)
+      ? tempRoi / 100 
+      : (dashboardStats.roi * 0.7 + (tempRoi / 100) * 0.3); // 가중 평균 (ROI는 %를 소수로 변환)
 
     updateDashboardStats({
       points: currentPoints,
@@ -345,7 +356,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
       누적포인트: currentPoints,
       누적XP: currentXp,
       정확도: `${(accuracy * 100).toFixed(1)}%`,
-      ROI: `${roi.toFixed(2)}%`,
+      ROI: `${tempRoi.toFixed(2)}%`,
     });
 
     // 경매분석 데이터 계산
@@ -365,6 +376,39 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
     const successProbability = Math.min(95, Math.max(5, 
       ((formData.bidPrice - averageBidPrice) / averageBidPrice * 50) + 50
     ));
+
+    // 수익모델 분석 (권리유형 13가지 반영)
+    const totalInvestment = winningBid + rightsAnalysisResult.totalAssumedAmount + rightsAnalysisResult.totalTenantDeposit;
+    const netProfit = property.basicInfo.appraisalValue - totalInvestment;
+    const roi = (netProfit / totalInvestment) * 100;
+    const breakEvenPrice = totalInvestment;
+    const profitMargin = (netProfit / property.basicInfo.appraisalValue) * 100;
+    
+    // 리스크 분석 (권리 분석 결과 반영)
+    const riskLevel = rightsAnalysisResult.riskAnalysis.overallRiskLevel;
+    const riskFactors = rightsAnalysisResult.riskAnalysis.riskFactors;
+    
+    // 투자 권장도 계산 (수익성 + 리스크 종합)
+    let investmentRecommendation: 'strong_buy' | 'buy' | 'hold' | 'avoid';
+    if (roi > 20 && riskLevel === 'low') {
+      investmentRecommendation = 'strong_buy';
+    } else if (roi > 10 && riskLevel !== 'high') {
+      investmentRecommendation = 'buy';
+    } else if (roi > 0) {
+      investmentRecommendation = 'hold';
+    } else {
+      investmentRecommendation = 'avoid';
+    }
+
+    console.log("📊 [경매분석] 수익모델 분석 완료:", {
+      총투자금액: formatNumber(totalInvestment),
+      순수익: formatNumber(netProfit),
+      ROI: `${roi.toFixed(2)}%`,
+      수익률: `${profitMargin.toFixed(2)}%`,
+      손익분기점: formatNumber(breakEvenPrice),
+      리스크레벨: riskLevel,
+      투자권장도: investmentRecommendation
+    });
 
     console.log("📊 [경매분석] 경매분석 데이터 계산 완료:", {
       평균입찰가: formatNumber(averageBidPrice),
@@ -400,6 +444,16 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
         marketTrend,
         competitionLevel,
         successProbability,
+        profitAnalysis: {
+          totalInvestment,
+          netProfit,
+          roi,
+          breakEvenPrice,
+          profitMargin,
+          riskLevel,
+          riskFactors,
+          investmentRecommendation,
+        },
       },
     };
 
@@ -1234,6 +1288,109 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                         </div>
                       </div>
 
+                      {/* 수익 분석 (권리유형 13가지 반영) */}
+                      <div className="mt-4 p-3 rounded border">
+                        <h6 className="font-semibold text-gray-900 mb-3">수익 분석 (권리유형 종합)</h6>
+                        
+                        {devMode.isDevMode ? (
+                          <>
+                            {console.log("💰 [수익분석] 개발자 모드 - 수익분석 상세 정보 표시")}
+                            {/* 투자 금액 분석 */}
+                            <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+                              <div>
+                                <span className="text-gray-600">총 투자금액:</span>
+                                <span className="ml-2 font-semibold text-red-600">
+                                  {formatNumber(biddingResult.auctionAnalysis.profitAnalysis.totalInvestment)}원
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-gray-600">순수익:</span>
+                                <span className={`ml-2 font-semibold ${
+                                  biddingResult.auctionAnalysis.profitAnalysis.netProfit > 0 ? 'text-green-600' : 'text-red-600'
+                                }`}>
+                                  {formatNumber(biddingResult.auctionAnalysis.profitAnalysis.netProfit)}원
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-gray-600">ROI:</span>
+                                <span className={`ml-2 font-semibold ${
+                                  biddingResult.auctionAnalysis.profitAnalysis.roi > 0 ? 'text-green-600' : 'text-red-600'
+                                }`}>
+                                  {biddingResult.auctionAnalysis.profitAnalysis.roi.toFixed(2)}%
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-gray-600">수익률:</span>
+                                <span className={`ml-2 font-semibold ${
+                                  biddingResult.auctionAnalysis.profitAnalysis.profitMargin > 0 ? 'text-green-600' : 'text-red-600'
+                                }`}>
+                                  {biddingResult.auctionAnalysis.profitAnalysis.profitMargin.toFixed(2)}%
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* 투자 권장도 */}
+                            <div className="mt-4 p-3 rounded border">
+                              <div className={`p-3 rounded ${
+                                biddingResult.auctionAnalysis.profitAnalysis.investmentRecommendation === 'strong_buy' ? 'bg-green-50 border-green-200' :
+                                biddingResult.auctionAnalysis.profitAnalysis.investmentRecommendation === 'buy' ? 'bg-blue-50 border-blue-200' :
+                                biddingResult.auctionAnalysis.profitAnalysis.investmentRecommendation === 'hold' ? 'bg-yellow-50 border-yellow-200' :
+                                'bg-red-50 border-red-200'
+                              }`}>
+                                <div className="flex items-center gap-2 mb-2">
+                                  <span className="text-lg">
+                                    {biddingResult.auctionAnalysis.profitAnalysis.investmentRecommendation === 'strong_buy' ? '🚀' :
+                                     biddingResult.auctionAnalysis.profitAnalysis.investmentRecommendation === 'buy' ? '📈' :
+                                     biddingResult.auctionAnalysis.profitAnalysis.investmentRecommendation === 'hold' ? '⏸️' : '⚠️'}
+                                  </span>
+                                  <h6 className="font-semibold text-gray-900">
+                                    투자 권장도: {
+                                      biddingResult.auctionAnalysis.profitAnalysis.investmentRecommendation === 'strong_buy' ? '강력 매수' :
+                                      biddingResult.auctionAnalysis.profitAnalysis.investmentRecommendation === 'buy' ? '매수' :
+                                      biddingResult.auctionAnalysis.profitAnalysis.investmentRecommendation === 'hold' ? '보유' : '회피'
+                                    }
+                                  </h6>
+                                </div>
+                                
+                                <div className="text-sm text-gray-700">
+                                  <p className="mb-2">
+                                    <strong>분석:</strong> 권리유형 13가지를 종합 분석한 결과, 
+                                    {biddingResult.auctionAnalysis.profitAnalysis.roi > 0 ? 
+                                      ` 예상 수익률 ${biddingResult.auctionAnalysis.profitAnalysis.roi.toFixed(2)}%로 ` :
+                                      ` 예상 손실률 ${Math.abs(biddingResult.auctionAnalysis.profitAnalysis.roi).toFixed(2)}%로 `
+                                    }
+                                    {biddingResult.auctionAnalysis.profitAnalysis.investmentRecommendation === 'strong_buy' ? '매우 유망한 투자 기회입니다.' :
+                                     biddingResult.auctionAnalysis.profitAnalysis.investmentRecommendation === 'buy' ? '적당한 투자 기회입니다.' :
+                                     biddingResult.auctionAnalysis.profitAnalysis.investmentRecommendation === 'hold' ? '신중한 검토가 필요합니다.' : '투자를 권장하지 않습니다.'}
+                                  </p>
+                                  <p>
+                                    <strong>손익분기점:</strong> {formatNumber(biddingResult.auctionAnalysis.profitAnalysis.breakEvenPrice)}원
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* 리스크 요인 (권리유형 기반) */}
+                            {biddingResult.auctionAnalysis.profitAnalysis.riskFactors.length > 0 && (
+                              <div className="mt-3 p-3 rounded border">
+                                <h6 className="font-semibold text-gray-900 mb-2">주요 리스크 요인</h6>
+                                <ul className="text-sm text-gray-600 list-disc list-inside space-y-1">
+                                  {biddingResult.auctionAnalysis.profitAnalysis.riskFactors.slice(0, 5).map((factor, index) => (
+                                    <li key={index}>{factor}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <div className="text-center py-8">
+                            {console.log("🚧 [수익분석] 일반모드 - 서비스 준비중 메시지 표시")}
+                            <div className="text-gray-500 text-lg mb-2">🚧</div>
+                            <p className="text-gray-600 font-medium">서비스 준비중입니다</p>
+                            <p className="text-sm text-gray-500 mt-1">곧 더 나은 서비스로 찾아뵙겠습니다</p>
+                          </div>
+                        )}
+                      </div>
 
                       <div className="mt-4 p-3 bg-green-50 rounded border border-green-200">
                         <p className="text-sm text-green-800 mb-3">
