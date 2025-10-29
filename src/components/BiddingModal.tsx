@@ -52,11 +52,6 @@ interface BiddingResult {
       optimal: number;
     };
   };
-  profitAnalysis: {
-    expectedProfit: number;
-    roi: number;
-    totalInvestment: number;
-  };
 }
 
 export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
@@ -286,7 +281,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
       console.log("⚠️ [입찰결과] 권장 범위가 없어 기본값 사용");
     }
 
-    // 수익 분석
+    // ROI 계산 (간단한 버전)
     const totalInvestment = winningBid + safetyMargin + 5000000; // 명도비용 500만원 추가
     const expectedProfit = property.basicInfo.marketValue - totalInvestment;
     const roi = (expectedProfit / totalInvestment) * 100;
@@ -358,11 +353,6 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
           optimal: Math.round((property.basicInfo.minimumBidPrice + property.basicInfo.appraisalValue * 0.8) / 2)
         },
       },
-      profitAnalysis: {
-        expectedProfit,
-        roi,
-        totalInvestment,
-      },
     };
 
     console.log("입찰 결과 상세:", {
@@ -432,16 +422,60 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
     console.log("권리 분석 리포트 클릭됨");
   };
 
-  // 수익 분석 클릭 핸들러
-  const handleProfitAnalysisClick = () => {
-    setShowProfitAnalysis(true);
-    console.log("수익 분석 클릭됨");
-  };
 
   // 사전 알림 신청 핸들러
   const handleWaitlistSignup = () => {
     console.log("사전 알림 신청 모달 열기");
     setShowWaitlistModal(true);
+  };
+
+  // 권리분석 요약 생성 함수
+  const generateRightsAnalysisSummary = (property: SimulationScenario, rightsAnalysis: any) => {
+    console.log("📊 [권리분석] 요약 생성 시작");
+    
+    const { totalAssumedAmount, safetyMargin, recommendedRange } = rightsAnalysis;
+    const { minimumBidPrice, appraisalValue } = property.basicInfo;
+    
+    // 실제 권리분석 엔진을 사용하여 정확한 결과 계산
+    const actualRightsAnalysis = analyzeRights(property);
+    const actualSafetyMargin = actualRightsAnalysis.safetyMargin;
+    const actualTotalAssumedAmount = actualRightsAnalysis.totalAssumedAmount;
+    const actualAssumedRights = actualRightsAnalysis.assumedRights.length;
+    const actualAssumedTenants = actualRightsAnalysis.assumedTenants.length;
+    
+    console.log("📊 [권리분석] 실제 분석 결과:", {
+      안전마진: actualSafetyMargin,
+      인수권리총액: actualTotalAssumedAmount,
+      인수권리개수: actualAssumedRights,
+      인수임차인수: actualAssumedTenants,
+      감정가: appraisalValue,
+      안전마진비율: `${((actualSafetyMargin / appraisalValue) * 100).toFixed(1)}%`
+    });
+    
+    // 안전 마진 비율 계산 (실제 값 사용)
+    const marginRatio = (actualSafetyMargin / appraisalValue) * 100;
+    
+    let title = "";
+    let content = "";
+    let details = "";
+    
+    if (marginRatio > 30) {
+      title = "⚠️ 고위험 매물";
+      content = `안전마진이 ${marginRatio.toFixed(1)}%로 매우 높아 주의가 필요합니다.`;
+      details = `인수권리 ${actualAssumedRights}개, 임차인 ${actualAssumedTenants}명으로 총 ${actualSafetyMargin.toLocaleString()}원 추가 부담 예상`;
+    } else if (marginRatio > 15) {
+      title = "⚡ 중위험 매물";
+      content = `안전마진이 ${marginRatio.toFixed(1)}%로 적당한 수준입니다.`;
+      details = `인수권리 ${actualAssumedRights}개, 임차인 ${actualAssumedTenants}명으로 총 ${actualSafetyMargin.toLocaleString()}원 추가 부담 예상`;
+    } else {
+      title = "✅ 안전한 매물";
+      content = `안전마진이 ${marginRatio.toFixed(1)}%로 낮아 상대적으로 안전합니다.`;
+      details = `인수권리 ${actualAssumedRights}개, 임차인 ${actualAssumedTenants}명으로 총 ${actualSafetyMargin.toLocaleString()}원 추가 부담 예상`;
+    }
+    
+    console.log("📊 [권리분석] 요약 생성 완료:", { title, content, details });
+    
+    return { title, content, details };
   };
 
   // 모달이 열릴 때 또는 매물이 변경될 때 formData 초기화 (단일 useEffect로 통합)
@@ -887,7 +921,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                 >
                   <div className="flex items-center justify-between">
                     <h4 className="font-semibold text-gray-900">
-                      권리분석 리포트
+                      권리 분석리포트 요약
                     </h4>
                     <span className="text-blue-600 text-sm">클릭하여 보기</span>
                   </div>
@@ -895,35 +929,35 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
 
                 {showRightsAnalysis && (
                   <div className="mt-3 p-4 bg-gray-50 rounded-lg border">
-                    <p className="text-center text-gray-600">
-                      서비스 준비중 입니다.
-                    </p>
+                    <div className="space-y-2 text-sm">
+                      {(() => {
+                        if (!biddingResult) return null;
+                        
+                        const { rightsAnalysis } = biddingResult;
+                        const { totalAssumedAmount, safetyMargin } = rightsAnalysis;
+                        
+                        // 권리분석 요약 생성
+                        const summary = generateRightsAnalysisSummary(property, rightsAnalysis);
+                        
+                        return (
+                          <>
+                            <div className="font-medium text-gray-800">
+                              {summary.title}
+                            </div>
+                            <div className="text-gray-600">
+                              {summary.content}
+                            </div>
+                            <div className="text-gray-500 text-xs">
+                              {summary.details}
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </div>
                   </div>
                 )}
               </div>
 
-              {/* 수익 분석 */}
-              <div>
-                <button
-                  onClick={handleProfitAnalysisClick}
-                  className="w-full text-left p-4 bg-green-50 hover:bg-green-100 rounded-lg border border-green-200 transition-colors"
-                >
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-semibold text-gray-900">수익 분석</h4>
-                    <span className="text-green-600 text-sm">
-                      클릭하여 보기
-                    </span>
-                  </div>
-                </button>
-
-                {showProfitAnalysis && (
-                  <div className="mt-3 p-4 bg-gray-50 rounded-lg border">
-                    <p className="text-center text-gray-600">
-                      서비스 준비중 입니다.
-                    </p>
-                  </div>
-                )}
-              </div>
 
               {/* 버튼들 */}
               <div className="flex justify-between">
