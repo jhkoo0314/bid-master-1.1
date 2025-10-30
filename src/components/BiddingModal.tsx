@@ -58,8 +58,8 @@ interface BiddingResult {
     highestBidPrice: number;
     lowestBidPrice: number;
     bidPriceRange: number;
-    marketTrend: 'hot' | 'normal' | 'cold';
-    competitionLevel: 'high' | 'medium' | 'low';
+    marketTrend: "hot" | "normal" | "cold";
+    competitionLevel: "high" | "medium" | "low";
     successProbability: number;
     // 수익모델 분석 데이터 (권리유형 13가지 반영)
     profitAnalysis: {
@@ -68,15 +68,16 @@ interface BiddingResult {
       roi: number; // ROI (%)
       breakEvenPrice: number; // 손익분기점 가격
       profitMargin: number; // 수익률 (%)
-      riskLevel: 'high' | 'medium' | 'low';
+      riskLevel: "high" | "medium" | "low";
       riskFactors: string[];
-      investmentRecommendation: 'strong_buy' | 'buy' | 'hold' | 'avoid';
+      investmentRecommendation: "strong_buy" | "buy" | "hold" | "avoid";
     };
   };
 }
 
 export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
-  const { dashboardStats, updateDashboardStats, devMode } = useSimulationStore();
+  const { dashboardStats, updateDashboardStats, devMode } =
+    useSimulationStore();
 
   // 초기값을 빈 객체로 설정하고 useEffect에서 초기화
   const [formData, setFormData] = useState<BiddingFormData>({
@@ -102,7 +103,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
   const [showAuctionAnalysis, setShowAuctionAnalysis] = useState(false);
   const [showWaitlistModal, setShowWaitlistModal] = useState(false);
   const [showAnalysisModal, setShowAnalysisModal] = useState(false);
-  
+
   // 이전 isOpen 값 추적 (무한 루프 방지)
   const prevIsOpenRef = useRef(false);
   const prevPropertyIdRef = useRef<string | undefined>(undefined);
@@ -267,217 +268,241 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
       setIsSubmitting(true);
       console.log("입찰표 제출 시작:", formData);
 
-    // 2초 대기 (로딩 효과)
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+      // 2초 대기 (로딩 효과)
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
-    // 가상 경쟁자 생성
-    const virtualBidders = generateVirtualBidders(
-      formData.bidPrice,
-      property.basicInfo.minimumBidPrice,
-      property.basicInfo.appraisalValue
-    );
+      // 가상 경쟁자 생성
+      const virtualBidders = generateVirtualBidders(
+        formData.bidPrice,
+        property.basicInfo.minimumBidPrice,
+        property.basicInfo.appraisalValue
+      );
 
-    // 낙찰자 찾기
-    const winner = virtualBidders.find((bidder) => bidder.isWinner);
-    const winningBid = winner ? winner.bidPrice : virtualBidders[0].bidPrice;
-    const isUserWinner = winner ? winner.name === "나" : false;
-    const totalBidders = virtualBidders.length;
+      // 낙찰자 찾기
+      const winner = virtualBidders.find((bidder) => bidder.isWinner);
+      const winningBid = winner ? winner.bidPrice : virtualBidders[0].bidPrice;
+      const isUserWinner = winner ? winner.name === "나" : false;
+      const totalBidders = virtualBidders.length;
 
-    // 경쟁률 계산 (참여자 수 대비 비율, 예: 6:1)
-    const competitionRate = `${totalBidders}:1`;
-    console.log("경쟁률 계산:", { totalBidders, competitionRate });
+      // 경쟁률 계산 (참여자 수 대비 비율, 예: 6:1)
+      const competitionRate = `${totalBidders}:1`;
+      console.log("경쟁률 계산:", { totalBidders, competitionRate });
 
-    // 낙찰가율 계산 (낙찰가 대비 감정가 비율 %)
-    const bidPriceRatio = Math.round(
-      (winningBid / property.basicInfo.appraisalValue) * 100
-    );
+      // 낙찰가율 계산 (낙찰가 대비 감정가 비율 %)
+      const bidPriceRatio = Math.round(
+        (winningBid / property.basicInfo.appraisalValue) * 100
+      );
 
-    // 권리분석 결과 (더 정확한 분석 사용)
-    const rightsAnalysisResult = analyzeRights(property);
-    const recommendedRange = rightsAnalysisResult.recommendedBidRange;
-    const totalAssumedAmount = rightsAnalysisResult.totalAssumedAmount;
-    const safetyMargin = rightsAnalysisResult.safetyMargin;
-    
-    // recommendedRange가 undefined인 경우 기본값 제공
-    if (!recommendedRange) {
-      console.log("⚠️ [입찰결과] 권장 범위가 없어 기본값 사용");
-    }
+      // 권리분석 결과 (더 정확한 분석 사용)
+      const rightsAnalysisResult = analyzeRights(property);
+      const recommendedRange = rightsAnalysisResult.recommendedBidRange;
+      const totalAssumedAmount = rightsAnalysisResult.totalAssumedAmount;
+      const safetyMargin = rightsAnalysisResult.safetyMargin;
 
-    // ROI 계산 (간단한 버전) - 임시 변수로 계산
-    const tempTotalInvestment = winningBid + safetyMargin + 5000000; // 명도비용 500만원 추가
-    const expectedProfit = property.basicInfo.marketValue - tempTotalInvestment;
-    const tempRoi = (expectedProfit / tempTotalInvestment) * 100;
+      // recommendedRange가 undefined인 경우 기본값 제공
+      if (!recommendedRange) {
+        console.log("⚠️ [입찰결과] 권장 범위가 없어 기본값 사용");
+      }
 
-    // 포인트 계산
-    console.log("⭐ [입찰결과] 포인트 계산 시작");
-    const pointResult = calculatePoints({
-      scenario: property,
-      userBidPrice: formData.bidPrice,
-      winningBidPrice: winningBid,
-      isSuccess: isUserWinner,
-      roi: tempRoi,
-      rightsAnalysisResult: {
-        totalAssumedAmount: rightsAnalysisResult.totalAssumedAmount,
-        safetyMargin: rightsAnalysisResult.safetyMargin,
-        recommendedRange: recommendedRange || {
-          min: property.basicInfo.minimumBidPrice,
-          max: property.basicInfo.appraisalValue * 0.8,
-          optimal: Math.round((property.basicInfo.minimumBidPrice + property.basicInfo.appraisalValue * 0.8) / 2)
+      // ROI 계산 (간단한 버전) - 임시 변수로 계산
+      const tempTotalInvestment = winningBid + safetyMargin + 5000000; // 명도비용 500만원 추가
+      const expectedProfit =
+        property.basicInfo.marketValue - tempTotalInvestment;
+      const tempRoi = (expectedProfit / tempTotalInvestment) * 100;
+
+      // 포인트 계산
+      console.log("⭐ [입찰결과] 포인트 계산 시작");
+      const pointResult = calculatePoints({
+        scenario: property,
+        userBidPrice: formData.bidPrice,
+        winningBidPrice: winningBid,
+        isSuccess: isUserWinner,
+        roi: tempRoi,
+        rightsAnalysisResult: {
+          totalAssumedAmount: rightsAnalysisResult.totalAssumedAmount,
+          safetyMargin: rightsAnalysisResult.safetyMargin,
+          recommendedRange: recommendedRange || {
+            min: property.basicInfo.minimumBidPrice,
+            max: property.basicInfo.appraisalValue * 0.8,
+            optimal: Math.round(
+              (property.basicInfo.minimumBidPrice +
+                property.basicInfo.appraisalValue * 0.8) /
+                2
+            ),
+          },
         },
-      },
-    });
+      });
 
-    // 정확도 계산
-    const accuracy = calculateAccuracy(formData.bidPrice, recommendedRange);
+      // 정확도 계산
+      const accuracy = calculateAccuracy(formData.bidPrice, recommendedRange);
 
-    // 대시보드 통계 업데이트
-    const currentPoints = dashboardStats.points + pointResult.totalPoints;
-    const currentXp = dashboardStats.xp + pointResult.xp;
-    
-    // 평균 정확도 및 ROI 계산 (이전 정확도와 ROI를 배열로 저장해야 하지만, 
-    // 여기서는 간단히 이동 평균으로 계산)
-    const newAccuracy = dashboardStats.accuracy === 0 
-      ? accuracy 
-      : (dashboardStats.accuracy * 0.7 + accuracy * 0.3); // 가중 평균
-    const newRoi = dashboardStats.roi === 0 
-      ? tempRoi / 100 
-      : (dashboardStats.roi * 0.7 + (tempRoi / 100) * 0.3); // 가중 평균 (ROI는 %를 소수로 변환)
+      // 대시보드 통계 업데이트
+      const currentPoints = dashboardStats.points + pointResult.totalPoints;
+      const currentXp = dashboardStats.xp + pointResult.xp;
 
-    updateDashboardStats({
-      points: currentPoints,
-      xp: currentXp,
-      accuracy: newAccuracy,
-      roi: newRoi,
-    });
+      // 평균 정확도 및 ROI 계산 (이전 정확도와 ROI를 배열로 저장해야 하지만,
+      // 여기서는 간단히 이동 평균으로 계산)
+      const newAccuracy =
+        dashboardStats.accuracy === 0
+          ? accuracy
+          : dashboardStats.accuracy * 0.7 + accuracy * 0.3; // 가중 평균
+      const newRoi =
+        dashboardStats.roi === 0
+          ? tempRoi / 100
+          : dashboardStats.roi * 0.7 + (tempRoi / 100) * 0.3; // 가중 평균 (ROI는 %를 소수로 변환)
 
-    console.log("📊 [입찰결과] 대시보드 통계 업데이트 완료:", {
-      포인트: pointResult.totalPoints,
-      XP: pointResult.xp,
-      누적포인트: currentPoints,
-      누적XP: currentXp,
-      정확도: `${(accuracy * 100).toFixed(1)}%`,
-      ROI: `${tempRoi.toFixed(2)}%`,
-    });
+      updateDashboardStats({
+        points: currentPoints,
+        xp: currentXp,
+        accuracy: newAccuracy,
+        roi: newRoi,
+      });
 
-    // 경매분석 데이터 계산
-    const allBidPrices = virtualBidders.map(bidder => bidder.bidPrice);
-    const averageBidPrice = Math.round(allBidPrices.reduce((sum, price) => sum + price, 0) / allBidPrices.length);
-    const highestBidPrice = Math.max(...allBidPrices);
-    const lowestBidPrice = Math.min(...allBidPrices);
-    const bidPriceRange = highestBidPrice - lowestBidPrice;
-    
-    // 시장 트렌드 분석
-    const marketTrend = bidPriceRatio > 80 ? 'hot' : bidPriceRatio > 60 ? 'normal' : 'cold';
-    
-    // 경쟁 수준 분석
-    const competitionLevel = totalBidders > 8 ? 'high' : totalBidders > 4 ? 'medium' : 'low';
-    
-    // 성공 확률 계산 (사용자 입찰가가 평균보다 높으면 성공 확률 높음)
-    const successProbability = Math.min(95, Math.max(5, 
-      ((formData.bidPrice - averageBidPrice) / averageBidPrice * 50) + 50
-    ));
+      console.log("📊 [입찰결과] 대시보드 통계 업데이트 완료:", {
+        포인트: pointResult.totalPoints,
+        XP: pointResult.xp,
+        누적포인트: currentPoints,
+        누적XP: currentXp,
+        정확도: `${(accuracy * 100).toFixed(1)}%`,
+        ROI: `${tempRoi.toFixed(2)}%`,
+      });
 
-    // 수익모델 분석 (권리유형 13가지 반영)
-    const totalInvestment = winningBid + rightsAnalysisResult.totalAssumedAmount + rightsAnalysisResult.totalTenantDeposit;
-    const netProfit = property.basicInfo.appraisalValue - totalInvestment;
-    const roi = (netProfit / totalInvestment) * 100;
-    const breakEvenPrice = totalInvestment;
-    const profitMargin = (netProfit / property.basicInfo.appraisalValue) * 100;
-    
-    // 리스크 분석 (권리 분석 결과 반영)
-    const riskLevel = rightsAnalysisResult.riskAnalysis.overallRiskLevel;
-    const riskFactors = rightsAnalysisResult.riskAnalysis.riskFactors;
-    
-    // 투자 권장도 계산 (수익성 + 리스크 종합)
-    let investmentRecommendation: 'strong_buy' | 'buy' | 'hold' | 'avoid';
-    if (roi > 20 && riskLevel === 'low') {
-      investmentRecommendation = 'strong_buy';
-    } else if (roi > 10 && riskLevel !== 'high') {
-      investmentRecommendation = 'buy';
-    } else if (roi > 0) {
-      investmentRecommendation = 'hold';
-    } else {
-      investmentRecommendation = 'avoid';
-    }
+      // 경매분석 데이터 계산
+      const allBidPrices = virtualBidders.map((bidder) => bidder.bidPrice);
+      const averageBidPrice = Math.round(
+        allBidPrices.reduce((sum, price) => sum + price, 0) /
+          allBidPrices.length
+      );
+      const highestBidPrice = Math.max(...allBidPrices);
+      const lowestBidPrice = Math.min(...allBidPrices);
+      const bidPriceRange = highestBidPrice - lowestBidPrice;
 
-    console.log("📊 [경매분석] 수익모델 분석 완료:", {
-      총투자금액: formatNumber(totalInvestment),
-      순수익: formatNumber(netProfit),
-      ROI: `${roi.toFixed(2)}%`,
-      수익률: `${profitMargin.toFixed(2)}%`,
-      손익분기점: formatNumber(breakEvenPrice),
-      리스크레벨: riskLevel,
-      투자권장도: investmentRecommendation
-    });
+      // 시장 트렌드 분석
+      const marketTrend =
+        bidPriceRatio > 80 ? "hot" : bidPriceRatio > 60 ? "normal" : "cold";
 
-    console.log("📊 [경매분석] 경매분석 데이터 계산 완료:", {
-      평균입찰가: formatNumber(averageBidPrice),
-      최고입찰가: formatNumber(highestBidPrice),
-      최저입찰가: formatNumber(lowestBidPrice),
-      입찰가범위: formatNumber(bidPriceRange),
-      시장트렌드: marketTrend,
-      경쟁수준: competitionLevel,
-      성공확률: `${successProbability.toFixed(1)}%`
-    });
+      // 경쟁 수준 분석
+      const competitionLevel =
+        totalBidders > 8 ? "high" : totalBidders > 4 ? "medium" : "low";
 
-    const result: BiddingResult = {
-      userBidPrice: formData.bidPrice,
-      isSuccess: isUserWinner,
-      competitionRate,
-      totalBidders,
-      winningBidPrice: winningBid,
-      virtualBidders,
-      rightsAnalysis: {
-        totalAssumedAmount: rightsAnalysisResult.totalAssumedAmount,
-        safetyMargin: rightsAnalysisResult.safetyMargin,
-        recommendedRange: recommendedRange || {
-          min: property.basicInfo.minimumBidPrice,
-          max: property.basicInfo.appraisalValue * 0.8,
-          optimal: Math.round((property.basicInfo.minimumBidPrice + property.basicInfo.appraisalValue * 0.8) / 2)
+      // 성공 확률 계산 (사용자 입찰가가 평균보다 높으면 성공 확률 높음)
+      const successProbability = Math.min(
+        95,
+        Math.max(
+          5,
+          ((formData.bidPrice - averageBidPrice) / averageBidPrice) * 50 + 50
+        )
+      );
+
+      // 수익모델 분석 (권리유형 13가지 반영)
+      const totalInvestment =
+        winningBid +
+        rightsAnalysisResult.totalAssumedAmount +
+        rightsAnalysisResult.totalTenantDeposit;
+      const netProfit = property.basicInfo.appraisalValue - totalInvestment;
+      const roi = (netProfit / totalInvestment) * 100;
+      const breakEvenPrice = totalInvestment;
+      const profitMargin =
+        (netProfit / property.basicInfo.appraisalValue) * 100;
+
+      // 리스크 분석 (권리 분석 결과 반영)
+      const riskLevel = rightsAnalysisResult.riskAnalysis.overallRiskLevel;
+      const riskFactors = rightsAnalysisResult.riskAnalysis.riskFactors;
+
+      // 투자 권장도 계산 (수익성 + 리스크 종합)
+      let investmentRecommendation: "strong_buy" | "buy" | "hold" | "avoid";
+      if (roi > 20 && riskLevel === "low") {
+        investmentRecommendation = "strong_buy";
+      } else if (roi > 10 && riskLevel !== "high") {
+        investmentRecommendation = "buy";
+      } else if (roi > 0) {
+        investmentRecommendation = "hold";
+      } else {
+        investmentRecommendation = "avoid";
+      }
+
+      console.log("📊 [경매분석] 수익모델 분석 완료:", {
+        총투자금액: formatNumber(totalInvestment),
+        순수익: formatNumber(netProfit),
+        ROI: `${roi.toFixed(2)}%`,
+        수익률: `${profitMargin.toFixed(2)}%`,
+        손익분기점: formatNumber(breakEvenPrice),
+        리스크레벨: riskLevel,
+        투자권장도: investmentRecommendation,
+      });
+
+      console.log("📊 [경매분석] 경매분석 데이터 계산 완료:", {
+        평균입찰가: formatNumber(averageBidPrice),
+        최고입찰가: formatNumber(highestBidPrice),
+        최저입찰가: formatNumber(lowestBidPrice),
+        입찰가범위: formatNumber(bidPriceRange),
+        시장트렌드: marketTrend,
+        경쟁수준: competitionLevel,
+        성공확률: `${successProbability.toFixed(1)}%`,
+      });
+
+      const result: BiddingResult = {
+        userBidPrice: formData.bidPrice,
+        isSuccess: isUserWinner,
+        competitionRate,
+        totalBidders,
+        winningBidPrice: winningBid,
+        virtualBidders,
+        rightsAnalysis: {
+          totalAssumedAmount: rightsAnalysisResult.totalAssumedAmount,
+          safetyMargin: rightsAnalysisResult.safetyMargin,
+          recommendedRange: recommendedRange || {
+            min: property.basicInfo.minimumBidPrice,
+            max: property.basicInfo.appraisalValue * 0.8,
+            optimal: Math.round(
+              (property.basicInfo.minimumBidPrice +
+                property.basicInfo.appraisalValue * 0.8) /
+                2
+            ),
+          },
         },
-      },
-      auctionAnalysis: {
-        averageBidPrice,
-        highestBidPrice,
-        lowestBidPrice,
-        bidPriceRange,
-        marketTrend,
-        competitionLevel,
-        successProbability,
-        profitAnalysis: {
-          totalInvestment,
-          netProfit,
-          roi,
-          breakEvenPrice,
-          profitMargin,
-          riskLevel,
-          riskFactors,
-          investmentRecommendation,
+        auctionAnalysis: {
+          averageBidPrice,
+          highestBidPrice,
+          lowestBidPrice,
+          bidPriceRange,
+          marketTrend,
+          competitionLevel,
+          successProbability,
+          profitAnalysis: {
+            totalInvestment,
+            netProfit,
+            roi,
+            breakEvenPrice,
+            profitMargin,
+            riskLevel,
+            riskFactors,
+            investmentRecommendation,
+          },
         },
-      },
-    };
+      };
 
-    console.log("입찰 결과 상세:", {
-      경쟁률: competitionRate,
-      낙찰가율: `${bidPriceRatio}%`,
-      낙찰가: formatNumber(winningBid),
-      감정가: formatNumber(property.basicInfo.appraisalValue),
-      사용자낙찰: isUserWinner,
-      입찰보증금: formatNumber(formData.depositAmount),
-      남은잔금: isUserWinner
-        ? formatNumber(winningBid - formData.depositAmount)
-        : "낙찰실패",
-    });
+      console.log("입찰 결과 상세:", {
+        경쟁률: competitionRate,
+        낙찰가율: `${bidPriceRatio}%`,
+        낙찰가: formatNumber(winningBid),
+        감정가: formatNumber(property.basicInfo.appraisalValue),
+        사용자낙찰: isUserWinner,
+        입찰보증금: formatNumber(formData.depositAmount),
+        남은잔금: isUserWinner
+          ? formatNumber(winningBid - formData.depositAmount)
+          : "낙찰실패",
+      });
 
-    console.log("결과 객체 경쟁률:", competitionRate);
+      console.log("결과 객체 경쟁률:", competitionRate);
 
-    setBiddingResult(result);
-    setIsSubmitting(false);
-    console.log("입찰 결과:", result);
-    console.log(
-      "💰 [입찰결과] 감정가 표시:",
-      formatNumber(property.basicInfo.appraisalValue) + "원"
-    );
+      setBiddingResult(result);
+      setIsSubmitting(false);
+      console.log("입찰 결과:", result);
+      console.log(
+        "💰 [입찰결과] 감정가 표시:",
+        formatNumber(property.basicInfo.appraisalValue) + "원"
+      );
     } catch (error) {
       console.error("❌ [입찰 에러] 입찰 처리 중 오류 발생:", error);
       setIsSubmitting(false);
@@ -520,13 +545,19 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
   // 권리 분석 리포트 클릭 핸들러
   const handleRightsAnalysisClick = () => {
     setShowRightsAnalysis(!showRightsAnalysis);
-    console.log("📊 [권리분석] 권리분석리포트 요약 클릭됨:", !showRightsAnalysis);
+    console.log(
+      "📊 [권리분석] 권리분석리포트 요약 클릭됨:",
+      !showRightsAnalysis
+    );
   };
 
   // 경매 분석 리포트 클릭 핸들러
   const handleAuctionAnalysisClick = () => {
     setShowAuctionAnalysis(!showAuctionAnalysis);
-    console.log("📊 [경매분석] 경매분석리포트 요약 클릭됨:", !showAuctionAnalysis);
+    console.log(
+      "📊 [경매분석] 경매분석리포트 요약 클릭됨:",
+      !showAuctionAnalysis
+    );
   };
 
   // 사전 알림 신청 핸들러
@@ -536,38 +567,46 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
   };
 
   // 권리분석 요약 생성 함수
-  const generateRightsAnalysisSummary = (property: SimulationScenario, rightsAnalysis: any) => {
+  const generateRightsAnalysisSummary = (
+    property: SimulationScenario,
+    rightsAnalysis: any
+  ) => {
     console.log("📊 [권리분석] 요약 생성 시작");
-    
-    const { totalAssumedAmount, safetyMargin, recommendedRange } = rightsAnalysis;
+
+    const { totalAssumedAmount, safetyMargin, recommendedRange } =
+      rightsAnalysis;
     const { minimumBidPrice, appraisalValue } = property.basicInfo;
-    
+
     // 실제 권리분석 엔진을 사용하여 정확한 결과 계산
     const actualRightsAnalysis = analyzeRights(property);
     const actualSafetyMargin = actualRightsAnalysis.safetyMargin;
     const actualTotalAssumedAmount = actualRightsAnalysis.totalAssumedAmount;
     const actualAssumedRights = actualRightsAnalysis.assumedRights.length;
     const actualAssumedTenants = actualRightsAnalysis.assumedTenants.length;
-    
+
     console.log("📊 [권리분석] 실제 분석 결과:", {
       안전마진: actualSafetyMargin,
       인수권리총액: actualTotalAssumedAmount,
       인수권리개수: actualAssumedRights,
       인수임차인수: actualAssumedTenants,
       감정가: appraisalValue,
-      안전마진비율: `${((actualSafetyMargin / appraisalValue) * 100).toFixed(1)}%`
+      안전마진비율: `${((actualSafetyMargin / appraisalValue) * 100).toFixed(
+        1
+      )}%`,
     });
-    
+
     // 안전 마진 비율 계산 (실제 값 사용)
     const marginRatio = (actualSafetyMargin / appraisalValue) * 100;
-    
+
     let title = "";
     let content = "";
     let details = "";
-    
+
     if (marginRatio > 30) {
       title = "고위험 매물";
-      content = `안전마진이 ${marginRatio.toFixed(1)}%로 매우 높아 주의가 필요합니다.`;
+      content = `안전마진이 ${marginRatio.toFixed(
+        1
+      )}%로 매우 높아 주의가 필요합니다.`;
       details = `인수권리 ${actualAssumedRights}개, 임차인 ${actualAssumedTenants}명으로 총 ${actualSafetyMargin.toLocaleString()}원 추가 부담 예상`;
     } else if (marginRatio > 15) {
       title = "중위험 매물";
@@ -575,12 +614,14 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
       details = `인수권리 ${actualAssumedRights}개, 임차인 ${actualAssumedTenants}명으로 총 ${actualSafetyMargin.toLocaleString()}원 추가 부담 예상`;
     } else {
       title = "안전한 매물";
-      content = `안전마진이 ${marginRatio.toFixed(1)}%로 낮아 상대적으로 안전합니다.`;
+      content = `안전마진이 ${marginRatio.toFixed(
+        1
+      )}%로 낮아 상대적으로 안전합니다.`;
       details = `인수권리 ${actualAssumedRights}개, 임차인 ${actualAssumedTenants}명으로 총 ${actualSafetyMargin.toLocaleString()}원 추가 부담 예상`;
     }
-    
+
     console.log("📊 [권리분석] 요약 생성 완료:", { title, content, details });
-    
+
     return { title, content, details };
   };
 
@@ -596,13 +637,17 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
     const isOpening = !prevIsOpenRef.current;
     const propertyChanged = property.id !== prevPropertyIdRef.current;
 
-
     if (isOpening || propertyChanged) {
-      console.log("🔓 [입찰모달] 모달 초기화", { isOpening, propertyChanged, propertyId: property.id });
+      console.log("🔓 [입찰모달] 모달 초기화", {
+        isOpening,
+        propertyChanged,
+        propertyId: property.id,
+      });
 
       // property 객체의 현재 값들을 로컬 변수에 저장하여 무한 루프 방지
       // regionalAnalysis가 없는 경우를 대비한 안전성 검사
-      const courtName = property.regionalAnalysis?.court?.name || "법원 정보 없음";
+      const courtName =
+        property.regionalAnalysis?.court?.name || "법원 정보 없음";
       const biddingDate = property.schedule.currentAuctionDate;
       const caseNumber = property.basicInfo.caseNumber;
       const minimumBidPrice = property.basicInfo.minimumBidPrice;
@@ -1038,101 +1083,53 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                 {showRightsAnalysis && biddingResult && (
                   <div className="mt-3 p-4 bg-gray-50 rounded-lg border">
                     <div className="space-y-4">
-                      <h5 className="font-semibold text-gray-900 mb-3">권리분석 결과</h5>
-                      
-                      {/* 기본 분석 정보 */}
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <span className="text-gray-600">총 인수 권리금:</span>
-                          <span className="ml-2 font-semibold text-blue-600">
-                            {formatNumber(biddingResult.rightsAnalysis.totalAssumedAmount)}원
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-gray-600">안전 마진:</span>
-                          <span className="ml-2 font-semibold text-green-600">
-                            {formatNumber(biddingResult.rightsAnalysis.safetyMargin)}원
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-gray-600">권장 입찰 범위:</span>
-                          <span className="ml-2 font-semibold">
-                            {formatNumber(biddingResult.rightsAnalysis.recommendedRange.min)}원 ~ {formatNumber(biddingResult.rightsAnalysis.recommendedRange.max)}원
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-gray-600">최적 입찰가:</span>
-                          <span className="ml-2 font-semibold text-purple-600">
-                            {formatNumber(biddingResult.rightsAnalysis.recommendedRange.optimal)}원
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* 리스크 분석 */}
-                      {biddingResult.rightsAnalysis.riskAnalysis && (
-                        <div className="mt-4 p-3 rounded border">
-                          <div className={`p-3 rounded ${
-                            biddingResult.rightsAnalysis.riskAnalysis.overallRiskLevel === 'high' 
-                              ? 'bg-red-50 border-red-200' 
-                              : biddingResult.rightsAnalysis.riskAnalysis.overallRiskLevel === 'medium'
-                              ? 'bg-yellow-50 border-yellow-200'
-                              : 'bg-green-50 border-green-200'
-                          }`}>
-                            <div className="flex items-center gap-2 mb-2">
-                              <h6 className="font-semibold text-gray-900">
-                                리스크 분석 ({biddingResult.rightsAnalysis.riskAnalysis.riskScore}/100점)
-                              </h6>
-                            </div>
-                            
-                            {biddingResult.rightsAnalysis.riskAnalysis.riskFactors.length > 0 && (
-                              <div className="mb-2">
-                                <p className="text-sm text-gray-700 mb-1">
-                                  <strong>리스크 요인:</strong>
-                                </p>
-                                <ul className="text-xs text-gray-600 list-disc list-inside">
-                                  {biddingResult.rightsAnalysis.riskAnalysis.riskFactors.map((factor, index) => (
-                                    <li key={index}>{factor}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-
-                            {biddingResult.rightsAnalysis.riskAnalysis.recommendations.length > 0 && (
-                              <div>
-                                <p className="text-sm text-gray-700 mb-1">
-                                  <strong>권장사항:</strong>
-                                </p>
-                                <ul className="text-xs text-gray-600 list-disc list-inside">
-                                  {biddingResult.rightsAnalysis.riskAnalysis.recommendations.map((rec, index) => (
-                                    <li key={index}>{rec}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
-                        <p className="text-sm text-blue-800 mb-3">
-                          <strong>분석 요약:</strong> 13가지 권리유형을 종합 분석하여 안전한 입찰 범위를 제시합니다. 
-                          리스크 레벨과 권리금을 고려한 최적 입찰가를 참고하세요.
-                        </p>
-                        <button
-                          onClick={() => {
-                            if (devMode.isDevMode) {
-                              setShowAnalysisModal(true);
-                              console.log("📊 [권리분석] 자세히보기 버튼 클릭 - 개발자 모드");
-                            } else {
-                              setShowWaitlistModal(true);
-                              console.log("📊 [권리분석] 자세히보기 버튼 클릭 - 일반 모드 (사전알림 신청)");
-                            }
-                          }}
-                          className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-                        >
-                          자세히보기
-                        </button>
-                      </div>
+                      <h5 className="font-semibold text-gray-900 mb-3">
+                        권리분석 결과
+                      </h5>
+                      <p className="text-sm text-gray-800">
+                        총 인수금액{" "}
+                        {formatNumber(
+                          biddingResult.rightsAnalysis.totalAssumedAmount
+                        )}
+                        원, 안전마진{" "}
+                        {formatNumber(
+                          biddingResult.rightsAnalysis.safetyMargin
+                        )}
+                        원 기준으로 권장 범위는{" "}
+                        {formatNumber(
+                          biddingResult.rightsAnalysis.recommendedRange.min
+                        )}
+                        ~
+                        {formatNumber(
+                          biddingResult.rightsAnalysis.recommendedRange.max
+                        )}
+                        원.
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        최적 입찰가{" "}
+                        {formatNumber(
+                          biddingResult.rightsAnalysis.recommendedRange.optimal
+                        )}
+                        원. 상세 리포트는 개발자 모드에서 제공.
+                      </p>
+                      <button
+                        onClick={() => {
+                          if (devMode.isDevMode) {
+                            setShowAnalysisModal(true);
+                            console.log(
+                              "⚖️ [권리분석] 자세히보기 클릭 - 개발자 모드"
+                            );
+                          } else {
+                            setShowWaitlistModal(true);
+                            console.log(
+                              "👤 [사용자 액션] 권리분석 자세히보기 - 일반 모드(사전 알림)"
+                            );
+                          }
+                        }}
+                        className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                      >
+                        자세히보기
+                      </button>
                     </div>
                   </div>
                 )}
@@ -1156,17 +1153,11 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
 
                 {showAuctionAnalysis && biddingResult && (
                   <div className="mt-3 p-4 bg-gray-50 rounded-lg border">
-                    {console.log("📊 [경매분석] 경매분석리포트 섹션 표시됨:", {
-                      경쟁률: biddingResult.competitionRate,
-                      총입찰자수: biddingResult.totalBidders,
-                      낙찰가: formatNumber(biddingResult.winningBidPrice),
-                      시장트렌드: biddingResult.auctionAnalysis.marketTrend,
-                      경쟁수준: biddingResult.auctionAnalysis.competitionLevel,
-                      성공확률: `${biddingResult.auctionAnalysis.successProbability.toFixed(1)}%`
-                    })}
                     <div className="space-y-4">
-                      <h5 className="font-semibold text-gray-900 mb-3">경매분석 결과</h5>
-                      
+                      <h5 className="font-semibold text-gray-900 mb-3">
+                        경매분석 결과
+                      </h5>
+
                       {/* 경매 기본 정보 */}
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
@@ -1189,57 +1180,109 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                         </div>
                         <div>
                           <span className="text-gray-600">사용자 입찰가:</span>
-                          <span className={`ml-2 font-semibold ${
-                            biddingResult.isSuccess ? 'text-green-600' : 'text-gray-600'
-                          }`}>
+                          <span
+                            className={`ml-2 font-semibold ${
+                              biddingResult.isSuccess
+                                ? "text-green-600"
+                                : "text-gray-600"
+                            }`}
+                          >
                             {formatNumber(biddingResult.userBidPrice)}원
                           </span>
                         </div>
                         <div>
                           <span className="text-gray-600">평균 입찰가:</span>
                           <span className="ml-2 font-semibold text-purple-600">
-                            {formatNumber(biddingResult.auctionAnalysis.averageBidPrice)}원
+                            {formatNumber(
+                              biddingResult.auctionAnalysis.averageBidPrice
+                            )}
+                            원
                           </span>
                         </div>
                         <div>
                           <span className="text-gray-600">입찰가 범위:</span>
                           <span className="ml-2 font-semibold text-indigo-600">
-                            {formatNumber(biddingResult.auctionAnalysis.bidPriceRange)}원
+                            {formatNumber(
+                              biddingResult.auctionAnalysis.bidPriceRange
+                            )}
+                            원
                           </span>
                         </div>
                       </div>
 
                       {/* 시장 분석 */}
                       <div className="mt-4 p-3 rounded border">
-                        <h6 className="font-semibold text-gray-900 mb-3">시장 분석</h6>
+                        <h6 className="font-semibold text-gray-900 mb-3">
+                          시장 분석
+                        </h6>
                         <div className="grid grid-cols-3 gap-4 text-sm">
                           <div className="text-center p-3 rounded border">
-                            <div className="font-semibold text-gray-700">시장 트렌드</div>
-                            <div className={`text-xs ${
-                              biddingResult.auctionAnalysis.marketTrend === 'hot' ? 'text-red-600' :
-                              biddingResult.auctionAnalysis.marketTrend === 'normal' ? 'text-yellow-600' : 'text-blue-600'
-                            }`}>
-                              {biddingResult.auctionAnalysis.marketTrend === 'hot' ? '매우 뜨거움' :
-                               biddingResult.auctionAnalysis.marketTrend === 'normal' ? '보통' : '차가움'}
+                            <div className="font-semibold text-gray-700">
+                              시장 트렌드
+                            </div>
+                            <div
+                              className={`text-xs ${
+                                biddingResult.auctionAnalysis.marketTrend ===
+                                "hot"
+                                  ? "text-red-600"
+                                  : biddingResult.auctionAnalysis
+                                      .marketTrend === "normal"
+                                  ? "text-yellow-600"
+                                  : "text-blue-600"
+                              }`}
+                            >
+                              {biddingResult.auctionAnalysis.marketTrend ===
+                              "hot"
+                                ? "매우 뜨거움"
+                                : biddingResult.auctionAnalysis.marketTrend ===
+                                  "normal"
+                                ? "보통"
+                                : "차가움"}
                             </div>
                           </div>
                           <div className="text-center p-3 rounded border">
-                            <div className="font-semibold text-gray-700">경쟁 수준</div>
-                            <div className={`text-xs ${
-                              biddingResult.auctionAnalysis.competitionLevel === 'high' ? 'text-red-600' :
-                              biddingResult.auctionAnalysis.competitionLevel === 'medium' ? 'text-yellow-600' : 'text-green-600'
-                            }`}>
-                              {biddingResult.auctionAnalysis.competitionLevel === 'high' ? '높음' :
-                               biddingResult.auctionAnalysis.competitionLevel === 'medium' ? '보통' : '낮음'}
+                            <div className="font-semibold text-gray-700">
+                              경쟁 수준
+                            </div>
+                            <div
+                              className={`text-xs ${
+                                biddingResult.auctionAnalysis
+                                  .competitionLevel === "high"
+                                  ? "text-red-600"
+                                  : biddingResult.auctionAnalysis
+                                      .competitionLevel === "medium"
+                                  ? "text-yellow-600"
+                                  : "text-green-600"
+                              }`}
+                            >
+                              {biddingResult.auctionAnalysis
+                                .competitionLevel === "high"
+                                ? "높음"
+                                : biddingResult.auctionAnalysis
+                                    .competitionLevel === "medium"
+                                ? "보통"
+                                : "낮음"}
                             </div>
                           </div>
                           <div className="text-center p-3 rounded border">
-                            <div className="font-semibold text-gray-700">성공 확률</div>
-                            <div className={`text-xs ${
-                              biddingResult.auctionAnalysis.successProbability > 70 ? 'text-green-600' :
-                              biddingResult.auctionAnalysis.successProbability > 40 ? 'text-yellow-600' : 'text-red-600'
-                            }`}>
-                              {biddingResult.auctionAnalysis.successProbability.toFixed(1)}%
+                            <div className="font-semibold text-gray-700">
+                              성공 확률
+                            </div>
+                            <div
+                              className={`text-xs ${
+                                biddingResult.auctionAnalysis
+                                  .successProbability > 70
+                                  ? "text-green-600"
+                                  : biddingResult.auctionAnalysis
+                                      .successProbability > 40
+                                  ? "text-yellow-600"
+                                  : "text-red-600"
+                              }`}
+                            >
+                              {biddingResult.auctionAnalysis.successProbability.toFixed(
+                                1
+                              )}
+                              %
                             </div>
                           </div>
                         </div>
@@ -1247,26 +1290,32 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
 
                       {/* 입찰 결과 분석 */}
                       <div className="mt-4 p-3 rounded border">
-                        <div className={`p-3 rounded ${
-                          biddingResult.isSuccess 
-                            ? 'bg-green-50 border-green-200' 
-                            : 'bg-gray-50 border-gray-200'
-                        }`}>
+                        <div
+                          className={`p-3 rounded ${
+                            biddingResult.isSuccess
+                              ? "bg-green-50 border-green-200"
+                              : "bg-gray-50 border-gray-200"
+                          }`}
+                        >
                           <div className="flex items-center gap-2 mb-2">
                             <h6 className="font-semibold text-gray-900">
-                              입찰 결과: {biddingResult.isSuccess ? '성공' : '실패'}
+                              입찰 결과:{" "}
+                              {biddingResult.isSuccess ? "성공" : "실패"}
                             </h6>
                           </div>
-                          
+
                           <div className="text-sm text-gray-700">
                             <p className="mb-2">
-                              <strong>분석:</strong> {biddingResult.isSuccess 
-                                ? '경쟁을 뚫고 낙찰에 성공했습니다.' 
-                                : '낙찰에 실패했습니다. 다음 기회를 노려보세요.'}
+                              <strong>분석:</strong>{" "}
+                              {biddingResult.isSuccess
+                                ? "경쟁을 뚫고 낙찰에 성공했습니다."
+                                : "낙찰에 실패했습니다. 다음 기회를 노려보세요."}
                             </p>
                             <p>
-                              <strong>경쟁 상황:</strong> 총 {biddingResult.totalBidders}명의 입찰자 중에서 
-                              {biddingResult.competitionRate}의 경쟁률을 기록했습니다.
+                              <strong>경쟁 상황:</strong> 총{" "}
+                              {biddingResult.totalBidders}명의 입찰자 중에서
+                              {biddingResult.competitionRate}의 경쟁률을
+                              기록했습니다.
                             </p>
                           </div>
                         </div>
@@ -1274,123 +1323,224 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
 
                       {/* 수익 분석 (권리유형 13가지 반영) */}
                       <div className="mt-4 p-3 rounded border">
-                        <h6 className="font-semibold text-gray-900 mb-3">수익 분석 (권리유형 종합)</h6>
-                        
+                        <h6 className="font-semibold text-gray-900 mb-3">
+                          수익 분석 (권리유형 종합)
+                        </h6>
+
                         {devMode.isDevMode ? (
                           <>
-                            {console.log("💰 [수익분석] 개발자 모드 - 수익분석 상세 정보 표시")}
+                            {console.log(
+                              "💰 [수익분석] 개발자 모드 - 수익분석 상세 정보 표시"
+                            )}
                             {/* 투자 금액 분석 */}
                             <div className="grid grid-cols-2 gap-4 text-sm mb-4">
                               <div>
-                                <span className="text-gray-600">총 투자금액:</span>
+                                <span className="text-gray-600">
+                                  총 투자금액:
+                                </span>
                                 <span className="ml-2 font-semibold text-red-600">
-                                  {formatNumber(biddingResult.auctionAnalysis.profitAnalysis.totalInvestment)}원
+                                  {formatNumber(
+                                    biddingResult.auctionAnalysis.profitAnalysis
+                                      .totalInvestment
+                                  )}
+                                  원
                                 </span>
                               </div>
                               <div>
                                 <span className="text-gray-600">순수익:</span>
-                                <span className={`ml-2 font-semibold ${
-                                  biddingResult.auctionAnalysis.profitAnalysis.netProfit > 0 ? 'text-green-600' : 'text-red-600'
-                                }`}>
-                                  {formatNumber(biddingResult.auctionAnalysis.profitAnalysis.netProfit)}원
+                                <span
+                                  className={`ml-2 font-semibold ${
+                                    biddingResult.auctionAnalysis.profitAnalysis
+                                      .netProfit > 0
+                                      ? "text-green-600"
+                                      : "text-red-600"
+                                  }`}
+                                >
+                                  {formatNumber(
+                                    biddingResult.auctionAnalysis.profitAnalysis
+                                      .netProfit
+                                  )}
+                                  원
                                 </span>
                               </div>
                               <div>
                                 <span className="text-gray-600">ROI:</span>
-                                <span className={`ml-2 font-semibold ${
-                                  biddingResult.auctionAnalysis.profitAnalysis.roi > 0 ? 'text-green-600' : 'text-red-600'
-                                }`}>
-                                  {biddingResult.auctionAnalysis.profitAnalysis.roi.toFixed(2)}%
+                                <span
+                                  className={`ml-2 font-semibold ${
+                                    biddingResult.auctionAnalysis.profitAnalysis
+                                      .roi > 0
+                                      ? "text-green-600"
+                                      : "text-red-600"
+                                  }`}
+                                >
+                                  {biddingResult.auctionAnalysis.profitAnalysis.roi.toFixed(
+                                    2
+                                  )}
+                                  %
                                 </span>
                               </div>
                               <div>
                                 <span className="text-gray-600">수익률:</span>
-                                <span className={`ml-2 font-semibold ${
-                                  biddingResult.auctionAnalysis.profitAnalysis.profitMargin > 0 ? 'text-green-600' : 'text-red-600'
-                                }`}>
-                                  {biddingResult.auctionAnalysis.profitAnalysis.profitMargin.toFixed(2)}%
+                                <span
+                                  className={`ml-2 font-semibold ${
+                                    biddingResult.auctionAnalysis.profitAnalysis
+                                      .profitMargin > 0
+                                      ? "text-green-600"
+                                      : "text-red-600"
+                                  }`}
+                                >
+                                  {biddingResult.auctionAnalysis.profitAnalysis.profitMargin.toFixed(
+                                    2
+                                  )}
+                                  %
                                 </span>
                               </div>
                             </div>
 
                             {/* 투자 권장도 */}
                             <div className="mt-4 p-3 rounded border">
-                              <div className={`p-3 rounded ${
-                                biddingResult.auctionAnalysis.profitAnalysis.investmentRecommendation === 'strong_buy' ? 'bg-green-50 border-green-200' :
-                                biddingResult.auctionAnalysis.profitAnalysis.investmentRecommendation === 'buy' ? 'bg-blue-50 border-blue-200' :
-                                biddingResult.auctionAnalysis.profitAnalysis.investmentRecommendation === 'hold' ? 'bg-yellow-50 border-yellow-200' :
-                                'bg-red-50 border-red-200'
-                              }`}>
+                              <div
+                                className={`p-3 rounded ${
+                                  biddingResult.auctionAnalysis.profitAnalysis
+                                    .investmentRecommendation === "strong_buy"
+                                    ? "bg-green-50 border-green-200"
+                                    : biddingResult.auctionAnalysis
+                                        .profitAnalysis
+                                        .investmentRecommendation === "buy"
+                                    ? "bg-blue-50 border-blue-200"
+                                    : biddingResult.auctionAnalysis
+                                        .profitAnalysis
+                                        .investmentRecommendation === "hold"
+                                    ? "bg-yellow-50 border-yellow-200"
+                                    : "bg-red-50 border-red-200"
+                                }`}
+                              >
                                 <div className="flex items-center gap-2 mb-2">
                                   <span className="text-lg">
-                                    {biddingResult.auctionAnalysis.profitAnalysis.investmentRecommendation === 'strong_buy' ? '🚀' :
-                                     biddingResult.auctionAnalysis.profitAnalysis.investmentRecommendation === 'buy' ? '📈' :
-                                     biddingResult.auctionAnalysis.profitAnalysis.investmentRecommendation === 'hold' ? '⏸️' : '⚠️'}
+                                    {biddingResult.auctionAnalysis
+                                      .profitAnalysis
+                                      .investmentRecommendation === "strong_buy"
+                                      ? "🚀"
+                                      : biddingResult.auctionAnalysis
+                                          .profitAnalysis
+                                          .investmentRecommendation === "buy"
+                                      ? "📈"
+                                      : biddingResult.auctionAnalysis
+                                          .profitAnalysis
+                                          .investmentRecommendation === "hold"
+                                      ? "⏸️"
+                                      : "⚠️"}
                                   </span>
                                   <h6 className="font-semibold text-gray-900">
-                                    투자 권장도: {
-                                      biddingResult.auctionAnalysis.profitAnalysis.investmentRecommendation === 'strong_buy' ? '강력 매수' :
-                                      biddingResult.auctionAnalysis.profitAnalysis.investmentRecommendation === 'buy' ? '매수' :
-                                      biddingResult.auctionAnalysis.profitAnalysis.investmentRecommendation === 'hold' ? '보유' : '회피'
-                                    }
+                                    투자 권장도:{" "}
+                                    {biddingResult.auctionAnalysis
+                                      .profitAnalysis
+                                      .investmentRecommendation === "strong_buy"
+                                      ? "강력 매수"
+                                      : biddingResult.auctionAnalysis
+                                          .profitAnalysis
+                                          .investmentRecommendation === "buy"
+                                      ? "매수"
+                                      : biddingResult.auctionAnalysis
+                                          .profitAnalysis
+                                          .investmentRecommendation === "hold"
+                                      ? "보유"
+                                      : "회피"}
                                   </h6>
                                 </div>
-                                
+
                                 <div className="text-sm text-gray-700">
                                   <p className="mb-2">
-                                    <strong>분석:</strong> 권리유형 13가지를 종합 분석한 결과, 
-                                    {biddingResult.auctionAnalysis.profitAnalysis.roi > 0 ? 
-                                      ` 예상 수익률 ${biddingResult.auctionAnalysis.profitAnalysis.roi.toFixed(2)}%로 ` :
-                                      ` 예상 손실률 ${Math.abs(biddingResult.auctionAnalysis.profitAnalysis.roi).toFixed(2)}%로 `
-                                    }
-                                    {biddingResult.auctionAnalysis.profitAnalysis.investmentRecommendation === 'strong_buy' ? '매우 유망한 투자 기회입니다.' :
-                                     biddingResult.auctionAnalysis.profitAnalysis.investmentRecommendation === 'buy' ? '적당한 투자 기회입니다.' :
-                                     biddingResult.auctionAnalysis.profitAnalysis.investmentRecommendation === 'hold' ? '신중한 검토가 필요합니다.' : '투자를 권장하지 않습니다.'}
+                                    <strong>분석:</strong> 권리유형 13가지를
+                                    종합 분석한 결과,
+                                    {biddingResult.auctionAnalysis
+                                      .profitAnalysis.roi > 0
+                                      ? ` 예상 수익률 ${biddingResult.auctionAnalysis.profitAnalysis.roi.toFixed(
+                                          2
+                                        )}%로 `
+                                      : ` 예상 손실률 ${Math.abs(
+                                          biddingResult.auctionAnalysis
+                                            .profitAnalysis.roi
+                                        ).toFixed(2)}%로 `}
+                                    {biddingResult.auctionAnalysis
+                                      .profitAnalysis
+                                      .investmentRecommendation === "strong_buy"
+                                      ? "매우 유망한 투자 기회입니다."
+                                      : biddingResult.auctionAnalysis
+                                          .profitAnalysis
+                                          .investmentRecommendation === "buy"
+                                      ? "적당한 투자 기회입니다."
+                                      : biddingResult.auctionAnalysis
+                                          .profitAnalysis
+                                          .investmentRecommendation === "hold"
+                                      ? "신중한 검토가 필요합니다."
+                                      : "투자를 권장하지 않습니다."}
                                   </p>
                                   <p>
-                                    <strong>손익분기점:</strong> {formatNumber(biddingResult.auctionAnalysis.profitAnalysis.breakEvenPrice)}원
+                                    <strong>손익분기점:</strong>{" "}
+                                    {formatNumber(
+                                      biddingResult.auctionAnalysis
+                                        .profitAnalysis.breakEvenPrice
+                                    )}
+                                    원
                                   </p>
                                 </div>
                               </div>
                             </div>
 
                             {/* 리스크 요인 (권리유형 기반) */}
-                            {biddingResult.auctionAnalysis.profitAnalysis.riskFactors.length > 0 && (
+                            {biddingResult.auctionAnalysis.profitAnalysis
+                              .riskFactors.length > 0 && (
                               <div className="mt-3 p-3 rounded border">
-                                <h6 className="font-semibold text-gray-900 mb-2">주요 리스크 요인</h6>
+                                <h6 className="font-semibold text-gray-900 mb-2">
+                                  주요 리스크 요인
+                                </h6>
                                 <ul className="text-sm text-gray-600 list-disc list-inside space-y-1">
-                                  {biddingResult.auctionAnalysis.profitAnalysis.riskFactors.slice(0, 5).map((factor, index) => (
-                                    <li key={index}>{factor}</li>
-                                  ))}
+                                  {biddingResult.auctionAnalysis.profitAnalysis.riskFactors
+                                    .slice(0, 5)
+                                    .map((factor, index) => (
+                                      <li key={index}>{factor}</li>
+                                    ))}
                                 </ul>
                               </div>
                             )}
                           </>
                         ) : (
                           <div className="text-center py-8">
-                            {console.log("🚧 [수익분석] 일반모드 - 서비스 준비중 메시지 표시")}
+                            {console.log(
+                              "🚧 [수익분석] 일반모드 - 서비스 준비중 메시지 표시"
+                            )}
                             <div className="text-gray-500 text-lg mb-2">🚧</div>
-                            <p className="text-gray-600 font-medium">서비스 준비중입니다</p>
-                            <p className="text-sm text-gray-500 mt-1">곧 더 나은 서비스로 찾아뵙겠습니다</p>
+                            <p className="text-gray-600 font-medium">
+                              서비스 준비중입니다
+                            </p>
+                            <p className="text-sm text-gray-500 mt-1">
+                              곧 더 나은 서비스로 찾아뵙겠습니다
+                            </p>
                           </div>
                         )}
                       </div>
 
                       <div className="mt-4 p-3 bg-green-50 rounded border border-green-200">
                         <p className="text-sm text-green-800 mb-3">
-                          <strong>분석 요약:</strong> AI가 생성한 가상 입찰자들과의 경쟁을 통해 
-                          실제 경매 상황을 시뮬레이션합니다. 경쟁률과 입찰 패턴을 분석하여 
-                          실전 경매에서의 전략을 학습할 수 있습니다.
+                          <strong>분석 요약:</strong> AI가 생성한 가상
+                          입찰자들과의 경쟁을 통해 실제 경매 상황을
+                          시뮬레이션합니다. 경쟁률과 입찰 패턴을 분석하여 실전
+                          경매에서의 전략을 학습할 수 있습니다.
                         </p>
                         <button
                           onClick={() => {
                             console.log("📊 [경매분석] 자세히보기 버튼 클릭됨");
                             if (devMode.isDevMode) {
                               setShowAnalysisModal(true);
-                              console.log("📊 [경매분석] 자세히보기 버튼 클릭 - 개발자 모드 (상세 리포트 모달 열기)");
+                              console.log(
+                                "📊 [경매분석] 자세히보기 버튼 클릭 - 개발자 모드 (상세 리포트 모달 열기)"
+                              );
                             } else {
                               setShowWaitlistModal(true);
-                              console.log("📊 [경매분석] 자세히보기 버튼 클릭 - 일반 모드 (사전알림 신청 모달 열기)");
+                              console.log(
+                                "📊 [경매분석] 자세히보기 버튼 클릭 - 일반 모드 (사전알림 신청 모달 열기)"
+                              );
                             }
                           }}
                           className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"

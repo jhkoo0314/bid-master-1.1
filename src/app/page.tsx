@@ -316,7 +316,7 @@ export default function HomePage() {
                 className="inline-flex items-center justify-center px-8 py-3 border border-gray-300 text-gray-700 font-semibold rounded-full transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-sm"
                 style={{ backgroundColor: "#F3F4F6" }}
               >
-                <span>실전 경매 훈련</span>
+                <span>무료 실전 경매 훈련</span>
                 <svg
                   className="ml-2 w-4 h-4 animate-bounce"
                   fill="none"

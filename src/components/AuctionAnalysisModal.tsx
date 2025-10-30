@@ -20,7 +20,7 @@ export function AuctionAnalysisModal({
 }: AuctionAnalysisModalProps) {
   if (!isOpen || !property) return null;
 
-  console.log("경매분석리포트 팝업 열림:", property.id);
+  console.log("📊 [경매분석] 상세 리포트 모달 열림:", property.id);
 
   // 권리 분석 데이터 계산
   const totalRights = property.rights?.length || 0;
@@ -47,22 +47,21 @@ export function AuctionAnalysisModal({
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border border-black/5 max-w-6xl w-full max-h-[90vh] overflow-hidden">
         {/* 헤더 */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6">
+        <div className="p-6 border-b border-black/5">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold mb-2">
-                매물 상세 분석 리포트
-              </h2>
-              <p className="text-blue-100">{property.basicInfo.location}</p>
+              <h2 className="text-xl font-semibold text-[#0B1220] mb-1">상세 분석 리포트 — 포인트 요약</h2>
+              <p className="text-sm text-[#5B6475]">{property.basicInfo.location}</p>
             </div>
             <button
               onClick={onClose}
-              className="text-white hover:text-gray-200 transition-colors"
+              className="text-[#5B6475] hover:text-[#0B1220] transition-colors"
+              aria-label="닫기"
             >
               <svg
-                className="w-8 h-8"
+                className="w-6 h-6"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -79,43 +78,41 @@ export function AuctionAnalysisModal({
         </div>
 
         {/* 스크롤 가능한 콘텐츠 */}
-        <div className="overflow-y-auto max-h-[calc(90vh-120px)] p-6">
-          <div className="space-y-8">
+        <div className="overflow-y-auto max-h-[calc(90vh-120px)] p-6 tabular-nums">
+          <div className="space-y-6">
             {/* 매물 기본 정보 */}
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border-l-4 border-blue-500">
-              <h3 className="text-xl font-bold text-gray-800 mb-4">
-                매물 정보 요약
-              </h3>
+            <div className="rounded-2xl border border-black/5 p-6">
+              <h3 className="text-base font-semibold text-[#0B1220] mb-4">매물 정보 — 요약</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-white p-4 rounded-lg shadow-sm">
+                <div className="p-4 rounded-xl border border-black/5">
                   <p className="text-sm font-medium text-gray-600 mb-1">
                     소재지
                   </p>
-                  <p className="text-lg font-bold text-gray-800">
+                  <p className="text-base font-semibold text-[#0B1220]">
                     {property.basicInfo.location}
                   </p>
                 </div>
-                <div className="bg-white p-4 rounded-lg shadow-sm">
+                <div className="p-4 rounded-xl border border-black/5">
                   <p className="text-sm font-medium text-gray-600 mb-1">
                     물건종류
                   </p>
-                  <p className="text-lg font-bold text-gray-800">
+                  <p className="text-base font-semibold text-[#0B1220]">
                     {property.basicInfo.propertyType}
                   </p>
                 </div>
-                <div className="bg-white p-4 rounded-lg shadow-sm">
+                <div className="p-4 rounded-xl border border-black/5">
                   <p className="text-sm font-medium text-gray-600 mb-1">
                     감정가
                   </p>
-                  <p className="text-lg font-bold text-blue-600">
+                  <p className="text-base font-semibold text-[#0B1220]">
                     {appraisalValue.toLocaleString("ko-KR")}원
                   </p>
                 </div>
-                <div className="bg-white p-4 rounded-lg shadow-sm">
+                <div className="p-4 rounded-xl border border-black/5">
                   <p className="text-sm font-medium text-gray-600 mb-1">
                     최저가
                   </p>
-                  <p className="text-lg font-bold text-red-600">
+                  <p className="text-base font-semibold text-[#0B1220]">
                     {minimumBidPrice.toLocaleString("ko-KR")}원
                   </p>
                 </div>
@@ -123,53 +120,49 @@ export function AuctionAnalysisModal({
             </div>
 
             {/* 권리 현황 상세 분석 */}
-            <div className="bg-gradient-to-r from-red-50 to-pink-50 p-6 rounded-xl border-l-4 border-red-500">
-              <h3 className="text-xl font-bold text-gray-800 mb-4">
-                권리 현황 분석
-              </h3>
+            <div className="rounded-2xl border border-black/5 p-6">
+              <h3 className="text-base font-semibold text-[#0B1220] mb-4">권리 현황 — 분석</h3>
 
               {/* 권리 개요 */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="bg-white p-4 rounded-lg shadow-sm text-center">
+                <div className="p-4 rounded-xl border border-black/5 text-center">
                   <p className="text-sm font-medium text-gray-600 mb-1">
                     총 권리 수
                   </p>
-                  <p className="text-3xl font-bold text-red-600">
+                  <p className="text-2xl font-semibold text-[#0B1220]">
                     {totalRights}개
                   </p>
                 </div>
-                <div className="bg-white p-4 rounded-lg shadow-sm text-center">
+                <div className="p-4 rounded-xl border border-black/5 text-center">
                   <p className="text-sm font-medium text-gray-600 mb-1">
                     인수 권리
                   </p>
-                  <p className="text-3xl font-bold text-blue-600">
+                  <p className="text-2xl font-semibold text-[#0B1220]">
                     {assumedRights}개
                   </p>
                 </div>
-                <div className="bg-white p-4 rounded-lg shadow-sm text-center">
+                <div className="p-4 rounded-xl border border-black/5 text-center">
                   <p className="text-sm font-medium text-gray-600 mb-1">
                     소멸 권리
                   </p>
-                  <p className="text-3xl font-bold text-gray-600">
+                  <p className="text-2xl font-semibold text-[#0B1220]">
                     {extinguishedRights}개
                   </p>
                 </div>
               </div>
 
               {/* 권리 상세 목록 */}
-              <div className="bg-white p-4 rounded-lg shadow-sm">
-                <h4 className="font-semibold text-gray-800 mb-3">
-                  권리 상세 내역
-                </h4>
+              <div className="p-4 rounded-xl border border-black/5">
+                <h4 className="text-sm font-semibold text-[#0B1220] mb-3">권리 상세 내역</h4>
                 {property.rights && property.rights.length > 0 ? (
                   <div className="space-y-3">
                     {property.rights.map((right, index) => (
                       <div
                         key={index}
-                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-xl"
                       >
                         <div className="flex-1">
-                          <p className="font-medium text-gray-800">
+                          <p className="font-medium text-[#0B1220]">
                             {right.rightType}
                           </p>
                           <p className="text-sm text-gray-600">
@@ -200,66 +193,57 @@ export function AuctionAnalysisModal({
                   </div>
                 ) : (
                   <div className="text-center py-8">
-                    <div className="text-4xl mb-2">✅</div>
-                    <p className="text-gray-600 font-medium">
-                      권리 부담이 없는 깨끗한 매물입니다
-                    </p>
-                    <p className="text-sm text-gray-500 mt-1">
-                      이는 매우 매력적인 투자 기회를 의미합니다
-                    </p>
+                    <p className="text-[#5B6475] font-medium">권리 부담 없음</p>
+                    <p className="text-sm text-gray-500 mt-1">추가 인수 예정 권리가 없습니다.</p>
                   </div>
                 )}
               </div>
             </div>
 
             {/* 임차인 현황 상세 분석 */}
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border-l-4 border-green-500">
-              <h3 className="text-xl font-bold text-gray-800 mb-4">
-                임차인 현황 분석
-              </h3>
+            <div className="rounded-2xl border border-black/5 p-6">
+              <h3 className="text-base font-semibold text-[#0B1220] mb-4">임차인 현황 — 분석</h3>
 
               {/* 임차인 개요 */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="bg-white p-4 rounded-lg shadow-sm text-center">
+                <div className="p-4 rounded-xl border border-black/5 text-center">
                   <p className="text-sm font-medium text-gray-600 mb-1">
                     총 임차인 수
                   </p>
-                  <p className="text-3xl font-bold text-green-600">
+                  <p className="text-2xl font-semibold text-[#0B1220]">
                     {totalTenants}명
                   </p>
                 </div>
-                <div className="bg-white p-4 rounded-lg shadow-sm text-center">
+                <div className="p-4 rounded-xl border border-black/5 text-center">
                   <p className="text-sm font-medium text-gray-600 mb-1">
                     소액임차인
                   </p>
-                  <p className="text-3xl font-bold text-yellow-600">
+                  <p className="text-2xl font-semibold text-[#0B1220]">
                     {smallTenants}명
                   </p>
                 </div>
-                <div className="bg-white p-4 rounded-lg shadow-sm text-center">
+                <div className="p-4 rounded-xl border border-black/5 text-center">
                   <p className="text-sm font-medium text-gray-600 mb-1">
                     대항력 보유
                   </p>
-                  <p className="text-3xl font-bold text-blue-600">
+                  <p className="text-2xl font-semibold text-[#0B1220]">
                     {tenantsWithDaehangryeok}명
                   </p>
                 </div>
               </div>
 
               {/* 임차인 상세 목록 */}
-              <div className="bg-white p-4 rounded-lg shadow-sm">
-                <h4 className="font-semibold text-gray-800 mb-3">
-                  임차인 상세 내역
-                </h4>
+              <div className="p-4 rounded-xl border border-black/5">
+                <h4 className="text-sm font-semibold text-[#0B1220] mb-3">임차인 상세 내역</h4>
                 {property.tenants && property.tenants.length > 0 ? (
                   <div className="space-y-3">
                     {property.tenants.map((tenant, index) => (
                       <div
                         key={index}
-                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-xl"
                       >
                         <div className="flex-1">
-                          <p className="font-medium text-gray-800">
+                          <p className="font-medium text-[#0B1220]">
                             {tenant.tenantName}
                           </p>
                           <p className="text-sm text-gray-600">
@@ -288,72 +272,51 @@ export function AuctionAnalysisModal({
                   </div>
                 ) : (
                   <div className="text-center py-8">
-                    <div className="text-4xl mb-2">✅</div>
-                    <p className="text-gray-600 font-medium">
-                      임차인이 없는 매물입니다
-                    </p>
-                    <p className="text-sm text-gray-500 mt-1">
-                      추가 부담 없이 투자할 수 있습니다
-                    </p>
+                    <p className="text-[#5B6475] font-medium">임차인 없음</p>
+                    <p className="text-sm text-gray-500 mt-1">추가 인수·명도 비용 가능성 낮음.</p>
                   </div>
                 )}
               </div>
             </div>
 
             {/* 투자 분석 및 리스크 평가 */}
-            <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-6 rounded-xl border-l-4 border-purple-500">
-              <h3 className="text-xl font-bold text-gray-800 mb-4">
-                투자 분석 및 리스크 평가
-              </h3>
+            <div className="rounded-2xl border border-black/5 p-6">
+              <h3 className="text-base font-semibold text-[#0B1220] mb-4">투자 분석 — 리스크 평가</h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* 투자 지표 */}
-                <div className="bg-white p-4 rounded-lg shadow-sm">
-                  <h4 className="font-semibold text-gray-800 mb-3">
-                    투자 지표
-                  </h4>
+                <div className="p-4 rounded-xl border border-black/5">
+                  <h4 className="text-sm font-semibold text-[#0B1220] mb-3">투자 지표</h4>
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-600">할인율</span>
-                      <span className="text-lg font-bold text-purple-600">
+                      <span className="text-base font-semibold text-[#0B1220]">
                         {discountRate}%
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-600">권리 복잡도</span>
-                      <span
-                        className={`text-sm font-bold ${
-                          totalRights > 3 ? "text-red-600" : "text-green-600"
-                        }`}
-                      >
-                        {totalRights > 3 ? "높음 ⚠️" : "보통 ✅"}
+                      <span className="text-sm font-semibold text-[#0B1220]">
+                        {totalRights > 3 ? "높음" : "보통"}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-600">
                         임차인 리스크
                       </span>
-                      <span
-                        className={`text-sm font-bold ${
-                          totalTenants > 0
-                            ? "text-yellow-600"
-                            : "text-green-600"
-                        }`}
-                      >
-                        {totalTenants > 0 ? "있음 ⚠️" : "없음 ✅"}
+                      <span className="text-sm font-semibold text-[#0B1220]">
+                        {totalTenants > 0 ? "있음" : "없음"}
                       </span>
                     </div>
                   </div>
                 </div>
 
                 {/* 리스크 점수 */}
-                <div className="bg-white p-4 rounded-lg shadow-sm">
-                  <h4 className="font-semibold text-gray-800 mb-3">
-                    리스크 점수
-                  </h4>
+                <div className="p-4 rounded-xl border border-black/5">
+                  <h4 className="text-sm font-semibold text-[#0B1220] mb-3">리스크 점수</h4>
                   <div className="text-center">
                     <div
-                      className="text-4xl font-bold mb-2"
+                      className="text-3xl font-semibold mb-2"
                       style={{ color: getRiskColor(riskScore) }}
                     >
                       {riskScore}/100
@@ -376,32 +339,28 @@ export function AuctionAnalysisModal({
             </div>
 
             {/* 권장 입찰 전략 */}
-            <div className="bg-gradient-to-r from-orange-50 to-yellow-50 p-6 rounded-xl border-l-4 border-orange-500">
-              <h3 className="text-xl font-bold text-gray-800 mb-4">
-                입찰 전략 분석
-              </h3>
+            <div className="rounded-2xl border border-black/5 p-6">
+              <h3 className="text-base font-semibold text-[#0B1220] mb-4">입찰 전략 — 분석</h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-white p-4 rounded-lg shadow-sm">
-                  <h4 className="font-semibold text-gray-800 mb-3">
-                    입찰 가격 분석
-                  </h4>
+                <div className="p-4 rounded-xl border border-black/5">
+                  <h4 className="text-sm font-semibold text-[#0B1220] mb-3">입찰 가격 분석</h4>
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-600">최저가</span>
-                      <span className="text-lg font-bold text-red-600">
+                      <span className="text-base font-semibold text-[#0B1220]">
                         {minimumBidPrice.toLocaleString("ko-KR")}원
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-600">권장 입찰가</span>
-                      <span className="text-lg font-bold text-orange-600">
+                      <span className="text-base font-semibold text-[#0B1220]">
                         {recommendedBidPrice.toLocaleString("ko-KR")}원
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-600">감정가 대비</span>
-                      <span className="text-sm font-bold text-blue-600">
+                      <span className="text-sm font-semibold text-[#0B1220]">
                         {Math.round(
                           (recommendedBidPrice / appraisalValue) * 100
                         )}
@@ -411,10 +370,8 @@ export function AuctionAnalysisModal({
                   </div>
                 </div>
 
-                <div className="bg-white p-4 rounded-lg shadow-sm">
-                  <h4 className="font-semibold text-gray-800 mb-3">
-                    종합 평가
-                  </h4>
+                <div className="p-4 rounded-xl border border-black/5">
+                  <h4 className="text-sm font-semibold text-[#0B1220] mb-3">종합 평가</h4>
                   <div className="space-y-2">
                     <p className="text-sm text-gray-700">
                       <strong>투자 적합성:</strong>{" "}
@@ -434,17 +391,13 @@ export function AuctionAnalysisModal({
             </div>
 
             {/* 상세 분석 설명 */}
-            <div className="bg-gradient-to-r from-gray-50 to-slate-50 p-6 rounded-xl border-l-4 border-gray-500">
-              <h3 className="text-xl font-bold text-gray-800 mb-6">
-                분석 결과 요약
-              </h3>
+            <div className="rounded-2xl border border-black/5 p-6">
+              <h3 className="text-base font-semibold text-[#0B1220] mb-6">분석 결과 — 요약</h3>
 
               <div className="space-y-6">
                 {/* 매물 기본 정보 설명 */}
-                <div className="bg-white p-5 rounded-lg shadow-sm">
-                  <h4 className="text-lg font-semibold text-gray-800 mb-3">
-                    매물 기본 정보 해석
-                  </h4>
+                <div className="p-5 rounded-xl border border-black/5">
+                  <h4 className="text-sm font-semibold text-[#0B1220] mb-3">매물 기본 정보 — 해석</h4>
                   <div className="space-y-3 text-gray-700">
                     <p>
                       <strong>감정가와 최저가의 의미:</strong> 감정가는 전문
@@ -465,10 +418,8 @@ export function AuctionAnalysisModal({
                 </div>
 
                 {/* 권리 현황 설명 */}
-                <div className="bg-white p-5 rounded-lg shadow-sm">
-                  <h4 className="text-lg font-semibold text-gray-800 mb-3">
-                    권리 현황 상세 해석
-                  </h4>
+                <div className="p-5 rounded-xl border border-black/5">
+                  <h4 className="text-sm font-semibold text-[#0B1220] mb-3">권리 현황 — 해석</h4>
                   <div className="space-y-3 text-gray-700">
                     <p>
                       <strong>권리의 종류와 의미:</strong> 경매에서 권리는 크게
@@ -485,22 +436,22 @@ export function AuctionAnalysisModal({
                     </p>
 
                     {totalRights > 0 && (
-                      <div className="bg-blue-50 p-4 rounded-lg">
-                        <p className="font-semibold text-blue-800 mb-2">
+                      <div className="bg-gray-50 p-4 rounded-xl border border-black/5">
+                        <p className="font-semibold text-[#0B1220] mb-2">
                           현재 매물의 권리 분석:
                         </p>
                         <ul className="space-y-1 text-sm">
                           <li>
-                            • 총 {totalRights}개의 권리가 존재하며, 이는{" "}
+                            - 총 {totalRights}개의 권리가 존재하며, 이는{" "}
                             {totalRights > 3 ? "복잡한" : "단순한"} 권리 구조를
                             의미합니다.
                           </li>
                           <li>
-                            • {assumedRights}개의 인수 권리는 낙찰 후 추가
+                            - {assumedRights}개의 인수 권리는 낙찰 후 추가
                             비용이 발생할 수 있습니다.
                           </li>
                           <li>
-                            • {extinguishedRights}개의 소멸 권리는 경매로 인해
+                            - {extinguishedRights}개의 소멸 권리는 경매로 인해
                             자동으로 해결됩니다.
                           </li>
                         </ul>
@@ -508,20 +459,16 @@ export function AuctionAnalysisModal({
                     )}
 
                     {totalRights === 0 && (
-                      <div className="bg-green-50 p-4 rounded-lg">
-                        <p className="font-semibold text-green-800">
-                          권리 부담이 없는 매물입니다. 이는 투자 기회를 의미합니다.
-                        </p>
+                      <div className="bg-gray-50 p-4 rounded-xl border border-black/5">
+                        <p className="font-semibold text-[#0B1220]">권리 부담 없음. 인수 예정 권리 없음.</p>
                       </div>
                     )}
                   </div>
                 </div>
 
                 {/* 임차인 현황 설명 */}
-                <div className="bg-white p-5 rounded-lg shadow-sm">
-                  <h4 className="text-lg font-semibold text-gray-800 mb-3">
-                    임차인 현황 상세 해석
-                  </h4>
+                <div className="p-5 rounded-xl border border-black/5">
+                  <h4 className="text-sm font-semibold text-[#0B1220] mb-3">임차인 현황 — 해석</h4>
                   <div className="space-y-3 text-gray-700">
                     <p>
                       <strong>임차인의 중요성:</strong> 경매에서 임차인은 가장
@@ -531,48 +478,42 @@ export function AuctionAnalysisModal({
                     </p>
 
                     {totalTenants > 0 ? (
-                      <div className="bg-yellow-50 p-4 rounded-lg">
-                        <p className="font-semibold text-yellow-800 mb-2">
+                      <div className="bg-gray-50 p-4 rounded-xl border border-black/5">
+                        <p className="font-semibold text-[#0B1220] mb-2">
                           현재 매물의 임차인 분석:
                         </p>
                         <ul className="space-y-1 text-sm">
                           <li>
-                            • 총 {totalTenants}명의 임차인이 거주 중입니다.
+                            - 총 {totalTenants}명의 임차인이 거주 중입니다.
                           </li>
                           {smallTenants > 0 && (
                             <li>
-                              • {smallTenants}명의 소액임차인은 특별한 보호를
+                              - {smallTenants}명의 소액임차인은 특별한 보호를
                               받아 퇴거가 어려울 수 있습니다.
                             </li>
                           )}
                           {tenantsWithDaehangryeok > 0 && (
                             <li>
-                              • {tenantsWithDaehangryeok}명이 대항력을 보유하여
+                              - {tenantsWithDaehangryeok}명이 대항력을 보유하여
                               강력한 권리를 가지고 있습니다.
                             </li>
                           )}
                         </ul>
-                        <p className="mt-2 text-sm text-yellow-700">
-                          ⚠️ 임차인 인수 비용과 퇴거 절차를 사전에 계산하고
-                          준비해야 합니다.
+                        <p className="mt-2 text-sm text-[#5B6475]">
+                          임차인 인수 비용·퇴거 절차는 사전 계산이 필요합니다.
                         </p>
                       </div>
                     ) : (
-                      <div className="bg-green-50 p-4 rounded-lg">
-                        <p className="font-semibold text-green-800">
-                          임차인이 없는 매물로, 추가 부담 없이 투자할 수
-                          있습니다.
-                        </p>
+                      <div className="bg-gray-50 p-4 rounded-xl border border-black/5">
+                        <p className="font-semibold text-[#0B1220]">임차인 없음. 추가 인수 부담 낮음.</p>
                       </div>
                     )}
                   </div>
                 </div>
 
                 {/* 투자 분석 설명 */}
-                <div className="bg-white p-5 rounded-lg shadow-sm">
-                  <h4 className="text-lg font-semibold text-gray-800 mb-3">
-                    투자 분석 상세 해석
-                  </h4>
+                <div className="p-5 rounded-xl border border-black/5">
+                  <h4 className="text-sm font-semibold text-[#0B1220] mb-3">투자 분석 — 해석</h4>
                   <div className="space-y-3 text-gray-700">
                     <p>
                       <strong>할인율의 의미:</strong> {discountRate}%의 할인율은
@@ -584,10 +525,8 @@ export function AuctionAnalysisModal({
                     </p>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="bg-purple-50 p-4 rounded-lg">
-                        <h5 className="font-semibold text-purple-800 mb-2">
-                          권리 복잡도 분석
-                        </h5>
+                      <div className="bg-gray-50 p-4 rounded-xl border border-black/5">
+                        <h5 className="text-sm font-semibold text-[#0B1220] mb-2">권리 복잡도</h5>
                         <p className="text-sm">
                           {totalRights > 3
                             ? "복잡한 권리 구조로 전문가 상담이 필요합니다. 각 권리의 상세 내용을 꼼꼼히 검토해야 합니다."
@@ -595,10 +534,8 @@ export function AuctionAnalysisModal({
                         </p>
                       </div>
 
-                      <div className="bg-green-50 p-4 rounded-lg">
-                        <h5 className="font-semibold text-green-800 mb-2">
-                          임차인 리스크 분석
-                        </h5>
+                      <div className="bg-gray-50 p-4 rounded-xl border border-black/5">
+                        <h5 className="text-sm font-semibold text-[#0B1220] mb-2">임차인 리스크</h5>
                         <p className="text-sm">
                           {totalTenants > 0
                             ? "임차인 존재로 인한 추가 비용과 복잡성을 고려해야 합니다. 퇴거 절차와 비용을 사전에 계산하세요."
@@ -607,10 +544,8 @@ export function AuctionAnalysisModal({
                       </div>
                     </div>
 
-                    <div className="bg-blue-50 p-4 rounded-lg">
-                      <h5 className="font-semibold text-blue-800 mb-2">
-                        리스크 점수 {riskScore}/100 해석
-                      </h5>
+                    <div className="bg-gray-50 p-4 rounded-xl border border-black/5">
+                      <h5 className="text-sm font-semibold text-[#0B1220] mb-2">리스크 점수 {riskScore}/100</h5>
                       <p className="text-sm">
                         {riskScore >= 70
                           ? "높은 리스크 - 신중한 검토가 필요합니다. 전문가 상담을 권장합니다."
@@ -623,10 +558,8 @@ export function AuctionAnalysisModal({
                 </div>
 
                 {/* 입찰 전략 설명 */}
-                <div className="bg-white p-5 rounded-lg shadow-sm">
-                  <h4 className="text-lg font-semibold text-gray-800 mb-3">
-                    입찰 전략 상세 가이드
-                  </h4>
+                <div className="p-5 rounded-xl border border-black/5">
+                  <h4 className="text-sm font-semibold text-[#0B1220] mb-3">입찰 전략 — 가이드</h4>
                   <div className="space-y-3 text-gray-700">
                     <p>
                       <strong>
@@ -636,38 +569,34 @@ export function AuctionAnalysisModal({
                     </p>
                     <ul className="space-y-2 ml-4">
                       <li>
-                        • 최저가 {minimumBidPrice.toLocaleString("ko-KR")}원에서
+                        - 최저가 {minimumBidPrice.toLocaleString("ko-KR")}원에서
                         20% 상회한 가격으로 설정
                       </li>
                       <li>
-                        • 감정가 대비{" "}
+                        - 감정가 대비{" "}
                         {Math.round(
                           (recommendedBidPrice / appraisalValue) * 100
                         )}
                         % 수준으로 적정한 투자 가격
                       </li>
                       <li>
-                        • 권리 인수 비용과 임차인 관련 비용을 고려한 실질적인
+                        - 권리 인수 비용과 임차인 관련 비용을 고려한 실질적인
                         투자 금액
                       </li>
                     </ul>
 
-                    <div className="bg-orange-50 p-4 rounded-lg">
-                      <h5 className="font-semibold text-orange-800 mb-2">
-                        투자 시 고려사항
-                      </h5>
+                    <div className="bg-gray-50 p-4 rounded-xl border border-black/5">
+                      <h5 className="text-sm font-semibold text-[#0B1220] mb-2">투자 시 고려사항</h5>
                       <ul className="space-y-1 text-sm">
-                        <li>• 입찰 전 권리 관계 전문가와 상담 권장</li>
-                        <li>• 임차인 인수 비용 사전 계산 및 준비</li>
-                        <li>• 시장 상황과 경쟁 입찰자 분석</li>
-                        <li>• 자금 조달 계획 및 리스크 관리 방안 수립</li>
+                        <li>- 입찰 전 권리 관계 전문가 상담</li>
+                        <li>- 임차인 인수 비용 사전 계산 및 준비</li>
+                        <li>- 시장 상황과 경쟁 입찰자 분석</li>
+                        <li>- 자금 조달 계획 및 리스크 관리 방안 수립</li>
                       </ul>
                     </div>
 
-                    <div className="bg-red-50 p-4 rounded-lg">
-                      <h5 className="font-semibold text-red-800 mb-2">
-                        주의사항
-                      </h5>
+                    <div className="bg-gray-50 p-4 rounded-xl border border-black/5">
+                      <h5 className="text-sm font-semibold text-[#0B1220] mb-2">주의사항</h5>
                       <p className="text-sm">
                         경매는 일회성 거래로 되돌릴 수 없습니다. 신중한 검토와
                         준비 없이 입찰에 참여하지 마시고, 전문가의 조언을 구하는
