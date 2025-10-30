@@ -79,9 +79,13 @@ function calculateRightClaimAmount(right: RightRecord, propertyValue: number, pr
   const propertyMultipliers: Record<string, number> = {
     '아파트': 1.0,      // 표준
     '오피스텔': 0.9,    // 상대적으로 낮음
-    '상가': 1.2,        // 상대적으로 높음
     '단독주택': 0.8,    // 상대적으로 낮음
     '빌라': 0.9,        // 상대적으로 낮음
+    '원룸': 0.85,
+    '주택': 0.9,
+    '다가구주택': 1.0,
+    '근린주택': 1.1,
+    '도시형생활주택': 0.9,
     '토지': 1.1,        // 상대적으로 높음
   };
 
@@ -538,9 +542,13 @@ function analyzeRightsRisk(rights: RightRecord[], propertyType: string): {
   const propertyRiskMultipliers: Record<string, number> = {
     '아파트': 1.0,
     '오피스텔': 1.2,
-    '상가': 1.5,
     '단독주택': 0.8,
     '빌라': 1.1,
+    '원룸': 1.0,
+    '주택': 1.0,
+    '다가구주택': 1.2,
+    '근린주택': 1.3,
+    '도시형생활주택': 1.1,
     '토지': 1.3,
   };
 
