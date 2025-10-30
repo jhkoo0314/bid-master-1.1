@@ -61,58 +61,41 @@ export default function DecisionPanel({
       </p>
 
       <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
-        {risks.slice(0, 3).map((risk, idx) => (
-          <div
-            key={idx}
-            className="rounded-xl border border-black/10 bg-white p-4"
-          >
-            <div className="flex items-center justify-between">
-              <div
-                className="text-sm font-semibold text-[#0B1220] truncate"
-                title={risk.title}
-              >
-                {risk.title}
+        {risks.slice(0, 3).map((risk, idx) => {
+          let bgColor = "bg-white";
+          if (risk.severity === "high") bgColor = "!bg-[#FFD4D1]";
+          else if (risk.severity === "mid") bgColor = "!bg-[#DFE6FF]";
+          else if (risk.severity === "low") bgColor = "!bg-[#E3F7EC]";
+          // 로그 추가
+          console.log(
+            `🎨 [낙찰가가이드] ${idx + 1}번 탭 bgColor: ${bgColor} (severity=${
+              risk.severity
+            })`
+          );
+          return (
+            <div
+              key={idx}
+              className={`rounded-xl border border-black/10 ${bgColor} p-4`}
+            >
+              <div className="flex items-center justify-between">
+                <div
+                  className="text-sm font-semibold text-[#0B1220] truncate"
+                  title={risk.title}
+                >
+                  {risk.title}
+                </div>
+                <RiskBadge severity={risk.severity} />
               </div>
-              <RiskBadge severity={risk.severity} />
+              <p className="mt-1 text-xs text-[#5B6475]">원인: {risk.cause}</p>
+              <p className="mt-1 text-xs text-[#5B6475]">영향: {risk.impact}</p>
+              <p className="mt-1 text-xs text-[#5B6475]">조치: {risk.action}</p>
             </div>
-            <p className="mt-1 text-xs text-[#5B6475]">원인: {risk.cause}</p>
-            <p className="mt-1 text-xs text-[#5B6475]">영향: {risk.impact}</p>
-            <p className="mt-1 text-xs text-[#5B6475]">조치: {risk.action}</p>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() => {
-            console.log("📄 [사용자 액션] 권리요약 보기 클릭");
-            onViewRights?.();
-          }}
-          className="text-xs rounded-full border border-black/20 px-3 py-1 hover:bg-gray-50"
-        >
-          권리요약 보기
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            console.log("📄 [사용자 액션] 배당요약 보기 클릭");
-            onViewPayout?.();
-          }}
-          className="text-xs rounded-full border border-black/20 px-3 py-1 hover:bg-gray-50"
-        >
-          배당요약 보기
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            console.log("📄 [사용자 액션] 현장체크리스트 다운로드 클릭");
-            onDownloadChecklist?.();
-          }}
-          className="text-xs rounded-full border border-black/20 px-3 py-1 hover:bg-gray-50"
-        >
-          현장체크리스트 다운로드
-        </button>
+        {/* 버튼 전체 제거: 버튼 텍스트도, 버튼 뼈대도 완전히 삭제 */}
       </div>
     </div>
   );
