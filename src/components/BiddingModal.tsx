@@ -12,6 +12,9 @@ import { AuctionAnalysisModal } from "./AuctionAnalysisModal";
 import { calculatePoints, calculateAccuracy } from "@/lib/point-calculator";
 import { analyzeRights } from "@/lib/rights-analysis-engine";
 import { useSimulationStore } from "@/store/simulation-store";
+import { CourtDocumentModal } from "./property/CourtDocumentModal";
+import { mapSimulationToPropertyDetail } from "@/lib/property/formatters";
+import { SaleSpecificationModal } from "./property/CourtDocumentModal";
 
 interface BiddingModalProps {
   property: SimulationScenario;
@@ -1573,15 +1576,18 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
         onClose={() => setShowWaitlistModal(false)}
       />
 
-      {/* 권리분석 상세 리포트 모달 */}
-      <AuctionAnalysisModal
-        isOpen={showAnalysisModal}
-        onClose={() => {
-          setShowAnalysisModal(false);
-          console.log("📊 [권리분석] 상세 리포트 모달 닫기");
-        }}
-        property={property}
-      />
+      {/* 권리분석 상세 리포트 공문서 모달 */}
+      {showAnalysisModal && property && (
+        <SaleSpecificationModal
+          isOpen={showAnalysisModal}
+          onClose={() => {
+            setShowAnalysisModal(false);
+            console.log("⚖️ [권리분석] 상세 리포트 모달 닫기");
+          }}
+          data={mapSimulationToPropertyDetail(property)}
+          analysis={analyzeRights(property)}
+        />
+      )}
     </div>
   );
 }

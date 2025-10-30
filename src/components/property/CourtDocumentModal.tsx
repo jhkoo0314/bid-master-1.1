@@ -1,10 +1,14 @@
 import React from "react";
 import type { PropertyDetail, RightRow } from "@/types/property";
 
-interface CourtDocumentModalProps {
+interface SaleSpecificationModalProps {
   isOpen: boolean;
   onClose: () => void;
   data: PropertyDetail;
+  analysis?: {
+    safetyMargin: number;
+    totalAssumedAmount: number;
+  };
 }
 
 // 9개 매물유형 예시 (meta.type)
@@ -44,29 +48,40 @@ function filterRightsByType(
   return rights.filter((r) => typeList.includes(r.type));
 }
 
-export function CourtDocumentModal({
+export function SaleSpecificationModal({
   isOpen,
   onClose,
   data,
-}: CourtDocumentModalProps) {
+  analysis,
+}: SaleSpecificationModalProps) {
   React.useEffect(() => {
     if (isOpen) {
-      console.log("📄 [법원문서] 매각물건명세서 공식문서 표준 양식 렌더링");
+      console.log("⚖️ [권리분석] 공식문서 표준 양식 렌더링");
     }
   }, [isOpen]);
-  if (!isOpen) return null;
+  if (!data || !data.meta) {
+    console.log("❌ [에러] SaleSpecificationModal: data 또는 meta가 undefined");
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
+        <div className="bg-white rounded-2xl shadow-lg w-full max-w-2xl mx-4 overflow-y-auto max-h-[90vh] flex flex-col items-center justify-center" style={{ minHeight: 240 }}>
+          <div className="text-lg font-semibold text-red-600 p-8">기본 부동산 정보가 없습니다.</div>
+          <button className="mt-4 px-8 py-2 bg-blue-600 text-white rounded-lg" onClick={onClose}>닫기</button>
+        </div>
+      </div>
+    );
+  }
 
   // 기본 매물 정보
   const { caseId, meta, price, nextAuction, rights } = data;
-  const address = meta.address;
-  const propertyType = PROPERTY_TYPES.includes(meta.type) ? meta.type : "기타";
+  const address = meta?.address ?? "정보 없음";
+  const propertyType = PROPERTY_TYPES.includes(meta?.type) ? meta.type : "기타";
   const area = meta?.area_pyeong
     ? `${meta.area_pyeong}평`
     : meta?.area_m2
     ? `${meta.area_m2}㎡`
     : "정보없음";
-  const appraisal = price.appraised.toLocaleString();
-  const lowest = price.lowest.toLocaleString();
+  const appraisal = price?.appraised?.toLocaleString?.() ?? "-";
+  const lowest = price?.lowest?.toLocaleString?.() ?? "-";
 
   // 주요 권리유형 분리
   const rightGroups: { [k: string]: RightRow[] } = {};
@@ -120,7 +135,7 @@ export function CourtDocumentModal({
         {/* 헤더 */}
         <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200">
           <h2 className="text-xl font-bold text-gray-900">
-            🏛️ 매각 물건 명세서(상세)
+            🏠 매각물건 명세서
           </h2>
           <button
             onClick={onClose}
@@ -131,6 +146,20 @@ export function CourtDocumentModal({
         </div>
         {/* 본문 */}
         <div className="p-0 divide-y divide-gray-200">
+          {/* 00. 분석 요약 섹션 추가 */}
+          <section className="px-6 py-4 bg-yellow-50 border-b border-yellow-200">
+            <h3 className="font-semibold mb-2 text-sm text-yellow-900">
+              🛡️ 권리분석 요약
+            </h3>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                안전마진: {analysis ? `${analysis.safetyMargin.toLocaleString()}원` : "-"}
+              </div>
+              <div>
+                인수금액: {analysis ? `${analysis.totalAssumedAmount.toLocaleString()}원` : "-"}
+              </div>
+            </div>
+          </section>
           {/* 01. 사건/매물 기본정보 */}
           <section className="px-6 py-4">
             <h3 className="font-semibold mb-2 text-sm text-gray-700">
@@ -395,4 +424,4 @@ export function CourtDocumentModal({
   );
 }
 
-export default CourtDocumentModal;
+export default SaleSpecificationModal;

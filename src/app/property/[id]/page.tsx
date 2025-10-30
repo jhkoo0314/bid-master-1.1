@@ -9,7 +9,7 @@ import ScheduleTable from "@/components/property/ScheduleTable";
 import RightsTable from "@/components/property/RightsTable";
 import PayoutTable from "@/components/property/PayoutTable";
 import RegionPanel from "@/components/property/RegionPanel";
-import { CourtDocumentModal } from "@/components/property/CourtDocumentModal";
+import { CourtDocumentModal, SaleSpecificationModal } from "@/components/property/CourtDocumentModal";
 import { PropertyDetail } from "@/types/property";
 import { SimulationScenario } from "@/types/simulation";
 import { useSimulationStore } from "@/store/simulation-store";
@@ -373,14 +373,16 @@ export default function PropertyPage({ params }: PageProps) {
         </div>
       </div>
       {/* 법원문서 모달 */}
-      <CourtDocumentModal
-        isOpen={courtModalOpen}
-        onClose={() => {
-          console.log("👤 [사용자 액션] 매각물건명세서 모달 닫기");
-          setCourtModalOpen(false);
-        }}
-        data={data}
-      />
+      {courtModalOpen && data && data.meta && (
+        <SaleSpecificationModal
+          isOpen={courtModalOpen}
+          onClose={() => {
+            console.log("👤 [사용자 액션] 매각물건명세서 모달 닫기");
+            setCourtModalOpen(false);
+          }}
+          data={data}
+        />
+      )}
     </div>
   );
 }

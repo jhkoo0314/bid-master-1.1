@@ -26,8 +26,6 @@ export interface PointCalculationInput {
   sessionParticipants?: number; // 세션 참여자 수 (상위 20% 계산용)
   userRank?: number; // 사용자 순위 (상위 20% 계산용)
   rightsAnalysisResult?: {
-    totalAssumedAmount: number;
-    safetyMargin: number;
     recommendedRange: {
       min: number;
       max: number;

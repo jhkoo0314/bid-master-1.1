@@ -230,10 +230,6 @@ export interface RightsAnalysisResult {
   malsoBaseRight: RightRecord | null; // 말소기준권리
   extinguishedRights: RightRecord[]; // 소멸되는 권리
   assumedRights: RightRecord[]; // 인수해야 할 권리
-  totalAssumedAmount: number; // 인수 권리 총액 (원)
-  assumedTenants: TenantRecord[]; // 인수해야 할 임차인
-  totalTenantDeposit: number; // 인수 임차보증금 총액 (원)
-  safetyMargin: number; // 안전 마진 (인수 권리 + 임차보증금)
   recommendedBidRange: {
     min: number; // 최소 입찰가 (원)
     max: number; // 최대 입찰가 (원)

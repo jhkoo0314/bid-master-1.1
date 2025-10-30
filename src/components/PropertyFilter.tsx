@@ -176,10 +176,13 @@ export function PropertyFilter({
 
   // 랜덤 필터 선택
   const randomizeFilters = () => {
-    // 매물유형 카테고리 랜덤 선택 (주거용 또는 상업용)
+    // 매물유형 카테고리 랜덤 선택: 상업용은 제외 (준비중)
+    const enabledCategories = propertyCategoryOptions.filter(
+      (option) => option.value === "주거용"
+    );
     const randomCategory =
-      propertyCategoryOptions[
-        Math.floor(Math.random() * propertyCategoryOptions.length)
+      enabledCategories[
+        Math.floor(Math.random() * enabledCategories.length)
       ].value;
 
     // 선택된 카테고리에 따라 매물 유형 선택
@@ -187,13 +190,20 @@ export function PropertyFilter({
       randomCategory === "주거용"
         ? residentialPropertyOptions
         : commercialPropertyOptions;
+
+    // 주거용 아닌 경우(빈 옵션): 에러 로그 후 디폴트 값 할당
+    if (!availableOptions.length) {
+      console.error(
+        "❌ [랜덤 필터] 해당 카테고리에는 매물 유형 옵션이 없습니다:",
+        randomCategory
+      );
+      return;
+    }
     const randomPropertyType =
-      availableOptions[Math.floor(Math.random() * availableOptions.length)]
-        .value;
+      availableOptions[Math.floor(Math.random() * availableOptions.length)].value;
 
     const randomDifficulty =
-      difficultyOptions[Math.floor(Math.random() * difficultyOptions.length)]
-        .value;
+      difficultyOptions[Math.floor(Math.random() * difficultyOptions.length)].value;
 
     // 권리유형은 1-3개 랜덤 선택
     const shuffledRightTypes = [...rightTypeOptions].sort(
