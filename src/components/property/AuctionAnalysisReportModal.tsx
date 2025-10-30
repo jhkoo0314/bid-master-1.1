@@ -1,5 +1,8 @@
+"use client";
 import React from "react";
 import type { PropertyDetail, RiskItem, ScheduleItem } from "@/types/property";
+import { useSimulationStore } from "@/store/simulation-store";
+import InfoTip from "@/components/common/InfoTip";
 
 interface AuctionAnalysisReportModalProps {
   isOpen: boolean;
@@ -8,6 +11,7 @@ interface AuctionAnalysisReportModalProps {
   analysis?: {
     safetyMargin: number;
     totalAssumedAmount: number;
+    trace?: string[];
   };
 }
 export default function AuctionAnalysisReportModal({
@@ -16,9 +20,10 @@ export default function AuctionAnalysisReportModal({
   data,
   analysis,
 }: AuctionAnalysisReportModalProps) {
+  const { devMode } = useSimulationStore();
   React.useEffect(() => {
     if (isOpen) {
-      console.log("📊 [경매분석] 경매분석 리포트 모달 열림");
+      console.log("📊 [경매분석] 리포트 열림 (open)");
     }
   }, [isOpen]);
 
@@ -50,6 +55,14 @@ export default function AuctionAnalysisReportModal({
       <div className="bg-white rounded-lg shadow w-full max-w-4xl mx-4 overflow-y-auto max-h-[90vh] flex flex-col font-serif">
         {/* 표준 법원양식 머리말 */}
         <div className="px-8 py-6 border-b border-gray-300 relative">
+          <style>{`
+            @media print {
+              .no-print { display: none !important; }
+              .print-border { border-color: #000 !important; }
+              .print-bg { background: #fff !important; }
+              body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            }
+          `}</style>
           <div className="text-center">
             <div className="text-sm tracking-wider">대한민국 법원 경매 분석 서식</div>
             <h1 className="text-2xl font-bold mt-1">경매분석 보고서</h1>
@@ -76,13 +89,29 @@ export default function AuctionAnalysisReportModal({
               </div>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="absolute top-3 right-4 text-2xl text-gray-400 hover:text-gray-700"
-            aria-label="닫기"
-          >
-            ×
-          </button>
+          <div className="absolute top-3 right-4 flex items-center gap-2 no-print">
+            {devMode?.isDevMode ? (
+              <button
+                onClick={() => {
+                  console.log("📄 [다운로드] 경매분석 리포트 인쇄/다운로드 (print)");
+                  window.print();
+                }}
+                className="text-xs px-3 py-1 border border-gray-300 bg-white hover:bg-gray-50"
+              >
+                인쇄
+              </button>
+            ) : null}
+            <button
+              onClick={() => {
+                console.log("👤 [사용자 액션] 경매분석 리포트 닫기 (close)");
+                onClose();
+              }}
+              className="text-2xl text-gray-400 hover:text-gray-700"
+              aria-label="닫기"
+            >
+              ×
+            </button>
+          </div>
         </div>
 
         <div className="divide-y divide-gray-200">
@@ -90,19 +119,19 @@ export default function AuctionAnalysisReportModal({
           <section className="px-8 py-5 bg-gray-50">
             <div className="grid gap-4 grid-cols-2 md:grid-cols-4 text-[13px]">
               <div className="p-3 bg-white border border-gray-300">
-                <div className="text-[11px] text-gray-600">감정가</div>
+                <div className="text-[11px] text-gray-600 flex items-center">감정가<InfoTip title="감정가" description={"감정평가사가 산정한 가격. 법원 공고 기준값으로 사용."} /></div>
                 <div className="font-semibold text-gray-900">{appraised.toLocaleString()}원</div>
               </div>
               <div className="p-3 bg-white border border-gray-300">
-                <div className="text-[11px] text-gray-600">최저가</div>
+                <div className="text-[11px] text-gray-600 flex items-center">최저가<InfoTip title="최저매각가격" description={"유찰 시 감액 비율을 반영한 현재 매각 최저가."} /></div>
                 <div className="font-semibold text-gray-900">{lowest.toLocaleString()}원</div>
               </div>
               <div className="p-3 bg-white border border-gray-300">
-                <div className="text-[11px] text-gray-600">할인율</div>
+                <div className="text-[11px] text-gray-600 flex items-center">할인율<InfoTip title="할인율" description={"1 - 최저가/감정가. 유찰로 인한 감액 수준."} /></div>
                 <div className="font-semibold text-gray-900">{Math.round(discountRate * 100)}%</div>
               </div>
               <div className="p-3 bg-white border border-gray-300">
-                <div className="text-[11px] text-gray-600">안전마진</div>
+                <div className="text-[11px] text-gray-600 flex items-center">안전마진<InfoTip title="안전마진" description={"최소 필요자기자본.\nmax(인수금액, 유형별 바닥노출) × 위험도 × 난이도.\n1만원 단위 반올림."} /></div>
                 <div className="font-semibold text-gray-900">{safetyMarginLabel}</div>
               </div>
             </div>
@@ -118,6 +147,18 @@ export default function AuctionAnalysisReportModal({
               <div className="text-xs text-gray-600">최저가 기준 + 안전마진 50% 반영한 단순 가이드입니다. 권리 인수액, 공실/수리비 등 실비를 반영해 조정하세요.</div>
             </div>
           </section>
+
+          {/* 2-1. 근거 보기 (산출 트레이스) */}
+          {analysis?.trace && analysis.trace.length > 0 && (
+            <section className="px-8 py-4 bg-gray-50">
+              <h3 className="font-semibold mb-2 text-sm text-gray-900">근거 보기</h3>
+              <ul className="text-xs text-gray-700 list-disc pl-5 space-y-1">
+                {analysis.trace.map((t, i) => (
+                  <li key={i}>{t}</li>
+                ))}
+              </ul>
+            </section>
+          )}
 
           {/* 3. 배당/현금흐름 요약 */}
           <section className="px-8 py-5 bg-gray-50">

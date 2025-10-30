@@ -15,12 +15,13 @@ import {
 } from "@/components/property/CourtDocumentModal";
 import RightsAnalysisReportModal from "@/components/property/RightsAnalysisReportModal";
 import AuctionAnalysisReportModal from "@/components/property/AuctionAnalysisReportModal";
+import { WaitlistModal } from "@/components/WaitlistModal";
 import { PropertyDetail } from "@/types/property";
 import { SimulationScenario } from "@/types/simulation";
 import { useSimulationStore } from "@/store/simulation-store";
 import { mapSimulationToPropertyDetail } from "@/lib/property/formatters";
 import { analyzeRights } from "@/lib/rights-analysis-engine";
-import { calculateSafetyMargin } from "@/lib/property/safety-calc";
+import { calculateSafetyMargin, calculateAdvancedAssumption } from "@/lib/property/safety-calc";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -35,17 +36,47 @@ export default function PropertyPage({ params }: PageProps) {
   const [courtModalOpen, setCourtModalOpen] = useState(false);
   const [rightsReportOpen, setRightsReportOpen] = useState(false);
   const [auctionReportOpen, setAuctionReportOpen] = useState(false);
+  const [isWaitlistModalOpen, setIsWaitlistModalOpen] = useState(false);
 
-  const { getPropertyFromCache, educationalProperties } = useSimulationStore();
+  const { getPropertyFromCache, educationalProperties, devMode } = useSimulationStore();
 
   // 권리분석 요약 계산을 컴포넌트 상단에서 일원화하여 하위에서 공용 사용
   const analysis = useMemo(() => {
     if (!scenario || !data) return undefined;
     try {
-      // 새로운 위험도·유형별 로직 직접 사용
-      const result = calculateSafetyMargin(data.rights);
-      console.log("⚖️ [권리분석] 위험도별 안전마진 계산: ", result);
-      return result;
+      // 권리 기반 위험도 요약
+      const severityOrder = { high: 3, mid: 2, low: 1 } as const;
+      const topSeverity = (data.rights || []).reduce<"low" | "mid" | "high">((acc, r) => {
+        const s = (r.severity as "low" | "mid" | "high") || "low";
+        return severityOrder[s] > severityOrder[acc] ? s : acc;
+      }, "low");
+
+      // 고도화 계산(매물유형/위험도/난이도 적용)
+      const lowestForCalc =
+        data.price?.lowest && data.price.lowest > 0
+          ? data.price.lowest
+          : Math.floor((data.price?.appraised || 0) * 0.7);
+
+      console.log("⚖️ [권리분석] 최저가 기반값 선택", {
+        rawLowest: data.price?.lowest,
+        appraised: data.price?.appraised,
+        usedLowest: lowestForCalc,
+        reason: (data.price?.lowest || 0) > 0 ? "raw" : "fallback(appraised×70%)",
+      });
+
+      const advanced = calculateAdvancedAssumption({
+        rights: data.rights || [],
+        propertyType: data.meta?.type || "기타",
+        lowestPrice: lowestForCalc,
+        riskLevel: topSeverity,
+        difficulty: "intermediate",
+      });
+      console.log("⚖️ [권리분석] 고도화 안전마진 계산:", advanced);
+      return {
+        safetyMargin: advanced.minSafetyMargin,
+        totalAssumedAmount: advanced.assumedAmount,
+        trace: advanced.trace,
+      };
     } catch (e) {
       console.error(
         "❌ [에러] 안전마진 산출 로직 실패 (calculateSafetyMargin)",
@@ -242,10 +273,33 @@ export default function PropertyPage({ params }: PageProps) {
             description="입찰 전 반드시 참고하세요"
             source="법원 공고"
             collapsible={true}
-            defaultCollapsed={false}
+            defaultCollapsed={!devMode?.isDevMode}
           >
             {(() => {
               if (!data) return null;
+              // 일반 모드: 요약 숨기고 준비중 메시지 + 접기 기본
+              if (!devMode?.isDevMode) {
+                return (
+                  <>
+                    <div className="text-sm text-gray-600 p-3 rounded bg-gray-50 border border-gray-200 mb-2">
+                      서비스 준비중 입니다
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <button
+                        type="button"
+                        className="text-xs px-3 py-1 rounded border border-blue-200 bg-white text-blue-700 font-semibold hover:bg-blue-50 transition"
+                        onClick={() => {
+                          console.log("👤 [사용자 액션] 명세서 자세히 클릭 (일반 모드)");
+                          console.log("📧 [사전 알림] 모달 오픈 트리거");
+                          setIsWaitlistModalOpen(true);
+                        }}
+                      >
+                        명세서 자세히
+                      </button>
+                    </div>
+                  </>
+                );
+              }
               // 요약 정보 생성
               const risks = data.risks || [];
               // 리스크: 심각도 순 정렬 후 가장 높은 것
@@ -381,20 +435,36 @@ export default function PropertyPage({ params }: PageProps) {
                       ? "추천 전략: 권리·임차 점검, 안정/공격형 병행"
                       : "추천 전략: 안정형 투자, 무리없는 낙찰"}
                   </div>
-                  <div className="flex justify-end gap-2">
-                    <button
-                      type="button"
-                      className="text-xs px-3 py-1 rounded border border-blue-200 bg-white text-blue-700 font-semibold hover:bg-blue-50 transition"
-                      onClick={() => {
-                        console.log(
-                          "👤 [사용자 액션] 매각물건명세서 자세히 보기 클릭"
-                        );
-                        setCourtModalOpen(true);
-                      }}
-                    >
-                      명세서 자세히
-                    </button>
-                  </div>
+                  {devMode?.isDevMode ? (
+                    <div className="flex justify-end gap-2">
+                      <button
+                        type="button"
+                        className="text-xs px-3 py-1 rounded border border-blue-200 bg-white text-blue-700 font-semibold hover:bg-blue-50 transition"
+                        onClick={() => {
+                          console.log(
+                            "👤 [사용자 액션] 매각물건명세서 자세히 보기 클릭 (개발자 모드)"
+                          );
+                          setCourtModalOpen(true);
+                        }}
+                      >
+                        명세서 자세히
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex justify-end gap-2">
+                      <button
+                        type="button"
+                        className="text-xs px-3 py-1 rounded border border-blue-200 bg-white text-blue-700 font-semibold hover:bg-blue-50 transition"
+                        onClick={() => {
+                          console.log("👤 [사용자 액션] 명세서 자세히 클릭 (일반 모드)");
+                          console.log("📧 [사전 알림] 모달 오픈 트리거");
+                          setIsWaitlistModalOpen(true);
+                        }}
+                      >
+                        명세서 자세히
+                      </button>
+                    </div>
+                  )}
                 </>
               );
             })()}
@@ -402,28 +472,39 @@ export default function PropertyPage({ params }: PageProps) {
         </div>
       </div>
       {/* 상세 리포트 진입 버튼 - 모바일 적응 */}
-      <div className="flex flex-wrap gap-2 justify-end mb-4">
-        <button
-          className="px-3 py-1 text-xs rounded border bg-white text-blue-700 border-blue-200 hover:bg-blue-50 transition"
-          onClick={() => setCourtModalOpen(true)}
-        >
-          매각물건명세서
-        </button>
-        <button
-          className="px-3 py-1 text-xs rounded border bg-white text-yellow-800 border-yellow-300 hover:bg-yellow-50 transition"
-          onClick={() => setRightsReportOpen(true)}
-        >
-          권리분석 리포트
-        </button>
-        <button
-          className="px-3 py-1 text-xs rounded border bg-white text-green-800 border-green-200 hover:bg-green-50 transition"
-          onClick={() => setAuctionReportOpen(true)}
-        >
-          경매분석 리포트
-        </button>
-      </div>
+      {devMode?.isDevMode ? (
+        <div className="flex flex-wrap gap-2 justify-end mb-4">
+          <button
+            className="px-3 py-1 text-xs rounded border bg-white text-blue-700 border-blue-200 hover:bg-blue-50 transition"
+            onClick={() => {
+              console.log("👤 [사용자 액션] 매각물건명세서 버튼 클릭 (개발자 모드)");
+              setCourtModalOpen(true);
+            }}
+          >
+            매각물건명세서
+          </button>
+          <button
+            className="px-3 py-1 text-xs rounded border bg-white text-yellow-800 border-yellow-300 hover:bg-yellow-50 transition"
+            onClick={() => {
+              console.log("👤 [사용자 액션] 권리분석 리포트 버튼 클릭 (개발자 모드)");
+              setRightsReportOpen(true);
+            }}
+          >
+            권리분석 리포트
+          </button>
+          <button
+            className="px-3 py-1 text-xs rounded border bg-white text-green-800 border-green-200 hover:bg-green-50 transition"
+            onClick={() => {
+              console.log("👤 [사용자 액션] 경매분석 리포트 버튼 클릭 (개발자 모드)");
+              setAuctionReportOpen(true);
+            }}
+          >
+            경매분석 리포트
+          </button>
+        </div>
+      ) : null}
       {/* 법원문서 모달 */}
-      {courtModalOpen && data && data.meta && (
+      {devMode?.isDevMode && courtModalOpen && data && data.meta && (
         <SaleSpecificationModal
           isOpen={courtModalOpen}
           onClose={() => {
@@ -435,7 +516,7 @@ export default function PropertyPage({ params }: PageProps) {
         />
       )}
       {/* 권리분석 리포트 모달 */}
-      {rightsReportOpen && data && (
+      {devMode?.isDevMode && rightsReportOpen && data && (
         <RightsAnalysisReportModal
           isOpen={rightsReportOpen}
           onClose={() => {
@@ -447,7 +528,7 @@ export default function PropertyPage({ params }: PageProps) {
         />
       )}
       {/* 경매분석 리포트 모달 */}
-      {auctionReportOpen && data && (
+      {devMode?.isDevMode && auctionReportOpen && data && (
         <AuctionAnalysisReportModal
           isOpen={auctionReportOpen}
           onClose={() => {
@@ -458,6 +539,14 @@ export default function PropertyPage({ params }: PageProps) {
           analysis={analysis}
         />
       )}
+      {/* 사전 알림 신청 모달 (일반 모드 CTA) */}
+      <WaitlistModal
+        isOpen={isWaitlistModalOpen}
+        onClose={() => {
+          console.log("🔔 [사전 알림] 모달 닫기");
+          setIsWaitlistModalOpen(false);
+        }}
+      />
     </div>
   );
 }

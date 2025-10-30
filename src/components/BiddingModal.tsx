@@ -1117,7 +1117,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                         {formatNumber(
                           biddingResult.rightsAnalysis.recommendedRange.optimal
                         )}
-                        원. 상세 리포트는 개발자 모드에서 제공.
+                        원.
                       </p>
                       <button
                         onClick={() => {

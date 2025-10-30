@@ -46,7 +46,17 @@ function calculateRiskScore(sim: SimulationScenario): number {
 export function mapSimulationToPropertyDetail(sim: SimulationScenario): PropertyDetail {
   console.log("🧪 [테스트] Simulation → PropertyDetail 매핑 시작", sim.id);
   const appraised = sim.basicInfo.appraisalValue;
-  const lowest = sim.basicInfo.minimumBidPrice;
+  const lowestRaw = sim.basicInfo.minimumBidPrice || 0;
+  const lowest = lowestRaw > 0
+    ? lowestRaw
+    : Math.floor((appraised || 0) * 0.7);
+
+  if (lowestRaw <= 0) {
+    console.log("📦 [데이터] 최저가 누락으로 감정가×70% Fallback 적용", {
+      appraisalValue: appraised,
+      usedLowest: lowest,
+    });
+  }
   const deposit = sim.basicInfo.bidDeposit;
 
   // 지역기관 정보 동적 생성

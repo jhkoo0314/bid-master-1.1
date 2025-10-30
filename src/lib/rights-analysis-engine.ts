@@ -440,7 +440,7 @@ export function analyzeRights(
 
   // 5. 총액 계산
   const propertyType = propertyDetails?.usage || '아파트';
-  const totalAssumedAmount = assumedRights.reduce(
+  let totalAssumedAmount = assumedRights.reduce(
     (sum, r) => sum + (r.claimAmount > 0 ? r.claimAmount : calculateRightClaimAmount(r, basicInfo.appraisalValue, propertyType)),
     0
   );
@@ -448,7 +448,59 @@ export function analyzeRights(
     (sum, t) => sum + (t.isSmallTenant ? t.priorityPaymentAmount : t.deposit),
     0
   );
-  const safetyMargin = calculateSafetyMargin(analyzedRights, analyzedTenants, basicInfo.appraisalValue, propertyType);
+
+  // 총 인수금액(권리) 보수적 추정치 적용: 0원일 때 canBeAssumed 권리를 기준으로 동적 청구액 합산
+  if (totalAssumedAmount === 0) {
+    console.log("⚠️ [권리분석 엔진] 총 인수금액(권리)이 0원 → 추정치 산출 로직 적용");
+    const fallbackRightsForAssume = rights.filter((r) => getRightPriority(r.rightType).canBeAssumed);
+    const estimatedAssumedAmount = fallbackRightsForAssume.reduce((sum, r) => {
+      const amount = r.claimAmount > 0
+        ? r.claimAmount
+        : calculateRightClaimAmount(r, basicInfo.appraisalValue, propertyType);
+      return sum + amount;
+    }, 0);
+    if (estimatedAssumedAmount > 0) {
+      totalAssumedAmount = estimatedAssumedAmount;
+      console.log("🛟 [권리분석 엔진] 총 인수금액 추정치 적용", {
+        estimatedAssumedAmount: estimatedAssumedAmount.toLocaleString(),
+      });
+    }
+  }
+  let safetyMargin = calculateSafetyMargin(analyzedRights, analyzedTenants, basicInfo.appraisalValue, propertyType);
+
+  // 방어 로직: 안전마진/인수금액이 0으로 산출될 경우 보수적 대체 계산 적용
+  if (safetyMargin === 0) {
+    console.log("⚠️ [권리분석 엔진] 안전마진이 0원으로 계산되어 대체 계산을 적용합니다.");
+
+    // 1) 권리 보수적 합: 말소기준권리 판단 실패 또는 인수 판단 실패 시에도
+    //    인수 가능성이 높은 권리(canBeAssumed=true)를 대상으로 동적 청구액을 합산
+    const fallbackRights = rights.filter((r) => getRightPriority(r.rightType).canBeAssumed);
+    const fallbackAssumedAmount = fallbackRights.reduce((sum, r) => {
+      const amount = r.claimAmount > 0
+        ? r.claimAmount
+        : calculateRightClaimAmount(r, basicInfo.appraisalValue, propertyType);
+      return sum + amount;
+    }, 0);
+
+    // 2) 임차 보수적 합: 대항력 판단 실패 시에도 소액임차인 기준으로 우선변제금액 가정
+    const fallbackTenantDeposit = tenants.reduce((sum, t) => {
+      const isSmallTenant = t.deposit <= 170000000; // 보수적 서울 기준
+      const assumed = isSmallTenant ? Math.min(t.deposit / 2, 50000000) : 0;
+      return sum + assumed;
+    }, 0);
+
+    const fallbackSafety = fallbackAssumedAmount + fallbackTenantDeposit;
+    console.log("🛟 [권리분석 엔진] 대체 안전마진 계산", {
+      fallbackAssumedAmount: fallbackAssumedAmount.toLocaleString(),
+      fallbackTenantDeposit: fallbackTenantDeposit.toLocaleString(),
+      fallbackSafety: fallbackSafety.toLocaleString(),
+    });
+
+    // 대체값이 0보다 크면 적용
+    if (fallbackSafety > 0) {
+      safetyMargin = fallbackSafety;
+    }
+  }
 
   // 6. 권장 입찰가 범위 계산
   const recommendedBidRange = calculateRecommendedBidRange(

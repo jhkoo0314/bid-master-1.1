@@ -1,4 +1,6 @@
+"use client";
 import React from "react";
+import { useSimulationStore } from "@/store/simulation-store";
 import type { PropertyDetail, RightRow } from "@/types/property";
 
 interface SaleSpecificationModalProps {
@@ -8,6 +10,7 @@ interface SaleSpecificationModalProps {
   analysis?: {
     safetyMargin: number;
     totalAssumedAmount: number;
+    trace?: string[];
   };
 }
 
@@ -54,9 +57,10 @@ export function SaleSpecificationModal({
   data,
   analysis,
 }: SaleSpecificationModalProps) {
+  const { devMode } = useSimulationStore();
   React.useEffect(() => {
     if (isOpen) {
-      console.log("⚖️ [권리분석] 공식문서 표준 양식 렌더링");
+      console.log("⚖️ [권리분석] 매각물건명세서 열림 (open)");
     }
   }, [isOpen]);
   if (!data || !data.meta) {
@@ -144,15 +148,39 @@ export function SaleSpecificationModal({
       <div className="bg-white rounded-2xl shadow-lg w-full max-w-2xl mx-4 overflow-y-auto max-h-[90vh]">
         {/* 헤더 */}
         <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200">
+          <style>{`
+            @media print {
+              .no-print { display: none !important; }
+              .print-border { border-color: #000 !important; }
+              .print-bg { background: #fff !important; }
+              body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            }
+          `}</style>
           <h2 className="text-xl font-bold text-gray-900">
             🏠 매각물건 명세서
           </h2>
-          <button
-            onClick={onClose}
-            className="text-2xl text-gray-400 hover:text-gray-700"
-          >
-            ×
-          </button>
+          <div className="flex items-center gap-2 no-print">
+            {devMode?.isDevMode ? (
+              <button
+                onClick={() => {
+                  console.log("📄 [다운로드] 매각물건명세서 인쇄/다운로드 (print)");
+                  window.print();
+                }}
+                className="text-xs px-3 py-1 border border-gray-300 bg-white hover:bg-gray-50"
+              >
+                인쇄
+              </button>
+            ) : null}
+            <button
+              onClick={() => {
+                console.log("👤 [사용자 액션] 매각물건명세서 닫기 (close)");
+                onClose();
+              }}
+              className="text-2xl text-gray-400 hover:text-gray-700"
+            >
+              ×
+            </button>
+          </div>
         </div>
         {/* 본문 */}
         <div className="p-0 divide-y divide-gray-200">
@@ -423,6 +451,18 @@ export function SaleSpecificationModal({
               </div>
             </div>
           </section>
+
+          {/* 05. 근거 보기 (산출 트레이스) */}
+          {analysis?.trace && analysis.trace.length > 0 && (
+            <section className="px-6 py-4 bg-gray-50">
+              <h3 className="font-semibold mb-2 text-sm text-gray-700">근거 보기</h3>
+              <ul className="text-xs text-gray-700 list-disc pl-5 space-y-1">
+                {analysis.trace.map((t, i) => (
+                  <li key={i}>{t}</li>
+                ))}
+              </ul>
+            </section>
+          )}
           {/* 닫기 버튼 */}
           <div className="px-6 py-4 border-t flex justify-end bg-white">
             <button
