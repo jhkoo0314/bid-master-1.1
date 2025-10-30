@@ -83,10 +83,7 @@ function checkAccurateHit(
  * 근접 적중 여부 계산 (v1.2 규정)
  * 사용자 입찰가가 낙찰가 범위 ±5% 이내인지 확인 (±3% 초과)
  */
-function checkCloseHit(
-  userBidPrice: number,
-  winningBidPrice: number
-): boolean {
+function checkCloseHit(userBidPrice: number, winningBidPrice: number): boolean {
   const diff = Math.abs(userBidPrice - winningBidPrice);
   const closeThreshold = winningBidPrice * 0.05; // ±5%
   const accurateThreshold = winningBidPrice * 0.03; // ±3%
@@ -158,11 +155,17 @@ export function calculatePoints(
   }
 
   // 2. 정답 적중 확인 (±3%)
-  if (hasResponded && checkAccurateHit(input.userBidPrice, input.winningBidPrice)) {
+  if (
+    hasResponded &&
+    checkAccurateHit(input.userBidPrice, input.winningBidPrice)
+  ) {
     breakdown.accurateHit = 10;
     basePoints += 10;
     console.log("  🎯 정답 적중(±3%): +10pt");
-  } else if (hasResponded && checkCloseHit(input.userBidPrice, input.winningBidPrice)) {
+  } else if (
+    hasResponded &&
+    checkCloseHit(input.userBidPrice, input.winningBidPrice)
+  ) {
     // 3. 근접 적중 확인 (±5%, ±3% 초과)
     breakdown.closeHit = 6;
     basePoints += 6;
@@ -193,7 +196,9 @@ export function calculatePoints(
   const finalPoints = Math.max(0, totalPoints);
   const xp = finalPoints; // XP는 포인트와 동일
 
-  console.log(`  ✅ 최종 포인트: ${finalPoints}pt (원점수 ${basePoints} × 난이도계수 ${difficultyMultiplier})`);
+  console.log(
+    `  ✅ 최종 포인트: ${finalPoints}pt (원점수 ${basePoints} × 난이도계수 ${difficultyMultiplier})`
+  );
   console.log(`  ✅ 획득 XP: ${xp}`);
 
   return {
@@ -313,9 +318,7 @@ export function updateLevel(totalPoints: number): LevelInfo {
 
   const { level, min, max } = currentLevelInfo;
   const progressPercent =
-    max === Infinity
-      ? 100
-      : ((totalPoints - min) / (max - min + 1)) * 100;
+    max === Infinity ? 100 : ((totalPoints - min) / (max - min + 1)) * 100;
 
   // 다음 레벨까지 필요한 포인트
   let nextLevelPoints = 0;

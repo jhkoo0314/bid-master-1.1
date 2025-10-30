@@ -15,6 +15,8 @@ import { useSimulationStore } from "@/store/simulation-store";
 import { CourtDocumentModal } from "./property/CourtDocumentModal";
 import { mapSimulationToPropertyDetail } from "@/lib/property/formatters";
 import { SaleSpecificationModal } from "./property/CourtDocumentModal";
+import RightsAnalysisReportModal from "./property/RightsAnalysisReportModal";
+import AuctionAnalysisReportModal from "./property/AuctionAnalysisReportModal";
 
 interface BiddingModalProps {
   property: SimulationScenario;
@@ -106,6 +108,8 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
   const [showAuctionAnalysis, setShowAuctionAnalysis] = useState(false);
   const [showWaitlistModal, setShowWaitlistModal] = useState(false);
   const [showAnalysisModal, setShowAnalysisModal] = useState(false);
+  const [showRightsReportModal, setShowRightsReportModal] = useState(false);
+  const [showAuctionReportModal, setShowAuctionReportModal] = useState(false);
 
   // 이전 isOpen 값 추적 (무한 루프 방지)
   const prevIsOpenRef = useRef(false);
@@ -1118,9 +1122,9 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                       <button
                         onClick={() => {
                           if (devMode.isDevMode) {
-                            setShowAnalysisModal(true);
+                            setShowRightsReportModal(true);
                             console.log(
-                              "⚖️ [권리분석] 자세히보기 클릭 - 개발자 모드"
+                              "⚖️ [권리분석] 리포트 자세히보기 클릭 - 개발자 모드"
                             );
                           } else {
                             setShowWaitlistModal(true);
@@ -1131,7 +1135,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                         }}
                         className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
                       >
-                        자세히보기
+                        권리분석 자세히
                       </button>
                     </div>
                   </div>
@@ -1535,7 +1539,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                           onClick={() => {
                             console.log("📊 [경매분석] 자세히보기 버튼 클릭됨");
                             if (devMode.isDevMode) {
-                              setShowAnalysisModal(true);
+                              setShowAuctionReportModal(true);
                               console.log(
                                 "📊 [경매분석] 자세히보기 버튼 클릭 - 개발자 모드 (상세 리포트 모달 열기)"
                               );
@@ -1548,7 +1552,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                           }}
                           className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
                         >
-                          자세히보기
+                          경매분석 자세히
                         </button>
                       </div>
                     </div>
@@ -1577,13 +1581,18 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
       />
 
       {/* 권리분석 상세 리포트 공문서 모달 */}
-      {showAnalysisModal && property && (
-        <SaleSpecificationModal
-          isOpen={showAnalysisModal}
-          onClose={() => {
-            setShowAnalysisModal(false);
-            console.log("⚖️ [권리분석] 상세 리포트 모달 닫기");
-          }}
+      {showRightsReportModal && property && (
+        <RightsAnalysisReportModal
+          isOpen={showRightsReportModal}
+          onClose={() => setShowRightsReportModal(false)}
+          data={mapSimulationToPropertyDetail(property)}
+          analysis={analyzeRights(property)}
+        />
+      )}
+      {showAuctionReportModal && property && (
+        <AuctionAnalysisReportModal
+          isOpen={showAuctionReportModal}
+          onClose={() => setShowAuctionReportModal(false)}
           data={mapSimulationToPropertyDetail(property)}
           analysis={analyzeRights(property)}
         />

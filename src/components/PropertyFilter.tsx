@@ -181,9 +181,8 @@ export function PropertyFilter({
       (option) => option.value === "주거용"
     );
     const randomCategory =
-      enabledCategories[
-        Math.floor(Math.random() * enabledCategories.length)
-      ].value;
+      enabledCategories[Math.floor(Math.random() * enabledCategories.length)]
+        .value;
 
     // 선택된 카테고리에 따라 매물 유형 선택
     const availableOptions =
@@ -200,10 +199,12 @@ export function PropertyFilter({
       return;
     }
     const randomPropertyType =
-      availableOptions[Math.floor(Math.random() * availableOptions.length)].value;
+      availableOptions[Math.floor(Math.random() * availableOptions.length)]
+        .value;
 
     const randomDifficulty =
-      difficultyOptions[Math.floor(Math.random() * difficultyOptions.length)].value;
+      difficultyOptions[Math.floor(Math.random() * difficultyOptions.length)]
+        .value;
 
     // 권리유형은 1-3개 랜덤 선택
     const shuffledRightTypes = [...rightTypeOptions].sort(

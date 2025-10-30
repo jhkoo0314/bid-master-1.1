@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import SummaryHeader from "@/components/property/SummaryHeader";
 import StickyBar from "@/components/property/StickyBar";
 import SectionCard from "@/components/property/SectionCard";
@@ -9,11 +9,18 @@ import ScheduleTable from "@/components/property/ScheduleTable";
 import RightsTable from "@/components/property/RightsTable";
 import PayoutTable from "@/components/property/PayoutTable";
 import RegionPanel from "@/components/property/RegionPanel";
-import { CourtDocumentModal, SaleSpecificationModal } from "@/components/property/CourtDocumentModal";
+import {
+  CourtDocumentModal,
+  SaleSpecificationModal,
+} from "@/components/property/CourtDocumentModal";
+import RightsAnalysisReportModal from "@/components/property/RightsAnalysisReportModal";
+import AuctionAnalysisReportModal from "@/components/property/AuctionAnalysisReportModal";
 import { PropertyDetail } from "@/types/property";
 import { SimulationScenario } from "@/types/simulation";
 import { useSimulationStore } from "@/store/simulation-store";
 import { mapSimulationToPropertyDetail } from "@/lib/property/formatters";
+import { analyzeRights } from "@/lib/rights-analysis-engine";
+import { calculateSafetyMargin } from "@/lib/property/safety-calc";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -22,11 +29,31 @@ interface PageProps {
 export default function PropertyPage({ params }: PageProps) {
   const [caseId, setCaseId] = useState<string>("");
   const [data, setData] = useState<PropertyDetail | null>(null);
+  const [scenario, setScenario] = useState<SimulationScenario | null>(null); // ✨ 원본 시나리오 추가
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [courtModalOpen, setCourtModalOpen] = useState(false);
+  const [rightsReportOpen, setRightsReportOpen] = useState(false);
+  const [auctionReportOpen, setAuctionReportOpen] = useState(false);
 
   const { getPropertyFromCache, educationalProperties } = useSimulationStore();
+
+  // 권리분석 요약 계산을 컴포넌트 상단에서 일원화하여 하위에서 공용 사용
+  const analysis = useMemo(() => {
+    if (!scenario || !data) return undefined;
+    try {
+      // 새로운 위험도·유형별 로직 직접 사용
+      const result = calculateSafetyMargin(data.rights);
+      console.log("⚖️ [권리분석] 위험도별 안전마진 계산: ", result);
+      return result;
+    } catch (e) {
+      console.error(
+        "❌ [에러] 안전마진 산출 로직 실패 (calculateSafetyMargin)",
+        e
+      );
+      return undefined;
+    }
+  }, [scenario, data]);
 
   useEffect(() => {
     const loadParams = async () => {
@@ -53,6 +80,7 @@ export default function PropertyPage({ params }: PageProps) {
           console.log(`💾 [캐시] 매물 데이터 조회 성공: ${caseId}`);
           const mapped = mapSimulationToPropertyDetail(cachedScenario);
           setData(mapped);
+          setScenario(cachedScenario); // 👈 원본 시나리오 저장
           setIsLoading(false);
           return;
         }
@@ -65,6 +93,7 @@ export default function PropertyPage({ params }: PageProps) {
           console.log(`📚 [교육용] 매물 데이터 조회 성공: ${caseId}`);
           const mapped = mapSimulationToPropertyDetail(foundScenario);
           setData(mapped);
+          setScenario(foundScenario); // 👈 원본 시나리오 저장
           setIsLoading(false);
           return;
         }
@@ -352,10 +381,10 @@ export default function PropertyPage({ params }: PageProps) {
                       ? "추천 전략: 권리·임차 점검, 안정/공격형 병행"
                       : "추천 전략: 안정형 투자, 무리없는 낙찰"}
                   </div>
-                  <div className="flex justify-end">
+                  <div className="flex justify-end gap-2">
                     <button
                       type="button"
-                      className="text-xs px-4 py-1 rounded border border-black/20 bg-white text-[#0E4ECF] font-semibold hover:bg-blue-50 transition"
+                      className="text-xs px-3 py-1 rounded border border-blue-200 bg-white text-blue-700 font-semibold hover:bg-blue-50 transition"
                       onClick={() => {
                         console.log(
                           "👤 [사용자 액션] 매각물건명세서 자세히 보기 클릭"
@@ -363,7 +392,7 @@ export default function PropertyPage({ params }: PageProps) {
                         setCourtModalOpen(true);
                       }}
                     >
-                      자세히 보기
+                      명세서 자세히
                     </button>
                   </div>
                 </>
@@ -371,6 +400,27 @@ export default function PropertyPage({ params }: PageProps) {
             })()}
           </SectionCard>
         </div>
+      </div>
+      {/* 상세 리포트 진입 버튼 - 모바일 적응 */}
+      <div className="flex flex-wrap gap-2 justify-end mb-4">
+        <button
+          className="px-3 py-1 text-xs rounded border bg-white text-blue-700 border-blue-200 hover:bg-blue-50 transition"
+          onClick={() => setCourtModalOpen(true)}
+        >
+          매각물건명세서
+        </button>
+        <button
+          className="px-3 py-1 text-xs rounded border bg-white text-yellow-800 border-yellow-300 hover:bg-yellow-50 transition"
+          onClick={() => setRightsReportOpen(true)}
+        >
+          권리분석 리포트
+        </button>
+        <button
+          className="px-3 py-1 text-xs rounded border bg-white text-green-800 border-green-200 hover:bg-green-50 transition"
+          onClick={() => setAuctionReportOpen(true)}
+        >
+          경매분석 리포트
+        </button>
       </div>
       {/* 법원문서 모달 */}
       {courtModalOpen && data && data.meta && (
@@ -381,6 +431,31 @@ export default function PropertyPage({ params }: PageProps) {
             setCourtModalOpen(false);
           }}
           data={data}
+          analysis={analysis}
+        />
+      )}
+      {/* 권리분석 리포트 모달 */}
+      {rightsReportOpen && data && (
+        <RightsAnalysisReportModal
+          isOpen={rightsReportOpen}
+          onClose={() => {
+            console.log("👤 [사용자 액션] 권리분석 리포트 닫기");
+            setRightsReportOpen(false);
+          }}
+          data={data}
+          analysis={analysis}
+        />
+      )}
+      {/* 경매분석 리포트 모달 */}
+      {auctionReportOpen && data && (
+        <AuctionAnalysisReportModal
+          isOpen={auctionReportOpen}
+          onClose={() => {
+            console.log("👤 [사용자 액션] 경매분석 리포트 닫기");
+            setAuctionReportOpen(false);
+          }}
+          data={data}
+          analysis={analysis}
         />
       )}
     </div>

@@ -63,9 +63,19 @@ export function SaleSpecificationModal({
     console.log("❌ [에러] SaleSpecificationModal: data 또는 meta가 undefined");
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
-        <div className="bg-white rounded-2xl shadow-lg w-full max-w-2xl mx-4 overflow-y-auto max-h-[90vh] flex flex-col items-center justify-center" style={{ minHeight: 240 }}>
-          <div className="text-lg font-semibold text-red-600 p-8">기본 부동산 정보가 없습니다.</div>
-          <button className="mt-4 px-8 py-2 bg-blue-600 text-white rounded-lg" onClick={onClose}>닫기</button>
+        <div
+          className="bg-white rounded-2xl shadow-lg w-full max-w-2xl mx-4 overflow-y-auto max-h-[90vh] flex flex-col items-center justify-center"
+          style={{ minHeight: 240 }}
+        >
+          <div className="text-lg font-semibold text-red-600 p-8">
+            기본 부동산 정보가 없습니다.
+          </div>
+          <button
+            className="mt-4 px-8 py-2 bg-blue-600 text-white rounded-lg"
+            onClick={onClose}
+          >
+            닫기
+          </button>
         </div>
       </div>
     );
@@ -153,10 +163,14 @@ export function SaleSpecificationModal({
             </h3>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                안전마진: {analysis ? `${analysis.safetyMargin.toLocaleString()}원` : "-"}
+                안전마진:{" "}
+                {analysis ? `${analysis.safetyMargin.toLocaleString()}원` : "-"}
               </div>
               <div>
-                인수금액: {analysis ? `${analysis.totalAssumedAmount.toLocaleString()}원` : "-"}
+                인수금액:{" "}
+                {analysis
+                  ? `${analysis.totalAssumedAmount.toLocaleString()}원`
+                  : "-"}
               </div>
             </div>
           </section>
