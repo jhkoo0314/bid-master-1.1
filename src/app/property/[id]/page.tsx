@@ -172,10 +172,11 @@ export default function PropertyPage({ params }: PageProps) {
           <SectionCard title="예상 배당" description="최저가 기준 예상 배당 금액입니다." source="배당표 추정" updatedAt={data.snapshotAt}>
             <PayoutTable data={data.payout.rows} />
           </SectionCard>
+
+          <RegionPanel region={data.region} />
         </div>
 
         <div className="lg:col-span-4 space-y-4">
-          <RegionPanel region={data.region} />
         </div>
       </div>
     </div>

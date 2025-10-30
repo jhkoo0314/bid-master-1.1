@@ -9,7 +9,7 @@ interface RegionPanelProps {
 
 export default function RegionPanel({ region }: RegionPanelProps) {
   return (
-    <div className="rounded-2xl shadow-sm border border-black/5 bg-white p-5">
+    <div className="rounded-2xl shadow-sm border border-black/10 bg-white p-5">
       <h3 className="text-base font-semibold text-[#0B1220]">지역/기관 정보</h3>
       <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
         <OrgCard title="법원" org={region.court} />
@@ -27,7 +27,7 @@ export default function RegionPanel({ region }: RegionPanelProps) {
               target="_blank"
               rel="noreferrer"
               onClick={() => console.log(`🔗 [외부 링크] 클릭: ${link.label} -> ${link.url}`)}
-              className="text-xs rounded-full border border-black/10 px-3 py-1 hover:bg-gray-50"
+              className="text-xs rounded-full border border-black/20 px-3 py-1 hover:bg-gray-50"
             >
               {link.label}
             </a>
@@ -44,7 +44,7 @@ export default function RegionPanel({ region }: RegionPanelProps) {
                   target="_blank"
                   rel="noreferrer"
                   onClick={() => console.log(`🔗 [외부 링크] 클릭: ${link.label} -> ${link.url}`)}
-                  className="text-xs rounded-full border border-black/10 px-3 py-1 hover:bg-gray-50"
+                  className="text-xs rounded-full border border-black/20 px-3 py-1 hover:bg-gray-50"
                 >
                   {link.label}
                 </a>
@@ -59,7 +59,7 @@ export default function RegionPanel({ region }: RegionPanelProps) {
 
 function OrgCard({ title, org }: { title: string; org: RegionInfo["court"] }) {
   return (
-    <div className="rounded-xl border border-black/5 bg-white p-4">
+    <div className="rounded-xl border border-black/10 bg-white p-4">
       <div className="text-xs text-[#5B6475]">{title}</div>
       <div className="mt-1 text-sm font-semibold text-[#0B1220]">{org.name}</div>
       {org.address ? <div className="mt-0.5 text-xs text-[#5B6475]">{org.address}</div> : null}

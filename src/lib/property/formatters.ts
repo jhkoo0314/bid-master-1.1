@@ -1,5 +1,6 @@
 import type { Money, PropertyDetail } from "@/types/property";
 import type { SimulationScenario } from "@/types/simulation";
+import { generateRegionalAnalysis } from "@/lib/regional-analysis";
 
 export function formatCurrency(value: Money): string {
   if (value == null) return "-";
@@ -47,6 +48,13 @@ export function mapSimulationToPropertyDetail(sim: SimulationScenario): Property
   const appraised = sim.basicInfo.appraisalValue;
   const lowest = sim.basicInfo.minimumBidPrice;
   const deposit = sim.basicInfo.bidDeposit;
+
+  // 지역기관 정보 동적 생성
+  const regional = generateRegionalAnalysis(sim.basicInfo.location);
+  // ✅ 로그: 지역기관 매핑 생성
+  console.log(
+    `🗺️ [지역분석] 매물별 지역기관 매핑 생성: court=${regional.court.name}, registry=${regional.registry.name}, tax=${regional.taxOffice.name}`
+  );
 
   const detail: PropertyDetail = {
     caseId: sim.basicInfo.caseNumber,
@@ -103,10 +111,30 @@ export function mapSimulationToPropertyDetail(sim: SimulationScenario): Property
       note: "실제 배당은 낙찰대금에 따라 변동됩니다.",
     },
     region: {
-      court: { name: sim.basicInfo.court },
-      registry: { name: "등기소" },
-      taxOffice: { name: "세무서" },
-      links: [],
+      court: {
+        name: regional.court.name,
+        phone: regional.court.phone,
+        address: regional.court.address,
+        open: {
+          bidStart: regional.court.biddingStartTime,
+          bidEnd: regional.court.biddingEndTime,
+        },
+      },
+      registry: {
+        name: regional.registry.name,
+        phone: regional.registry.phone,
+        address: regional.registry.address,
+      },
+      taxOffice: {
+        name: regional.taxOffice.name,
+        phone: regional.taxOffice.phone,
+        address: regional.taxOffice.address,
+      },
+      links: regional.externalLinks.map((l, idx) => ({
+        label: l.name,
+        url: l.url,
+        group: idx < 3 ? "primary" : "more",
+      })),
     },
     learn: {
       rights: { 

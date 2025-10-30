@@ -220,7 +220,7 @@ export default function HomePage() {
               <button onClick={() => { console.log("📚 [주요경매용어] 모달 열기 요청"); setIsAuctionTermsModalOpen(true); }} className="inline-flex items-center justify-center px-3 py-2 font-medium text-xs transition-all duration-200 hover:bg-gray-100 rounded-md text-gray-900 hover:-translate-y-1 hover:shadow-md">경매용어</button>
               <Link href="/calculator" className="inline-flex items-center justify-center px-3 py-2 font-medium text-xs transition-all duration-200 hover:bg-gray-100 rounded-md text-gray-900 hover:-translate-y-1 hover:shadow-md">수익 계산기</Link>
               <Link href="/guide" onClick={() => { console.log("📖 [실전 가이드] 페이지 이동"); }} className="inline-flex items-center justify-center px-3 py-2 font-medium text-xs transition-all duration-200 hover:bg-gray-100 rounded-md text-gray-900 hover:-translate-y-1 hover:shadow-md">실전 가이드</Link>
-              <button onClick={() => { console.log("📰 [전문가 칼럼] 서비스 준비중 모달 열기 요청"); setIsExpertColumnPreparing(true); }} className="inline-flex items-center justify-center px-3 py-2 font-medium text-xs transition-all duration-200 hover:bg-gray-100 rounded-md text-gray-900 hover:-translate-y-1 hover:shadow-md">전문가 칼럼</button>
+              <button onClick={() => { console.log("💬 [피드백] 피드백 모달 열기 요청"); setIsExpertColumnPreparing(true); }} className="inline-flex items-center justify-center px-3 py-2 font-medium text-xs transition-all duration-200 hover:bg-gray-100 rounded-md text-gray-900 hover:-translate-y-1 hover:shadow-md">피드백</button>
               <button onClick={() => { console.log("🔔 [사전 알림] 모달 열기 요청"); setIsWaitlistModalOpen(true); }} className="inline-flex items-center justify-center px-3 py-2 font-medium text-xs transition-all duration-200 bg-blue-600 text-white rounded-md hover:bg-blue-700 hover:-translate-y-1 hover:shadow-md">사전 알림 신청</button>
             </div>
             <div className="hidden sm:flex items-center">
@@ -326,10 +326,17 @@ export default function HomePage() {
         <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl max-w-md w-full p-8 shadow-2xl">
             <div className="text-center">
-              <div className="text-6xl mb-6">📰</div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">전문가 칼럼 준비중입니다</h2>
-              <p className="text-lg text-gray-600 mb-8">경매 전문가들의 실전 노하우를 곧 만나보실 수 있습니다</p>
-              <button onClick={() => { console.log("📰 [전문가 칼럼] 모달 닫기"); setIsExpertColumnPreparing(false); }} className="inline-flex items-center justify-center px-6 py-3 bg-black text-white font-semibold rounded-full hover:bg-gray-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-sm w-full">확인</button>
+              <div className="text-6xl mb-6">💬</div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">피드백을 남겨주세요</h2>
+              <p className="text-lg text-gray-600 mb-8">서비스 개선을 위해 여러분의 소중한 의견을 들려주세요</p>
+              <div className="space-y-4">
+                <textarea 
+                  placeholder="서비스에 대한 의견이나 개선사항을 자유롭게 작성해주세요..."
+                  className="w-full h-32 p-3 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button onClick={() => { console.log("💬 [피드백] 피드백 제출"); setIsExpertColumnPreparing(false); }} className="inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white font-semibold rounded-full hover:bg-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-sm w-full">피드백 제출</button>
+                <button onClick={() => { console.log("💬 [피드백] 모달 닫기"); setIsExpertColumnPreparing(false); }} className="inline-flex items-center justify-center px-6 py-3 bg-gray-100 text-gray-700 font-semibold rounded-full hover:bg-gray-200 transition-all duration-200 text-sm w-full">취소</button>
+              </div>
             </div>
           </div>
         </div>

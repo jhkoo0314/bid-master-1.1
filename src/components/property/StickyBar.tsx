@@ -12,7 +12,7 @@ export default function StickyBar({ lowestPrice, nextAuctionDate, court, topRisk
 
   return (
     <div
-      className="sticky top-0 z-30 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-b border-black/5"
+      className="sticky top-0 z-30 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-b border-black/10"
       aria-live="polite"
     >
       <div className="mx-auto max-w-7xl px-4 py-2 flex items-center gap-4">

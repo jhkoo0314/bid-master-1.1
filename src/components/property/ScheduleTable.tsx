@@ -21,7 +21,7 @@ export default function ScheduleTable({ data, loading, emptyMessage = "일정 �
         </thead>
         <tbody className="text-[#0B1220]">
           {data.map((row, idx) => (
-            <tr key={idx} className="border-t border-black/5">
+            <tr key={idx} className="border-t border-black/10">
               <td className="px-4 py-2 whitespace-nowrap">{row.day}</td>
               <td className="px-4 py-2 min-w-[16rem]">{row.title}</td>
               <td className="px-4 py-2 whitespace-nowrap">{row.date}</td>
@@ -33,3 +33,5 @@ export default function ScheduleTable({ data, loading, emptyMessage = "일정 �
     </div>
   );
 }
+
+

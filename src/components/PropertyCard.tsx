@@ -96,16 +96,26 @@ export function PropertyCard({
 
   // 호버 애니메이션 핸들러 제거 - CSS 호버 효과만 사용
 
-  // 난이도별 색상 - Bid Master 커스텀 컬러 사용
+  // 난이도별 색상 - Bid Master 커스텀 컬러 사용 (1단계 줄임)
   const difficultyColors = {
-    초급: "bg-success/10 text-success border-success/30",
-    중급: "bg-warning/10 text-warning border-warning/30",
-    고급: "bg-danger/10 text-danger border-danger/30",
+    초급: "bg-green-50 text-green-700 border-green-200",
+    중급: "bg-yellow-50 text-yellow-700 border-yellow-200", 
+    고급: "bg-red-50 text-red-700 border-red-200",
   };
 
-  const difficultyColor = educationalContent
-    ? difficultyColors[educationalContent.difficulty]
-    : "bg-gray-100 text-gray-800 border-gray-300";
+  // 난이도 결정 로직 - educationalContent가 없으면 랜덤하게 결정
+  const getDifficulty = () => {
+    if (educationalContent?.difficulty) {
+      return educationalContent.difficulty;
+    }
+    // educationalContent가 없으면 매물 유형과 가격에 따라 난이도 결정
+    const difficulties = ["초급", "중급", "고급"];
+    const randomIndex = Math.floor(Math.random() * difficulties.length);
+    return difficulties[randomIndex];
+  };
+
+  const difficulty = getDifficulty();
+  const difficultyColor = difficultyColors[difficulty] || "bg-gray-100 text-gray-800 border-gray-300";
 
   // ESC 키로 이미지 뷰어 닫기
   useEffect(() => {
@@ -187,24 +197,26 @@ export function PropertyCard({
 
       {/* 매물 정보 - 컴팩트 Vercel 스타일 */}
       <div className="p-3 flex flex-col flex-grow transition-all duration-300">
-        {/* 난이도 뱃지 */}
-        <div className="flex items-center gap-2 mb-2">
+        {/* 사건번호와 난이도 */}
+        <div className="flex items-center justify-between mb-1">
+          <div className="text-xs text-gray-500 font-medium">
+            {basicInfo.caseNumber}
+          </div>
           <span
-            className={`px-2 py-1 rounded-full text-sm font-medium border whitespace-nowrap ${difficultyColor}`}
+            className={`px-1.5 py-0.5 rounded-full text-xs font-normal border whitespace-nowrap ${difficultyColor}`}
           >
-            {educationalContent ? educationalContent.difficulty : "분석중"}
+            {difficulty}
           </span>
-          {educationalContent && (
+        </div>
+
+        {/* 교육 콘텐츠 한줄 요약 */}
+        {educationalContent && (
+          <div className="mb-2">
             <span className="text-xs text-gray-500 line-clamp-1 font-medium">
               {educationalContent.oneLiner}
             </span>
-          )}
-        </div>
-
-        {/* 사건번호 */}
-        <div className="text-xs text-gray-500 mb-1 font-medium">
-          {basicInfo.caseNumber}
-        </div>
+          </div>
+        )}
 
         {/* 소재지 */}
         <h3 className="font-bold text-gray-900 mb-2 line-clamp-2 text-sm leading-tight">
@@ -260,9 +272,7 @@ export function PropertyCard({
                 )}
               </>
             ) : (
-              <span className="px-1.5 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full font-normal">
-                권리 분석중...
-              </span>
+              <span className="text-gray-400 text-xs">권리 정보 없음</span>
             )}
           </div>
         </div>
@@ -276,8 +286,11 @@ export function PropertyCard({
             상세보기
           </Link>
           <button
-            onClick={handleOpenModal}
-            className="flex-1 px-3 py-2 bg-secondary text-white text-center text-xs font-semibold rounded-full hover:bg-secondary/90 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+            onClick={() => {
+              console.log("🎯 [UI 변경] 경매입찰 버튼을 상세보기와 동일한 스타일로 변경");
+              handleOpenModal();
+            }}
+            className="flex-1 px-3 py-2 bg-gray-100 text-gray-700 text-center text-xs font-semibold rounded-full hover:bg-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-200 border border-gray-200"
           >
             경매입찰
           </button>

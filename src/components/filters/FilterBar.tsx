@@ -16,14 +16,14 @@ export const FilterBar: React.FC<FilterBarProps> = ({ onApply, onReset, onGenera
     if (isGenerating) return;
     
     setIsGenerating(true);
-    console.log("🏠 [매물 생성] AI 매물 생성 버튼 클릭");
+    console.log("[매물 생성] AI 매물 생성 버튼 클릭");
     
     try {
       const property = await generateSimulation();
-      console.log("✅ [매물 생성] AI 매물 생성 완료", property.basicInfo.caseNumber);
+      console.log("[매물 생성] AI 매물 생성 완료", property.basicInfo.caseNumber);
       onGenerateProperty?.(property);
     } catch (error) {
-      console.error("❌ [에러] AI 매물 생성 실패", error);
+      console.error("[에러] AI 매물 생성 실패", error);
       alert("매물 생성에 실패했습니다. 잠시 후 다시 시도해주세요.");
     } finally {
       setIsGenerating(false);
@@ -37,7 +37,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({ onApply, onReset, onGenera
           className="rounded-xl border border-black/10 px-3 py-2 text-sm hover:bg-gray-50"
           onClick={() => {
             // eslint-disable-next-line no-console
-            console.log("👤 [사용자 액션] 필터 열기: 유형");
+            console.log("[사용자 액션] 필터 열기: 유형");
           }}
         >
           유형
@@ -47,7 +47,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({ onApply, onReset, onGenera
           className="rounded-xl border border-black/10 px-3 py-2 text-sm hover:bg-gray-50"
           onClick={() => {
             // eslint-disable-next-line no-console
-            console.log("👤 [사용자 액션] 필터 열기: 권리유형");
+            console.log("[사용자 액션] 필터 열기: 권리유형");
           }}
         >
           권리유형
@@ -57,7 +57,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({ onApply, onReset, onGenera
           className="rounded-xl border border-black/10 px-3 py-2 text-sm hover:bg-gray-50"
           onClick={() => {
             // eslint-disable-next-line no-console
-            console.log("👤 [사용자 액션] 필터 열기: 난이도");
+            console.log("[사용자 액션] 필터 열기: 난이도");
           }}
         >
           난이도
@@ -67,7 +67,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({ onApply, onReset, onGenera
           className="rounded-xl border border-black/10 px-3 py-2 text-sm hover:bg-gray-50"
           onClick={() => {
             // eslint-disable-next-line no-console
-            console.log("👤 [사용자 액션] 필터 열기: 가격");
+            console.log("[사용자 액션] 필터 열기: 가격");
           }}
         >
           가격
@@ -86,7 +86,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({ onApply, onReset, onGenera
             className="rounded-xl bg-blue-600 text-white px-4 py-2 text-sm hover:bg-blue-700"
             onClick={() => {
               // eslint-disable-next-line no-console
-              console.log("👤 [사용자 액션] 필터 적용");
+              console.log("[사용자 액션] 필터 적용");
               onApply?.();
             }}
           >
@@ -97,7 +97,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({ onApply, onReset, onGenera
             className="rounded-xl border border-black/10 px-4 py-2 text-sm hover:bg-gray-50"
             onClick={() => {
               // eslint-disable-next-line no-console
-              console.log("👤 [사용자 액션] 필터 초기화");
+              console.log("[사용자 액션] 필터 초기화");
               onReset?.();
             }}
           >

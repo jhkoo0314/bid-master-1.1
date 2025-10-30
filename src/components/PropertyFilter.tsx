@@ -258,7 +258,6 @@ export function PropertyFilter({
               className="px-2 py-1.5 text-left bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-all duration-200 flex items-center justify-between min-w-[120px]"
             >
               <div className="flex items-center gap-1 text-xs text-gray-700">
-                <span>🏢</span>
                 <span>{filters.propertyCategory || "매물유형"}</span>
               </div>
               <svg
@@ -321,7 +320,6 @@ export function PropertyFilter({
               className="px-2 py-1.5 text-left bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-all duration-200 flex items-center justify-between min-w-[120px]"
             >
               <div className="flex items-center gap-1 text-xs text-gray-700">
-                <span>🏠</span>
                 {filters.propertyType && <span>{filters.propertyType}</span>}
               </div>
               <svg
@@ -393,7 +391,6 @@ export function PropertyFilter({
               className="px-2 py-1.5 text-left bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-all duration-200 flex items-center justify-between min-w-[120px]"
             >
               <div className="flex items-center gap-1 text-xs text-gray-700">
-                <span>⚖️</span>
                 <span>권리유형</span>
                 {filters.rightTypes.length > 0 && (
                   <span className="text-xs bg-blue-100 text-blue-700 px-1 py-0.5 rounded-full">
@@ -461,7 +458,6 @@ export function PropertyFilter({
               className="px-2 py-1.5 text-left bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-all duration-200 flex items-center justify-between min-w-[120px]"
             >
               <div className="flex items-center gap-1 text-xs text-gray-700">
-                <span>📚</span>
                 <span>{filters.difficultyLevel || "난이도"}</span>
               </div>
               <svg
@@ -521,9 +517,8 @@ export function PropertyFilter({
                 onRefresh();
               }
             }}
-            className="px-3 py-1.5 text-xs bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition-colors flex items-center gap-1"
+            className="px-3 py-1.5 text-xs text-gray-700 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors flex items-center gap-1"
           >
-            <span>🔄</span>
             <span>매물 생성</span>
           </button>
           <button
@@ -531,9 +526,8 @@ export function PropertyFilter({
               console.log("🎲 [랜덤 필터] 랜덤 탭 버튼 클릭");
               randomizeFilters();
             }}
-            className="px-3 py-1.5 text-xs bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors flex items-center gap-1"
+            className="px-3 py-1.5 text-xs text-gray-700 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors flex items-center gap-1"
           >
-            <span>🎲</span>
             <span>랜덤</span>
           </button>
           <button
@@ -541,7 +535,7 @@ export function PropertyFilter({
               console.log("🔄 [필터 초기화] 초기화 버튼 클릭");
               resetFilters();
             }}
-            className="px-3 py-1.5 text-xs bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
+            className="px-3 py-1.5 text-xs text-gray-700 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
           >
             초기화
           </button>
@@ -560,7 +554,6 @@ export function PropertyFilter({
               </>
             ) : (
               <>
-                <span>🔍</span>
                 <span>필터 적용</span>
               </>
             )}

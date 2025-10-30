@@ -18,13 +18,13 @@ export default function DecisionPanel({ recommendedRange, risks, onViewRights, o
   };
 
   return (
-    <div className="rounded-2xl shadow-sm border border-black/5 bg-white p-5">
+    <div className="rounded-2xl shadow-sm border border-black/10 bg-white p-5">
       <div className="flex items-center justify-between">
         <h3 className="text-base font-semibold text-[#0B1220]">낙찰가 가이드</h3>
         <button
           type="button"
           onClick={onOpenFormula}
-          className="text-xs rounded-full border border-black/10 px-3 py-1 hover:bg-gray-50"
+          className="text-xs rounded-full border border-black/20 px-3 py-1 hover:bg-gray-50"
         >
           산식 보기
         </button>
@@ -35,7 +35,7 @@ export default function DecisionPanel({ recommendedRange, risks, onViewRights, o
 
       <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
         {risks.slice(0, 3).map((risk, idx) => (
-          <div key={idx} className="rounded-xl border border-black/5 bg-white p-4">
+          <div key={idx} className="rounded-xl border border-black/10 bg-white p-4">
             <div className="flex items-center justify-between">
               <div className="text-sm font-semibold text-[#0B1220] truncate" title={risk.title}>{risk.title}</div>
               <RiskBadge severity={risk.severity} />
@@ -54,7 +54,7 @@ export default function DecisionPanel({ recommendedRange, risks, onViewRights, o
             console.log("📄 [사용자 액션] 권리요약 보기 클릭");
             onViewRights?.();
           }}
-          className="text-xs rounded-full border border-black/10 px-3 py-1 hover:bg-gray-50"
+          className="text-xs rounded-full border border-black/20 px-3 py-1 hover:bg-gray-50"
         >
           권리요약 보기
         </button>
@@ -64,7 +64,7 @@ export default function DecisionPanel({ recommendedRange, risks, onViewRights, o
             console.log("📄 [사용자 액션] 배당요약 보기 클릭");
             onViewPayout?.();
           }}
-          className="text-xs rounded-full border border-black/10 px-3 py-1 hover:bg-gray-50"
+          className="text-xs rounded-full border border-black/20 px-3 py-1 hover:bg-gray-50"
         >
           배당요약 보기
         </button>
@@ -74,7 +74,7 @@ export default function DecisionPanel({ recommendedRange, risks, onViewRights, o
             console.log("📄 [사용자 액션] 현장체크리스트 다운로드 클릭");
             onDownloadChecklist?.();
           }}
-          className="text-xs rounded-full border border-black/10 px-3 py-1 hover:bg-gray-50"
+          className="text-xs rounded-full border border-black/20 px-3 py-1 hover:bg-gray-50"
         >
           현장체크리스트 다운로드
         </button>

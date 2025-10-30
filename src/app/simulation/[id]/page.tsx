@@ -166,3 +166,5 @@ export default async function SimulationPage({ params }: PageProps) {
     </div>
   );
 }
+
+

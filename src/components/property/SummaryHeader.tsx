@@ -27,7 +27,7 @@ export default function SummaryHeader({ caseId, meta, price, nextAuction }: Summ
       : "bg-gray-200 text-gray-700";
 
   return (
-    <div className="rounded-2xl shadow-sm border border-black/5 bg-white p-5">
+    <div className="rounded-2xl shadow-sm border border-black/10 bg-white p-5">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <h2 className="text-lg font-semibold text-[#0B1220]">사건 {caseId}</h2>
@@ -36,9 +36,11 @@ export default function SummaryHeader({ caseId, meta, price, nextAuction }: Summ
             {meta.area_pyeong || meta.area_m2 ? ` · ${formatArea(meta)}` : ""}
           </p>
         </div>
-        <span className={`px-2.5 py-1 rounded-full text-xs ${statusBadge}`}>
-          {price.status === "confirmed" ? "확정" : price.status === "estimated" ? "추정" : "준비중"}
-        </span>
+        {price.status === "estimated" ? null : (
+          <span className={`px-2.5 py-1 rounded-full text-xs ${statusBadge}`}>
+            {price.status === "confirmed" ? "확정" : "준비중"}
+          </span>
+        )}
       </div>
 
       <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -53,7 +55,7 @@ export default function SummaryHeader({ caseId, meta, price, nextAuction }: Summ
 
 function SummaryCard({ title, value, subtitle }: { title: string; value: number | string; subtitle?: string }) {
   return (
-    <div className="rounded-xl border border-black/5 bg-white p-4">
+    <div className="rounded-xl border border-black/10 bg-white p-4">
       <div className="text-xs text-[#5B6475]">{title}</div>
       <div className="mt-1 text-base font-semibold text-[#0B1220] tabular-nums">
         {typeof value === "number" ? new Intl.NumberFormat("ko-KR").format(value) : value}
@@ -62,3 +64,5 @@ function SummaryCard({ title, value, subtitle }: { title: string; value: number 
     </div>
   );
 }
+
+

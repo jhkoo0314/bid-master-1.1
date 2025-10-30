@@ -24,7 +24,7 @@ export default function SectionCard({
   };
 
   return (
-    <section className="rounded-2xl shadow-sm border border-black/5 bg-white">
+    <section className="rounded-2xl shadow-sm border border-black/10 bg-white">
       <header className="px-5 py-4 flex items-start justify-between gap-4">
         <div className="min-w-0">
           <h3 className="text-base font-semibold text-[#0B1220]">{title}</h3>
@@ -43,7 +43,7 @@ export default function SectionCard({
           <button
             type="button"
             onClick={toggle}
-            className="shrink-0 inline-flex items-center rounded-full border border-black/10 px-3 py-1 text-xs text-[#0B1220] hover:bg-gray-50"
+            className="shrink-0 inline-flex items-center rounded-full border border-black/20 px-3 py-1 text-xs text-[#0B1220] hover:bg-gray-50"
             aria-expanded={!collapsed}
             aria-controls={`section-body-${title}`}
           >

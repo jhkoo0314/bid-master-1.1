@@ -37,3 +37,5 @@ export const MainHero: React.FC<MainHeroProps> = ({ onStart }) => {
 export default MainHero;
 
 
+
+

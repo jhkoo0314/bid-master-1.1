@@ -16,7 +16,7 @@ export const ActiveChips: React.FC<ActiveChipsProps> = ({ chips, onRemove }) => 
           aria-label={`${chip.label} 필터 제거`}
           onClick={() => {
             // eslint-disable-next-line no-console
-            console.log("👤 [사용자 액션] 칩 제거", chip.id);
+            console.log("[사용자 액션] 칩 제거", chip.id);
             onRemove?.(chip.id);
           }}
           className="inline-flex items-center gap-2 rounded-2xl border border-black/10 px-3 py-1 text-sm hover:bg-gray-50"
@@ -30,5 +30,7 @@ export const ActiveChips: React.FC<ActiveChipsProps> = ({ chips, onRemove }) => 
 };
 
 export default ActiveChips;
+
+
 
 

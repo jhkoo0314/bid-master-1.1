@@ -23,7 +23,7 @@ export default function RightsTable({ data, loading, emptyMessage = "권리 정�
         </thead>
         <tbody className="text-[#0B1220]">
           {data.map((row, idx) => (
-            <tr key={idx} className="border-t border-black/5">
+            <tr key={idx} className="border-t border-black/10">
               <td className="px-4 py-2 whitespace-nowrap">{row.order}</td>
               <td className="px-4 py-2 whitespace-nowrap">{row.type}</td>
               <td className="px-4 py-2 whitespace-nowrap">{row.holder}</td>
@@ -37,3 +37,5 @@ export default function RightsTable({ data, loading, emptyMessage = "권리 정�
     </div>
   );
 }
+
+
