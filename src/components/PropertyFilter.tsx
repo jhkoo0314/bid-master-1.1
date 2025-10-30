@@ -242,9 +242,9 @@ export function PropertyFilter({
   return (
     <div className="bg-white rounded-lg shadow-md p-3 mb-3">
       {/* 한 줄 필터 레이아웃 */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center gap-2 md:gap-4 md:justify-between">
         {/* 좌측: 필터 옵션들 */}
-        <div className="flex items-center gap-3 flex-1">
+        <div className="flex flex-wrap items-center gap-2 md:gap-3 flex-1 min-w-0 basis-full md:basis-auto order-1 md:order-none">
           {/* 새로운 매물유형 토글 필터 */}
           <div className="relative">
             <button
@@ -509,7 +509,7 @@ export function PropertyFilter({
         </div>
 
         {/* 우측: 액션 버튼들 */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 basis-full md:basis-auto justify-start md:justify-end order-2 md:order-none">
           <button
             onClick={() => {
               console.log("🔄 [새 매물 불러오기] 새로고침 버튼 클릭");
