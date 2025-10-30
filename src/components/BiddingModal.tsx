@@ -16,6 +16,7 @@ import { CourtDocumentModal } from "./property/CourtDocumentModal";
 import { mapSimulationToPropertyDetail } from "@/lib/property/formatters";
 import { SaleSpecificationModal } from "./property/CourtDocumentModal";
 import RightsAnalysisReportModal from "./property/RightsAnalysisReportModal";
+import { estimateMarketPrice } from "@/lib/property/market-price";
 import AuctionAnalysisReportModal from "./property/AuctionAnalysisReportModal";
 
 interface BiddingModalProps {
@@ -679,6 +680,16 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
       setBiddingResult(null);
       setShowRightsAnalysis(false);
       setShowWaitlistModal(false);
+
+      // 시장가 계산 및 로그
+      const computedMarket = estimateMarketPrice(property);
+      console.log(
+        "📈 [시장가] 시장가 계산 완료:",
+        `${formatNumber(computedMarket)}원 (감정가 대비 ${(
+          (computedMarket / property.basicInfo.appraisalValue) *
+          100
+        ).toFixed(1)}%)`
+      );
     }
 
     // 이전 값들 업데이트
@@ -709,296 +720,308 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl mx-4 max-h-[90vh] overflow-y-auto border border-neutral-200">
         {/* 헤더 */}
-        <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-xl font-bold text-gray-900">경매 입찰</h2>
-          <button
-            onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600 text-2xl"
-          >
-            ×
-          </button>
+        <div className="relative px-6 py-5 border-b bg-[#F9FAFB]">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="inline-flex items-center gap-2 mb-2">
+                <span className="px-2 py-0.5 text-xs font-medium rounded bg-blue-100 text-blue-700">
+                  경매 입찰
+                </span>
+                <span className="px-2 py-0.5 text-xs font-medium rounded bg-emerald-100 text-emerald-700">
+                  시뮬레이션
+                </span>
+              </div>
+              <h2 className="text-xl md:text-2xl font-extrabold text-[#0B1220] tracking-tight">
+                {property.basicInfo.locationShort}
+              </h2>
+              <p className="mt-1 text-sm text-[#5B6475]">
+                사건번호 {formData.caseNumber} · 입찰기일 {formData.biddingDate}
+              </p>
+            </div>
+            <button
+              onClick={handleClose}
+              className="shrink-0 h-9 w-9 inline-flex items-center justify-center rounded-full bg-white border border-neutral-200 text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition"
+              aria-label="닫기"
+            >
+              ×
+            </button>
+          </div>
         </div>
 
         {/* 내용 */}
         <div className="p-6">
           {!biddingResult ? (
-            // 입찰표 폼
+            // 입찰표 폼 (Premium v2 Style)
             <div className="space-y-6">
-              {/* 매물 정보 */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h3 className="font-semibold text-gray-900 mb-2">
-                  {property.basicInfo.locationShort}
-                </h3>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-600">감정가:</span>
-                    <span className="ml-2 font-semibold">
-                      {formatNumber(property.basicInfo.appraisalValue)}원
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">최저가:</span>
-                    <span className="ml-2 font-semibold text-blue-600">
-                      {formatNumber(property.basicInfo.minimumBidPrice)}원
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* 입찰표 양식 */}
-              <div className="space-y-4">
-                <h4 className="font-semibold text-gray-900 border-b pb-2">
+              {/* 입찰표 본문 카드 */}
+              <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-6">
+                <h3 className="text-lg font-bold text-[#0B1220] border-b border-neutral-100 pb-2">
                   경매입찰표
-                </h4>
+                </h3>
 
-                {/* 1. 법원명 */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    1. 법원명 *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.courtName}
-                    onChange={(e) =>
-                      handleFormDataChange("courtName", e.target.value)
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="법원명을 입력하세요"
-                  />
-                </div>
+                <div className="mt-6 space-y-5">
+                  {/* 1. 법원명 */}
+                  <div>
+                    <label className="block text-sm font-medium text-[#374151] mb-1">
+                      1. 법원명 *
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.courtName}
+                      onChange={(e) =>
+                        handleFormDataChange("courtName", e.target.value)
+                      }
+                      className="w-full rounded-lg border border-neutral-200 bg-[#FAFAFA] text-[#0B1220] px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="법원명을 입력하세요"
+                    />
+                  </div>
 
-                {/* 2. 입찰기일 */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    2. 입찰기일
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.biddingDate}
-                    readOnly
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600"
-                  />
-                </div>
+                  {/* 2. 입찰기일 */}
+                  <div>
+                    <label className="block text-sm font-medium text-[#374151] mb-1">
+                      2. 입찰기일
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.biddingDate}
+                      readOnly
+                      className="w-full rounded-lg border border-neutral-200 bg-[#FAFAFA] text-[#0B1220] px-4 py-2 text-sm"
+                    />
+                  </div>
 
-                {/* 3. 사건번호 */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    3. 사건번호
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.caseNumber}
-                    readOnly
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600"
-                  />
-                </div>
+                  {/* 3. 사건번호 */}
+                  <div>
+                    <label className="block text-sm font-medium text-[#374151] mb-1">
+                      3. 사건번호
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.caseNumber}
+                      readOnly
+                      className="w-full rounded-lg border border-neutral-200 bg-[#FAFAFA] text-[#0B1220] px-4 py-2 text-sm"
+                    />
+                  </div>
 
-                {/* 4. 물건번호 */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    4. 물건번호
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.propertyNumber}
-                    readOnly
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600"
-                  />
-                </div>
+                  {/* 4. 물건번호 */}
+                  <div>
+                    <label className="block text-sm font-medium text-[#374151] mb-1">
+                      4. 물건번호
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.propertyNumber}
+                      readOnly
+                      className="w-full rounded-lg border border-neutral-200 bg-[#FAFAFA] text-[#0B1220] px-4 py-2 text-sm"
+                    />
+                  </div>
 
-                {/* 5. 본인 정보 (시뮬레이션용 - 양식만 표시) */}
-                <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                  <h5 className="font-semibold text-gray-900 mb-3">
-                    5. 본인 정보 (시뮬레이션용)
-                  </h5>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-600">성명:</span>
-                      <span className="ml-2 text-gray-500">[시뮬레이션용]</span>
+                  {/* 5. 본인 정보 (시뮬레이션용) */}
+                  <div className="bg-[#F6F6F6] border border-neutral-200 rounded-xl p-4 text-sm text-[#5B6475]">
+                    <p className="font-semibold mb-1 text-[#374151]">
+                      5. 본인 정보 (시뮬레이션용)
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <p>성명: [시뮬레이션]</p>
+                      <p>주민등록번호: [시뮬레이션]</p>
+                      <p>주소: [시뮬레이션]</p>
+                      <p>전화번호: [시뮬레이션]</p>
                     </div>
-                    <div>
-                      <span className="text-gray-600">주민등록번호:</span>
-                      <span className="ml-2 text-gray-500">[시뮬레이션용]</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">주소:</span>
-                      <span className="ml-2 text-gray-500">[시뮬레이션용]</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">전화번호:</span>
-                      <span className="ml-2 text-gray-500">[시뮬레이션용]</span>
+                    <p className="text-xs text-[#9CA3AF] mt-1">
+                      * 실제 경매에서는 본인 정보를 정확히 기재해야 합니다.
+                    </p>
+                  </div>
+
+                  {/* 6. 입찰가격 */}
+                  <div>
+                    <label className="block text-sm font-medium text-[#374151] mb-1">
+                      6. 입찰가격 (원) *
+                    </label>
+                    <input
+                      type="text"
+                      value={bidPriceDisplay}
+                      onChange={(e) => {
+                        console.log(
+                          "👤 [사용자 액션] 프리미엄 UI - 입찰가 변경"
+                        );
+                        handleBidPriceChange(e);
+                      }}
+                      className="w-full rounded-lg border border-neutral-200 bg-[#FAFAFA] text-[#0B1220] px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="입찰가를 입력하세요 (예: 1,000,000)"
+                    />
+                    <p className="text-xs text-[#9CA3AF] mt-1">
+                      최저 입찰가{" "}
+                      {formatNumber(property.basicInfo.minimumBidPrice)}원
+                    </p>
+                  </div>
+
+                  {/* 7. 입찰보증금 */}
+                  <div>
+                    <label className="block text-sm font-medium text-[#374151] mb-1">
+                      7. 입찰보증금 (원) *
+                    </label>
+                    <input
+                      type="text"
+                      value={depositAmountDisplay}
+                      onChange={(e) => {
+                        console.log(
+                          "👤 [사용자 액션] 프리미엄 UI - 보증금 변경"
+                        );
+                        handleDepositAmountChange(e);
+                      }}
+                      className="w-full rounded-lg border border-neutral-200 bg-[#FAFAFA] text-[#0B1220] px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="보증금을 입력하세요"
+                    />
+                    <p className="text-xs text-[#9CA3AF] mt-1">
+                      일반적으로 입찰가의 10% (자동 계산됨)
+                    </p>
+                  </div>
+
+                  {/* 8. 입찰보증금 제공 방법 */}
+                  <div>
+                    <label className="block text-sm font-medium text-[#374151] mb-1">
+                      8. 입찰보증금 제공 방법 *
+                    </label>
+                    <div className="flex gap-4">
+                      <label className="inline-flex items-center gap-2">
+                        <input
+                          type="radio"
+                          name="depositMethod"
+                          value="cash"
+                          checked={formData.depositMethod === "cash"}
+                          onChange={(e) =>
+                            handleFormDataChange(
+                              "depositMethod",
+                              e.target.value
+                            )
+                          }
+                          className="h-4 w-4"
+                        />
+                        <span className="text-sm text-[#0B1220]">현금</span>
+                      </label>
+                      <label className="inline-flex items-center gap-2">
+                        <input
+                          type="radio"
+                          name="depositMethod"
+                          value="check"
+                          checked={formData.depositMethod === "check"}
+                          onChange={(e) =>
+                            handleFormDataChange(
+                              "depositMethod",
+                              e.target.value
+                            )
+                          }
+                          className="h-4 w-4"
+                        />
+                        <span className="text-sm text-[#0B1220]">
+                          자기앞수표
+                        </span>
+                      </label>
                     </div>
                   </div>
-                  <p className="text-xs text-yellow-700 mt-2">
-                    * 실제 경매에서는 본인 정보를 정확히 기재해야 합니다.
-                  </p>
                 </div>
 
-                {/* 6. 입찰가격 */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    6. 입찰가격 (원) *
-                  </label>
-                  <input
-                    type="text"
-                    value={bidPriceDisplay}
-                    onChange={handleBidPriceChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="입찰가를 입력하세요 (예: 1,000,000)"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    최저 입찰가:{" "}
-                    {formatNumber(property.basicInfo.minimumBidPrice)}원
-                  </p>
-                </div>
-
-                {/* 7. 입찰보증금액 */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    7. 입찰보증금액 (원) *
-                  </label>
-                  <input
-                    type="text"
-                    value={depositAmountDisplay}
-                    onChange={handleDepositAmountChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="보증금을 입력하세요"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    일반적으로 입찰가의 10% (자동 계산됨)
-                  </p>
-                </div>
-
-                {/* 8. 입찰보증금 제공 방법 */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    8. 입찰보증금 제공 방법 *
-                  </label>
-                  <div className="flex gap-4">
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        name="depositMethod"
-                        value="cash"
-                        checked={formData.depositMethod === "cash"}
-                        onChange={(e) =>
-                          handleFormDataChange("depositMethod", e.target.value)
-                        }
-                        className="mr-2"
-                      />
-                      <span className="text-sm">현금</span>
-                    </label>
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        name="depositMethod"
-                        value="check"
-                        checked={formData.depositMethod === "check"}
-                        onChange={(e) =>
-                          handleFormDataChange("depositMethod", e.target.value)
-                        }
-                        className="mr-2"
-                      />
-                      <span className="text-sm">자기앞수표</span>
-                    </label>
+                {/* 제출 버튼 */}
+                <div className="flex justify-end pt-6 mt-4 border-t border-neutral-100">
+                  <div className="flex gap-3 w-full sm:w-auto">
+                    <button
+                      onClick={handleClose}
+                      className="px-5 py-2.5 border border-neutral-300 text-[#374151] rounded-lg hover:bg-[#F3F4F6]"
+                    >
+                      취소
+                    </button>
+                    <button
+                      onClick={() => {
+                        console.log(
+                          "👤 [사용자 액션] 프리미엄 UI - 입찰표 제출 클릭"
+                        );
+                        handleSubmitBid();
+                      }}
+                      disabled={
+                        isSubmitting ||
+                        formData.bidPrice < property.basicInfo.minimumBidPrice
+                      }
+                      className="px-5 py-2.5 bg-[#0B1220] hover:bg-[#1F2937] text-white rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          입찰 중...
+                        </>
+                      ) : (
+                        "입찰표 제출"
+                      )}
+                    </button>
                   </div>
                 </div>
-              </div>
-
-              {/* 입찰 버튼 */}
-              <div className="flex gap-3">
-                <button
-                  onClick={handleClose}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-                >
-                  취소
-                </button>
-                <button
-                  onClick={handleSubmitBid}
-                  disabled={
-                    isSubmitting ||
-                    formData.bidPrice < property.basicInfo.minimumBidPrice
-                  }
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      입찰 중...
-                    </>
-                  ) : (
-                    "입찰표 제출"
-                  )}
-                </button>
               </div>
             </div>
           ) : (
             // 입찰 결과
             <div className="space-y-6">
-              {/* 입찰 결과 요약 */}
-              <div
-                className={`p-4 rounded-lg ${
-                  biddingResult.isSuccess
-                    ? "bg-green-50 border border-green-200"
-                    : "bg-red-50 border border-red-200"
-                }`}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-2xl">
-                    {biddingResult.isSuccess ? "성공" : "실패"}
-                  </span>
-                  <h3
-                    className={`font-bold ${
+              {/* 입찰 결과 요약 (Premium v2 Card) */}
+              <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-6">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-lg font-bold text-[#0B1220]">
+                    입찰 결과
+                  </h3>
+                  <span
+                    className={`px-3 py-1 text-xs font-medium rounded-full border ${
                       biddingResult.isSuccess
-                        ? "text-green-800"
-                        : "text-red-800"
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        : "bg-red-50 text-red-700 border-red-200"
                     }`}
                   >
-                    {biddingResult.isSuccess ? "낙찰 성공!" : "낙찰 실패"}
-                  </h3>
+                    {biddingResult.isSuccess ? "낙찰 성공" : "낙찰 실패"}
+                  </span>
                 </div>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-600">낙찰가:</span>
-                    <span className="ml-2 font-semibold">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                  <div className="p-3 bg-[#FAFAFA] rounded-xl border border-neutral-100">
+                    <div className="text-[#6B7280]">낙찰가</div>
+                    <div className="font-semibold text-[#0B1220]">
                       {formatNumber(biddingResult.winningBidPrice)}원
-                    </span>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-gray-600">내 입찰가:</span>
-                    <span className="ml-2 font-semibold">
+                  <div className="p-3 bg-[#FAFAFA] rounded-xl border border-neutral-100">
+                    <div className="text-[#6B7280]">내 입찰가</div>
+                    <div className="font-semibold text-[#0B1220]">
                       {formatNumber(biddingResult.userBidPrice)}원
-                    </span>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-gray-600">감정가:</span>
-                    <span className="ml-2 font-semibold text-blue-600">
+                  <div className="p-3 bg-[#FAFAFA] rounded-xl border border-neutral-100">
+                    <div className="text-[#6B7280]">감정가</div>
+                    <div className="font-semibold text-[#0B1220]">
                       {formatNumber(property.basicInfo.appraisalValue)}원
-                    </span>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-gray-600">참여자 수:</span>
-                    <span className="ml-2 font-semibold">
+                  <div className="p-3 bg-[#FAFAFA] rounded-xl border border-neutral-100">
+                    <div className="text-[#6B7280]">예상 시장가</div>
+                    <div className="font-semibold text-[#0B1220]">
+                      {formatNumber(estimateMarketPrice(property))}원
+                    </div>
+                  </div>
+                  <div className="p-3 bg-[#FAFAFA] rounded-xl border border-neutral-100">
+                    <div className="text-[#6B7280]">참여자 수</div>
+                    <div className="font-semibold text-[#0B1220]">
                       {biddingResult.totalBidders}명
-                    </span>
+                    </div>
                   </div>
                   {biddingResult.isSuccess && (
-                    <div>
-                      <span className="text-gray-600">남은 잔금:</span>
-                      <span className="ml-2 font-semibold text-green-600">
+                    <div className="p-3 bg-[#FAFAFA] rounded-xl border border-neutral-100">
+                      <div className="text-[#6B7280]">남은 잔금</div>
+                      <div className="font-semibold text-emerald-700">
                         {formatNumber(
                           biddingResult.winningBidPrice - formData.depositAmount
                         )}
                         원
-                      </span>
+                      </div>
                     </div>
                   )}
                 </div>
 
                 {/* 원형 차트로 주요 지표 표시 */}
-                <div className="mt-6 space-y-4">
+                <div className="mt-6">
                   <h4 className="font-semibold text-gray-900 mb-3">
                     입찰 결과 분석
                   </h4>
@@ -1038,32 +1061,32 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                 </div>
               </div>
 
-              {/* 경쟁자 현황 */}
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-3">
+              {/* 경쟁자 현황 (Premium v2 Card) */}
+              <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-6">
+                <h4 className="font-semibold text-[#0B1220] mb-3">
                   경쟁자 현황
                 </h4>
                 <div className="space-y-2 max-h-40 overflow-y-auto">
                   {biddingResult.virtualBidders.map((bidder, index) => (
                     <div
                       key={index}
-                      className={`flex items-center justify-between p-2 rounded ${
+                      className={`flex items-center justify-between p-2 rounded border ${
                         bidder.isWinner
-                          ? "bg-yellow-100 border border-yellow-300"
-                          : "bg-gray-50"
+                          ? "bg-yellow-50 border-yellow-200"
+                          : "bg-[#FAFAFA] border-neutral-100"
                       }`}
                     >
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">
+                        <span className="text-sm font-medium text-[#0B1220]">
                           {bidder.name}
                         </span>
                         {bidder.isWinner && (
-                          <span className="text-xs bg-yellow-200 text-yellow-800 px-2 py-1 rounded">
+                          <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full border border-yellow-200">
                             낙찰
                           </span>
                         )}
                       </div>
-                      <span className="text-sm font-semibold">
+                      <span className="text-sm font-semibold text-[#0B1220]">
                         {formatNumber(bidder.bidPrice)}원
                       </span>
                     </div>
@@ -1071,8 +1094,8 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                 </div>
               </div>
 
-              {/* 권리분석리포트 요약 */}
-              <div>
+              {/* 권리분석리포트 요약 (Premium v2 Card) */}
+              <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-6">
                 <button
                   onClick={handleRightsAnalysisClick}
                   className="w-full text-left p-4 bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200 transition-colors"
@@ -1142,8 +1165,8 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                 )}
               </div>
 
-              {/* 경매분석리포트 요약 */}
-              <div>
+              {/* 경매분석리포트 요약 (Premium v2 Card) */}
+              <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-6">
                 <button
                   onClick={handleAuctionAnalysisClick}
                   className="w-full text-left p-4 bg-green-50 hover:bg-green-100 rounded-lg border border-green-200 transition-colors"
@@ -1563,8 +1586,13 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
               {/* 버튼들 */}
               <div className="flex justify-end">
                 <button
-                  onClick={handleClose}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  onClick={() => {
+                    console.log(
+                      "👤 [사용자 액션] 프리미엄 UI - 결과 확인 닫기"
+                    );
+                    handleClose();
+                  }}
+                  className="px-6 py-2 bg-[#0B1220] text-white rounded-lg hover:bg-[#1F2937]"
                 >
                   확인
                 </button>
