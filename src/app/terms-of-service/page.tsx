@@ -23,7 +23,7 @@ export default function TermsOfServicePage() {
             <h1 className="text-3xl font-bold text-gray-900">이용약관</h1>
           </div>
           <p className="text-gray-600">
-            Bid Master Lab 서비스 이용약관에 오신 것을 환영합니다.
+            Bid Master AI 서비스 이용약관에 오신 것을 환영합니다.
           </p>
         </div>
 
@@ -35,7 +35,7 @@ export default function TermsOfServicePage() {
             </h2>
             <div className="space-y-3 text-gray-700">
               <p>
-                이 약관은 Bid Master Lab(이하 "회사")이 제공하는 Bid Master AI
+                이 약관은 Bid Master AI(이하 "회사")이 제공하는 Bid Master AI
                 서비스(이하 "서비스")의 이용과 관련하여 회사와 이용자 간의 권리,
                 의무 및 책임사항을 규정함을 목적으로 합니다.
               </p>

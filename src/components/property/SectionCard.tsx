@@ -29,9 +29,11 @@ export default function SectionCard({
         <div className="min-w-0">
           <h3 className="text-base font-semibold text-[#0B1220]">{title}</h3>
           {description ? (
-            <p className="mt-1 text-sm text-[#5B6475] leading-relaxed">{description}</p>
+            <p className="mt-1 text-sm text-[#5B6475] leading-relaxed">
+              {description}
+            </p>
           ) : null}
-          {(source || updatedAt) ? (
+          {source || updatedAt ? (
             <p className="mt-2 text-xs text-[#5B6475]">
               {source ? <span>출처: {source}</span> : null}
               {source && updatedAt ? <span className="mx-2">·</span> : null}

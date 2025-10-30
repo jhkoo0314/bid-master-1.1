@@ -21,7 +21,10 @@ export function DashboardHeader() {
       레벨: `L${levelInfo.level}`,
       누적포인트: levelInfo.currentPoints,
       진행률: `${levelInfo.progressPercent.toFixed(1)}%`,
-      다음레벨까지: levelInfo.nextLevelPoints > 0 ? `${levelInfo.nextLevelPoints}pt` : "최고 레벨",
+      다음레벨까지:
+        levelInfo.nextLevelPoints > 0
+          ? `${levelInfo.nextLevelPoints}pt`
+          : "최고 레벨",
     });
   }
 
@@ -76,7 +79,9 @@ export function DashboardHeader() {
           <div className="flex items-center gap-2 mb-2">
             <span className="text-sm font-medium text-gray-800">레벨</span>
           </div>
-          <div className="text-2xl font-bold text-blue-600">L{levelInfo.level}</div>
+          <div className="text-2xl font-bold text-slate-700">
+            L{levelInfo.level}
+          </div>
           <div className="text-xs text-gray-600 mt-1">
             포인트: {levelInfo.currentPoints} / {levelInfo.maxPoints}
           </div>
@@ -87,7 +92,7 @@ export function DashboardHeader() {
           <div className="flex items-center gap-2 mb-2">
             <span className="text-sm font-medium text-gray-800">포인트</span>
           </div>
-          <div className="text-2xl font-bold text-blue-600">
+          <div className="text-2xl font-bold text-slate-700">
             {dashboardStats.points.toLocaleString()}
           </div>
           <div className="text-xs text-gray-600 mt-1">누적 점수</div>
@@ -98,7 +103,7 @@ export function DashboardHeader() {
           <div className="flex items-center gap-2 mb-2">
             <span className="text-sm font-medium text-gray-800">정확도</span>
           </div>
-          <div className="text-2xl font-bold text-blue-600">
+          <div className="text-2xl font-bold text-slate-700">
             {Math.round(dashboardStats.accuracy * 100)}%
           </div>
           <div className="text-xs text-gray-600 mt-1">예측 정확도</div>
@@ -109,7 +114,7 @@ export function DashboardHeader() {
           <div className="flex items-center gap-2 mb-2">
             <span className="text-sm font-medium text-gray-800">수익률</span>
           </div>
-          <div className="text-2xl font-bold text-blue-600">
+          <div className="text-2xl font-bold text-slate-700">
             {Math.round(dashboardStats.roi * 100)}%
           </div>
           <div className="text-xs text-gray-600 mt-1">평균 수익률</div>
@@ -122,12 +127,13 @@ export function DashboardHeader() {
           <span>다음 레벨까지</span>
           <span>
             {levelInfo.currentPoints} / {levelInfo.maxPoints} 포인트
-            {levelInfo.nextLevelPoints > 0 && ` (${levelInfo.nextLevelPoints}pt 남음)`}
+            {levelInfo.nextLevelPoints > 0 &&
+              ` (${levelInfo.nextLevelPoints}pt 남음)`}
           </span>
         </div>
         <div className="w-full bg-gray-200 rounded-full h-2">
           <div
-            className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+            className="bg-slate-700 h-2 rounded-full transition-all duration-300"
             style={{
               width: `${levelInfo.progressPercent}%`,
             }}

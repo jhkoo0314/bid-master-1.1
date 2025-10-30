@@ -68,7 +68,7 @@ export default function ContactPage() {
             <h1 className="text-3xl font-bold text-gray-900">문의하기</h1>
           </div>
           <p className="text-gray-600">
-            Bid Master Lab에 대한 문의사항이나 피드백을 보내주세요. 빠른 시일
+            Bid Master AI에 대한 문의사항이나 피드백을 보내주세요. 빠른 시일
             내에 답변드리겠습니다.
           </p>
         </div>
@@ -244,7 +244,7 @@ export default function ContactPage() {
                     Q. 서비스는 무료인가요?
                   </h3>
                   <p className="text-gray-600 text-sm">
-                    네, Bid Master Lab는 교육용 서비스로 현재 무료로 제공됩니다.
+                    네, Bid Master AI는 교육용 서비스로 현재 무료로 제공됩니다.
                     추후 유료화 예정입니다.
                   </p>
                 </div>

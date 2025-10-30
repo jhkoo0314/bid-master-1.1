@@ -25,7 +25,7 @@ export default function PrivacyPolicyPage() {
             </h1>
           </div>
           <p className="text-gray-600">
-            Bid Master Lab는 사용자의 개인정보 보호를 위해 최선을 다하고
+            Bid Master AI는 사용자의 개인정보 보호를 위해 최선을 다하고
             있습니다.
           </p>
         </div>
@@ -38,7 +38,7 @@ export default function PrivacyPolicyPage() {
             </h2>
             <div className="space-y-3 text-gray-700">
               <p>
-                Bid Master Lab는 다음과 같은 목적으로 개인정보를 수집 및
+                Bid Master AI는 다음과 같은 목적으로 개인정보를 수집 및
                 이용합니다:
               </p>
               <ul className="list-disc list-inside space-y-2 ml-4">
@@ -88,7 +88,7 @@ export default function PrivacyPolicyPage() {
             </h2>
             <div className="space-y-3 text-gray-700">
               <p>
-                Bid Master Lab는 원칙적으로 사용자의 개인정보를 외부에 제공하지
+                Bid Master AI는 원칙적으로 사용자의 개인정보를 외부에 제공하지
                 않습니다. 다만, 다음의 경우에는 예외로 합니다:
               </p>
               <ul className="list-disc list-inside space-y-2 ml-4">
@@ -126,7 +126,7 @@ export default function PrivacyPolicyPage() {
               </p>
               <div className="bg-gray-50 p-4 rounded-lg">
                 <p>
-                  <strong>개인정보 보호책임자:</strong> Bid Master Lab
+                  <strong>개인정보 보호책임자:</strong> Bid Master AI
                 </p>
                 <p>
                   <strong>이메일:</strong> privacy@bidmaster.ai

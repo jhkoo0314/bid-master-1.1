@@ -7,7 +7,10 @@ export interface ActiveChipsProps {
   onRemove?: (id: string) => void;
 }
 
-export const ActiveChips: React.FC<ActiveChipsProps> = ({ chips, onRemove }) => {
+export const ActiveChips: React.FC<ActiveChipsProps> = ({
+  chips,
+  onRemove,
+}) => {
   return (
     <div className="mx-auto max-w-7xl px-4 py-3 flex flex-wrap gap-2">
       {chips.map((chip) => (
@@ -30,7 +33,3 @@ export const ActiveChips: React.FC<ActiveChipsProps> = ({ chips, onRemove }) => 
 };
 
 export default ActiveChips;
-
-
-
-

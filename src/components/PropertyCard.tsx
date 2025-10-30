@@ -99,7 +99,7 @@ export function PropertyCard({
   // 난이도별 색상 - Bid Master 커스텀 컬러 사용 (1단계 줄임)
   const difficultyColors = {
     초급: "bg-green-50 text-green-700 border-green-200",
-    중급: "bg-yellow-50 text-yellow-700 border-yellow-200", 
+    중급: "bg-yellow-50 text-yellow-700 border-yellow-200",
     고급: "bg-red-50 text-red-700 border-red-200",
   };
 
@@ -115,7 +115,8 @@ export function PropertyCard({
   };
 
   const difficulty = getDifficulty();
-  const difficultyColor = difficultyColors[difficulty] || "bg-gray-100 text-gray-800 border-gray-300";
+  const difficultyColor =
+    difficultyColors[difficulty] || "bg-gray-100 text-gray-800 border-gray-300";
 
   // ESC 키로 이미지 뷰어 닫기
   useEffect(() => {
@@ -287,7 +288,9 @@ export function PropertyCard({
           </Link>
           <button
             onClick={() => {
-              console.log("🎯 [UI 변경] 경매입찰 버튼을 상세보기와 동일한 스타일로 변경");
+              console.log(
+                "🎯 [UI 변경] 경매입찰 버튼을 상세보기와 동일한 스타일로 변경"
+              );
               handleOpenModal();
             }}
             className="flex-1 px-3 py-2 bg-gray-100 text-gray-700 text-center text-xs font-semibold rounded-full hover:bg-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-200 border border-gray-200"

@@ -53,7 +53,7 @@ export default function Footer() {
 
           {/* 저작권 정보 */}
           <p className="text-gray-500 text-xs text-center">
-            © 2025 Bid Master Lab. All rights reserved.
+            © 2025 Bid Master AI. All rights reserved.
           </p>
         </div>
       </div>

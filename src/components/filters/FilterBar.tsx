@@ -9,18 +9,25 @@ export interface FilterBarProps {
   onGenerateProperty?: (property: any) => void;
 }
 
-export const FilterBar: React.FC<FilterBarProps> = ({ onApply, onReset, onGenerateProperty }) => {
+export const FilterBar: React.FC<FilterBarProps> = ({
+  onApply,
+  onReset,
+  onGenerateProperty,
+}) => {
   const [isGenerating, setIsGenerating] = React.useState(false);
 
   const handleGenerateProperty = async () => {
     if (isGenerating) return;
-    
+
     setIsGenerating(true);
     console.log("[매물 생성] AI 매물 생성 버튼 클릭");
-    
+
     try {
       const property = await generateSimulation();
-      console.log("[매물 생성] AI 매물 생성 완료", property.basicInfo.caseNumber);
+      console.log(
+        "[매물 생성] AI 매물 생성 완료",
+        property.basicInfo.caseNumber
+      );
       onGenerateProperty?.(property);
     } catch (error) {
       console.error("[에러] AI 매물 생성 실패", error);
@@ -110,5 +117,3 @@ export const FilterBar: React.FC<FilterBarProps> = ({ onApply, onReset, onGenera
 };
 
 export default FilterBar;
-
-
