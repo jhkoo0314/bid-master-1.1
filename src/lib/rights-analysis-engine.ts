@@ -14,6 +14,7 @@ import {
 } from "@/types/simulation";
 import {
   calcAcquisitionAndMoS,
+  calcTaxes,
   mapPropertyTypeToUse,
   parseMoneyValue,
   type TaxInput,
@@ -651,7 +652,7 @@ export function analyzeRights(
   // 시세(V) 계산: marketValue가 있으면 사용, 없으면 감정가와 최저가 기반으로 추정
   // marketValue가 문자열('522,550,000원') 형태일 수 있으므로 파싱 필요
   const rawMarketValue = basicInfo.marketValue ?? estimateMarketPrice(scenario);
-  const marketValue =
+  let marketValue =
     parseMoneyValue(rawMarketValue) || estimateMarketPrice(scenario);
 
   console.log("💰 [권리분석 엔진] 시세(V) 계산");
@@ -668,6 +669,30 @@ export function analyzeRights(
   console.log(`  - marketValue 파싱 후: ${marketValue.toLocaleString()}원`);
   console.log(`  - 감정가: ${basicInfo.appraisalValue.toLocaleString()}원`);
   console.log(`  - 최저가: ${basicInfo.minimumBidPrice.toLocaleString()}원`);
+
+  // 1️⃣ 시세 보정 로직 강화: 시세가 최저가보다 너무 낮으면 보정
+  const minimumMarketValue = Math.max(
+    basicInfo.minimumBidPrice * 1.15, // 최저가 × 1.15
+    basicInfo.appraisalValue * 0.75 // 감정가 × 0.75
+  );
+
+  if (marketValue < minimumMarketValue) {
+    const originalMarketValue = marketValue;
+    marketValue = minimumMarketValue;
+    console.warn(
+      `⚠️ [시세 보정] 시세가 비정상적으로 낮아 보정합니다.`
+    );
+    console.warn(
+      `  - 원본 시세: ${originalMarketValue.toLocaleString()}원`
+    );
+    console.warn(
+      `  - 최소 시세 기준: max(최저가×1.15, 감정가×0.75) = ${minimumMarketValue.toLocaleString()}원`
+    );
+    console.warn(
+      `  - 보정 후 시세: ${marketValue.toLocaleString()}원`
+    );
+  }
+
   console.log(`  - 최종 시세(V): ${marketValue.toLocaleString()}원`);
 
   // 매물 유형에 따른 세금 용도 결정
@@ -702,6 +727,40 @@ export function analyzeRights(
   console.log("marketValue is NaN:", isNaN(Number(marketValue)));
   console.log("marketValue is undefined:", marketValue === undefined);
 
+  // 먼저 예상 총인수금액을 계산해서 시세와 비교
+  // 예상 총인수금액 = 최저가 기준으로 계산
+  const tempTax = calcTaxes(taxInput, undefined);
+  const estimatedTotalAcquisition = 
+    estimatedBidPrice + 
+    rightsAmount + 
+    tempTax.totalTaxesAndFees + 
+    capex + 
+    eviction + 
+    carrying + 
+    contingency;
+
+  console.log("⚖️ [시세 보정 검증] 예상 총인수금액과 시세 비교:");
+  console.log(`  - 예상 총인수금액: ${estimatedTotalAcquisition.toLocaleString()}원`);
+  console.log(`  - 현재 시세: ${marketValue.toLocaleString()}원`);
+  console.log(`  - 차이: ${(marketValue - estimatedTotalAcquisition).toLocaleString()}원`);
+
+  // ⚠️ 핵심 수정: 시세가 예상 총인수금액보다 작으면 보정
+  // 안전마진이 플러스가 되려면 시세 >= 총인수금액이어야 합니다
+  if (marketValue < estimatedTotalAcquisition) {
+    const originalMarketValue = marketValue;
+    // 시세를 총인수금액의 1.1배로 보정 (최소 10% 마진 확보)
+    marketValue = Math.max(
+      estimatedTotalAcquisition * 1.1,
+      estimatedBidPrice * 1.2, // 최저가의 1.2배 최소 보장
+      basicInfo.appraisalValue * 0.8 // 감정가의 80% 최소 보장
+    );
+    console.warn("⚠️ [시세 보정] 시세가 총인수금액보다 작아 보정합니다:");
+    console.warn(`  - 원본 시세: ${originalMarketValue.toLocaleString()}원`);
+    console.warn(`  - 예상 총인수금액: ${estimatedTotalAcquisition.toLocaleString()}원`);
+    console.warn(`  - 보정 후 시세: ${marketValue.toLocaleString()}원`);
+    console.warn(`  - 안전마진 보정: ${(marketValue - estimatedTotalAcquisition).toLocaleString()}원`);
+  }
+
   const acquisitionResult = calcAcquisitionAndMoS({
     bidPrice: estimatedBidPrice,
     rights: rightsAmount,
@@ -717,7 +776,8 @@ export function analyzeRights(
   const safetyMargin = acquisitionResult.marginAmount;
   const totalAcquisition = acquisitionResult.totalAcquisition;
 
-  // 안전마진이 마이너스인 경우 경고
+  // 2️⃣ 안전마진 음수 시 입찰가 상한 제한 추가
+  let maxBidLimit: number | undefined = undefined;
   if (safetyMargin < 0) {
     console.warn(
       `⚠️ [권리분석 엔진] 안전마진이 마이너스입니다: ${safetyMargin.toLocaleString()}원`
@@ -729,6 +789,24 @@ export function analyzeRights(
     );
     console.warn(
       `  - 원인: 총인수금액이 시세보다 큽니다. 최저가(${estimatedBidPrice.toLocaleString()}원)가 높거나 권리/비용이 큰 경우입니다.`
+    );
+
+    // 입찰가 상한 제한 계산
+    const limitByMarket = marketValue * 0.95; // 시세 × 0.95
+    const limitByMinBid = estimatedBidPrice * 1.05; // 최저가 × 1.05
+    maxBidLimit = Math.min(limitByMarket, limitByMinBid);
+
+    console.warn(
+      `⚠️ [입찰가 상한 제한] 안전마진이 음수이므로 최대 입찰가를 제한합니다.`
+    );
+    console.warn(
+      `  - 시세 기준 제한(시세×0.95): ${limitByMarket.toLocaleString()}원`
+    );
+    console.warn(
+      `  - 최저가 기준 제한(최저가×1.05): ${limitByMinBid.toLocaleString()}원`
+    );
+    console.warn(
+      `  - 최대 입찰가 제한: ${maxBidLimit.toLocaleString()}원 (min 값 적용)`
     );
   }
 

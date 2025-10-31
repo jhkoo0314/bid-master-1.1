@@ -840,23 +840,23 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl mx-4 max-h-[90vh] overflow-y-auto border border-neutral-200">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl mx-4 max-h-[90vh] overflow-y-auto border border-neutral-200">
         {/* 헤더 */}
         <div className="relative px-6 py-5 border-b bg-[#F9FAFB]">
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="inline-flex items-center gap-2 mb-2">
-                <span className="px-2 py-0.5 text-xs font-medium rounded bg-blue-100 text-blue-700">
+                <span className="px-2 py-0.5 text-[10px] font-medium rounded bg-blue-100 text-blue-700">
                   경매 입찰
                 </span>
-                <span className="px-2 py-0.5 text-xs font-medium rounded bg-emerald-100 text-emerald-700">
+                <span className="px-2 py-0.5 text-[10px] font-medium rounded bg-emerald-100 text-emerald-700">
                   시뮬레이션
                 </span>
               </div>
-              <h2 className="text-xl md:text-2xl font-extrabold text-[#0B1220] tracking-tight">
+              <h2 className="text-lg md:text-xl font-extrabold text-[#0B1220] tracking-tight">
                 {property.basicInfo.locationShort}
               </h2>
-              <p className="mt-1 text-sm text-[#5B6475]">
+              <p className="mt-1 text-xs text-[#5B6475]">
                 사건번호 {formData.caseNumber} · 입찰기일 {formData.biddingDate}
               </p>
             </div>
@@ -877,14 +877,14 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
             <div className="space-y-6">
               {/* 입찰표 본문 카드 */}
               <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-6">
-                <h3 className="text-lg font-bold text-[#0B1220] border-b border-neutral-100 pb-2">
+                <h3 className="text-base font-bold text-[#0B1220] border-b border-neutral-100 pb-2">
                   경매입찰표
                 </h3>
 
                 <div className="mt-6 space-y-5">
                   {/* 1. 법원명 */}
                   <div>
-                    <label className="block text-sm font-medium text-[#374151] mb-1">
+                    <label className="block text-xs font-medium text-[#374151] mb-1">
                       1. 법원명 *
                     </label>
                     <input
@@ -893,52 +893,52 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                       onChange={(e) =>
                         handleFormDataChange("courtName", e.target.value)
                       }
-                      className="w-full rounded-lg border border-neutral-200 bg-[#FAFAFA] text-[#0B1220] px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full rounded-lg border border-neutral-200 bg-[#FAFAFA] text-[#0B1220] px-4 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       placeholder="법원명을 입력하세요"
                     />
                   </div>
 
                   {/* 2. 입찰기일 */}
                   <div>
-                    <label className="block text-sm font-medium text-[#374151] mb-1">
+                    <label className="block text-xs font-medium text-[#374151] mb-1">
                       2. 입찰기일
                     </label>
                     <input
                       type="date"
                       value={formData.biddingDate}
                       readOnly
-                      className="w-full rounded-lg border border-neutral-200 bg-[#FAFAFA] text-[#0B1220] px-4 py-2 text-sm"
+                      className="w-full rounded-lg border border-neutral-200 bg-[#FAFAFA] text-[#0B1220] px-4 py-2 text-xs"
                     />
                   </div>
 
                   {/* 3. 사건번호 */}
                   <div>
-                    <label className="block text-sm font-medium text-[#374151] mb-1">
+                    <label className="block text-xs font-medium text-[#374151] mb-1">
                       3. 사건번호
                     </label>
                     <input
                       type="text"
                       value={formData.caseNumber}
                       readOnly
-                      className="w-full rounded-lg border border-neutral-200 bg-[#FAFAFA] text-[#0B1220] px-4 py-2 text-sm"
+                      className="w-full rounded-lg border border-neutral-200 bg-[#FAFAFA] text-[#0B1220] px-4 py-2 text-xs"
                     />
                   </div>
 
                   {/* 4. 물건번호 */}
                   <div>
-                    <label className="block text-sm font-medium text-[#374151] mb-1">
+                    <label className="block text-xs font-medium text-[#374151] mb-1">
                       4. 물건번호
                     </label>
                     <input
                       type="text"
                       value={formData.propertyNumber}
                       readOnly
-                      className="w-full rounded-lg border border-neutral-200 bg-[#FAFAFA] text-[#0B1220] px-4 py-2 text-sm"
+                      className="w-full rounded-lg border border-neutral-200 bg-[#FAFAFA] text-[#0B1220] px-4 py-2 text-xs"
                     />
                   </div>
 
                   {/* 5. 본인 정보 (시뮬레이션용) */}
-                  <div className="bg-[#F6F6F6] border border-neutral-200 rounded-xl p-4 text-sm text-[#5B6475]">
+                  <div className="bg-[#F6F6F6] border border-neutral-200 rounded-xl p-4 text-xs text-[#5B6475]">
                     <p className="font-semibold mb-1 text-[#374151]">
                       5. 본인 정보 (시뮬레이션용)
                     </p>
@@ -948,14 +948,14 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                       <p>주소: [시뮬레이션]</p>
                       <p>전화번호: [시뮬레이션]</p>
                     </div>
-                    <p className="text-xs text-[#9CA3AF] mt-1">
+                    <p className="text-[10px] text-[#9CA3AF] mt-1">
                       * 실제 경매에서는 본인 정보를 정확히 기재해야 합니다.
                     </p>
                   </div>
 
                   {/* 6. 입찰가격 */}
                   <div>
-                    <label className="block text-sm font-medium text-[#374151] mb-1">
+                    <label className="block text-xs font-medium text-[#374151] mb-1">
                       6. 입찰가격 (원) *
                     </label>
                     <input
@@ -967,10 +967,10 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                         );
                         handleBidPriceChange(e);
                       }}
-                      className="w-full rounded-lg border border-neutral-200 bg-[#FAFAFA] text-[#0B1220] px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full rounded-lg border border-neutral-200 bg-[#FAFAFA] text-[#0B1220] px-4 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       placeholder="입찰가를 입력하세요 (예: 1,000,000)"
                     />
-                    <p className="text-xs text-[#9CA3AF] mt-1">
+                    <p className="text-[10px] text-[#9CA3AF] mt-1">
                       최저 입찰가{" "}
                       {formatCurrency(property.basicInfo.minimumBidPrice)}
                     </p>
@@ -978,7 +978,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
 
                   {/* 7. 입찰보증금 */}
                   <div>
-                    <label className="block text-sm font-medium text-[#374151] mb-1">
+                    <label className="block text-xs font-medium text-[#374151] mb-1">
                       7. 입찰보증금 (원) *
                     </label>
                     <input
@@ -990,17 +990,17 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                         );
                         handleDepositAmountChange(e);
                       }}
-                      className="w-full rounded-lg border border-neutral-200 bg-[#FAFAFA] text-[#0B1220] px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full rounded-lg border border-neutral-200 bg-[#FAFAFA] text-[#0B1220] px-4 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       placeholder="보증금을 입력하세요"
                     />
-                    <p className="text-xs text-[#9CA3AF] mt-1">
+                    <p className="text-[10px] text-[#9CA3AF] mt-1">
                       일반적으로 입찰가의 10% (자동 계산됨)
                     </p>
                   </div>
 
                   {/* 8. 입찰보증금 제공 방법 */}
                   <div>
-                    <label className="block text-sm font-medium text-[#374151] mb-1">
+                    <label className="block text-xs font-medium text-[#374151] mb-1">
                       8. 입찰보증금 제공 방법 *
                     </label>
                     <div className="flex gap-4">
@@ -1018,7 +1018,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                           }
                           className="h-4 w-4"
                         />
-                        <span className="text-sm text-[#0B1220]">현금</span>
+                        <span className="text-xs text-[#0B1220]">현금</span>
                       </label>
                       <label className="inline-flex items-center gap-2">
                         <input
@@ -1034,7 +1034,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                           }
                           className="h-4 w-4"
                         />
-                        <span className="text-sm text-[#0B1220]">
+                        <span className="text-xs text-[#0B1220]">
                           자기앞수표
                         </span>
                       </label>
@@ -1047,7 +1047,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                   <div className="flex gap-3 w-full sm:w-auto">
                     <button
                       onClick={handleClose}
-                      className="px-5 py-2.5 border border-neutral-300 text-[#374151] rounded-lg hover:bg-[#F3F4F6]"
+                      className="px-5 py-2.5 border border-neutral-300 text-[#374151] rounded-lg hover:bg-[#F3F4F6] text-xs"
                     >
                       취소
                     </button>
@@ -1062,7 +1062,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                         isSubmitting ||
                         formData.bidPrice < property.basicInfo.minimumBidPrice
                       }
-                      className="px-5 py-2.5 bg-[#0B1220] hover:bg-[#1F2937] text-white rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+                      className="px-5 py-2.5 bg-[#0B1220] hover:bg-[#1F2937] text-white rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2 text-xs"
                     >
                       {isSubmitting ? (
                         <>
@@ -1083,11 +1083,11 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
               {/* 입찰 결과 요약 (Premium v2 Card) */}
               <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-6">
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-lg font-bold text-[#0B1220]">
+                  <h3 className="text-base font-bold text-[#0B1220]">
                     입찰 결과
                   </h3>
                   <span
-                    className={`px-3 py-1 text-xs font-medium rounded-full border ${
+                    className={`px-3 py-1 text-[10px] font-medium rounded-full border ${
                       biddingResult.isSuccess
                         ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                         : "bg-red-50 text-red-700 border-red-200"
@@ -1096,7 +1096,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                     {biddingResult.isSuccess ? "낙찰 성공" : "낙찰 실패"}
                   </span>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
                   <div className="p-3 bg-[#FAFAFA] rounded-xl border border-neutral-100">
                     <div className="text-[#6B7280]">낙찰가</div>
                     <div className="font-semibold text-[#0B1220]">
@@ -1142,7 +1142,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
 
                 {/* 원형 차트로 주요 지표 표시 */}
                 <div className="mt-6">
-                  <h4 className="font-semibold text-gray-900 mb-3">
+                  <h4 className="font-semibold text-gray-900 mb-3 text-xs">
                     입찰 결과 분석
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1183,7 +1183,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
 
               {/* 경쟁자 현황 (Premium v2 Card) */}
               <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-6">
-                <h4 className="font-semibold text-[#0B1220] mb-3">
+                <h4 className="font-semibold text-[#0B1220] mb-3 text-xs">
                   경쟁자 현황
                 </h4>
                 <div className="space-y-2 max-h-40 overflow-y-auto">
@@ -1197,16 +1197,16 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                       }`}
                     >
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-[#0B1220]">
+                        <span className="text-xs font-medium text-[#0B1220]">
                           {bidder.name}
                         </span>
                         {bidder.isWinner && (
-                          <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full border border-yellow-200">
+                          <span className="text-[10px] bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full border border-yellow-200">
                             낙찰
                           </span>
                         )}
                       </div>
-                      <span className="text-sm font-semibold text-[#0B1220]">
+                      <span className="text-xs font-semibold text-[#0B1220]">
                         {formatCurrency(bidder.bidPrice)}
                       </span>
                     </div>
@@ -1246,10 +1246,10 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                         : ""
                     }`}
                   >
-                    <h3 className="text-base font-semibold mb-1">
+                    <h3 className="text-xs font-semibold mb-1">
                       {tab.label}
                     </h3>
-                    <p className="text-sm opacity-80">
+                    <p className="text-xs opacity-80">
                       {tab.key === "right" &&
                         "등기부와 임차인 정보를 기반으로 인수권리와 말소기준권리를 분석합니다."}
                       {tab.key === "auction" &&
@@ -1257,7 +1257,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                       {tab.key === "profit" &&
                         "총인수금액, 안전마진, ROI를 계산해 예상 수익률을 제시합니다."}
                     </p>
-                    <button className="mt-3 text-xs font-medium underline hover:opacity-80">
+                    <button className="mt-3 text-[10px] font-medium underline hover:opacity-80">
                       자세히 보기 →
                     </button>
                   </div>
@@ -1270,10 +1270,10 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                   {/* 권리분석 리포트 */}
                   {activeTab === "right" && (
                     <div className="space-y-4">
-                      <h5 className="font-semibold text-gray-900 mb-3">
+                      <h5 className="font-semibold text-gray-900 mb-3 text-xs">
                         권리분석 결과
                       </h5>
-                      <p className="text-sm text-gray-800">
+                      <p className="text-xs text-gray-800">
                         <span className="font-semibold">총인수금액</span>{" "}
                         {formatNumber(
                           biddingResult.rightsAnalysis.totalAcquisition ??
@@ -1294,12 +1294,12 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                         원.
                       </p>
                       {biddingResult.rightsAnalysis.safetyMargin < 0 && (
-                        <p className="text-sm text-red-600 font-semibold mt-2">
+                        <p className="text-xs text-red-600 font-semibold mt-2">
                           ⚠️ 경고: 안전마진이 마이너스입니다. 총인수금액이
                           시세보다 큽니다.
                         </p>
                       )}
-                      <p className="text-sm text-gray-600">
+                      <p className="text-xs text-gray-600">
                         최적 입찰가{" "}
                         {formatNumber(
                           biddingResult.rightsAnalysis.recommendedRange.optimal
@@ -1320,7 +1320,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                             );
                           }
                         }}
-                        className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                        className="w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium self-start"
                       >
                         권리분석 자세히
                       </button>
@@ -1330,12 +1330,12 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                   {/* 경매분석 리포트 */}
                   {activeTab === "auction" && devMode.isDevMode && (
                     <div className="space-y-4">
-                      <h5 className="font-semibold text-gray-900 mb-3">
+                      <h5 className="font-semibold text-gray-900 mb-3 text-xs">
                         경매분석 결과
                       </h5>
 
                       {/* 경매 기본 정보 */}
-                      <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div className="grid grid-cols-2 gap-4 text-xs">
                         <div>
                           <span className="text-gray-600">경쟁률:</span>
                           <span className="ml-2 font-semibold text-orange-600">
@@ -1388,10 +1388,10 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
 
                       {/* 시장 분석 */}
                       <div className="mt-4 p-3 rounded border">
-                        <h6 className="font-semibold text-gray-900 mb-3">
+                        <h6 className="font-semibold text-gray-900 mb-3 text-xs">
                           시장 분석
                         </h6>
-                        <div className="grid grid-cols-3 gap-4 text-sm">
+                        <div className="grid grid-cols-3 gap-4 text-xs">
                           <div className="text-center p-3 rounded border">
                             <div className="font-semibold text-gray-700">
                               시장 트렌드
@@ -1480,7 +1480,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                             </h6>
                           </div>
 
-                          <div className="text-sm text-gray-700">
+                          <div className="text-xs text-gray-700">
                             <p className="mb-2">
                               <strong>분석:</strong>{" "}
                               {biddingResult.isSuccess
@@ -1498,7 +1498,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                       </div>
 
                       <div className="mt-4 p-3 bg-green-50 rounded border border-green-200">
-                        <p className="text-sm text-green-800 mb-3">
+                        <p className="text-xs text-green-800 mb-3">
                           <strong>분석 요약:</strong> AI가 생성한 가상
                           입찰자들과의 경쟁을 통해 실제 경매 상황을
                           시뮬레이션합니다. 경쟁률과 입찰 패턴을 분석하여 실전
@@ -1519,7 +1519,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                               );
                             }
                           }}
-                          className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+                          className="w-auto px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs font-medium self-start"
                         >
                           경매분석 자세히
                         </button>
@@ -1530,7 +1530,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                   {/* 수익분석 리포트 */}
                   {activeTab === "profit" && devMode.isDevMode && (
                     <div className="space-y-4">
-                      <h5 className="font-semibold text-gray-900 mb-3">
+                      <h5 className="font-semibold text-gray-900 mb-3 text-xs">
                         수익 분석 (권리유형 종합)
                       </h5>
 
@@ -1538,7 +1538,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                         "💰 [수익분석] 개발자 모드 - 수익분석 상세 정보 표시"
                       )}
                       {/* 투자 금액 분석 */}
-                      <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+                      <div className="grid grid-cols-2 gap-4 text-xs mb-4">
                         <div>
                           <span className="text-gray-600">총 투자금액:</span>
                           <span className="ml-2 font-semibold text-red-600">
@@ -1644,7 +1644,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                             </h6>
                           </div>
 
-                          <div className="text-sm text-gray-700">
+                          <div className="text-xs text-gray-700">
                             <p className="mb-2">
                               <strong>분석:</strong> 권리유형 13가지를 종합
                               분석한 결과,
@@ -1684,10 +1684,10 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                       {biddingResult.auctionAnalysis.profitAnalysis.riskFactors
                         .length > 0 && (
                         <div className="mt-3 p-3 rounded border">
-                          <h6 className="font-semibold text-gray-900 mb-2">
+                          <h6 className="font-semibold text-gray-900 mb-2 text-xs">
                             주요 리스크 요인
                           </h6>
-                          <ul className="text-sm text-gray-600 list-disc list-inside space-y-1">
+                          <ul className="text-xs text-gray-600 list-disc list-inside space-y-1">
                             {biddingResult.auctionAnalysis.profitAnalysis.riskFactors
                               .slice(0, 5)
                               .map((factor, index) => (
@@ -1696,6 +1696,32 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                           </ul>
                         </div>
                       )}
+
+                      <div className="mt-4 p-3 bg-orange-50 rounded border border-orange-200">
+                        <p className="text-xs text-orange-800 mb-3">
+                          <strong>분석 요약:</strong> 권리유형 13가지를 종합 분석하여 총인수금액, 안전마진, ROI를 계산해 예상 수익률을 제시합니다. 실제 투자 전 반드시 전문가 자문을 받으시기 바랍니다.
+                        </p>
+                        <button
+                          onClick={() => {
+                            console.log("💰 [수익분석] 자세히보기 버튼 클릭됨");
+                            if (devMode.isDevMode) {
+                              // TODO: 수익분석 리포트 모달 추가 시 연결
+                              setShowWaitlistModal(true);
+                              console.log(
+                                "💰 [수익분석] 자세히보기 버튼 클릭 - 개발자 모드"
+                              );
+                            } else {
+                              setShowWaitlistModal(true);
+                              console.log(
+                                "👤 [사용자 액션] 수익분석 자세히보기 - 일반 모드(사전 알림)"
+                              );
+                            }
+                          }}
+                          className="w-auto px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-xs font-medium self-start"
+                        >
+                          수익분석 자세히
+                        </button>
+                      </div>
                     </div>
                   )}
 
@@ -1703,11 +1729,11 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                   {((activeTab === "auction" && !devMode.isDevMode) ||
                     (activeTab === "profit" && !devMode.isDevMode)) && (
                     <div className="text-center py-8">
-                      <div className="text-gray-500 text-lg mb-2">🚧</div>
-                      <p className="text-gray-600 font-medium">
+                      <div className="text-gray-500 text-base mb-2">🚧</div>
+                      <p className="text-gray-600 font-medium text-xs">
                         서비스 준비중입니다
                       </p>
-                      <p className="text-sm text-gray-500 mt-1">
+                      <p className="text-xs text-gray-500 mt-1">
                         곧 더 나은 서비스로 찾아뵙겠습니다
                       </p>
                     </div>
@@ -1724,7 +1750,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                     );
                     handleClose();
                   }}
-                  className="px-6 py-2 bg-[#0B1220] text-white rounded-lg hover:bg-[#1F2937]"
+                  className="px-6 py-2 bg-[#0B1220] text-white rounded-lg hover:bg-[#1F2937] text-xs"
                 >
                   확인
                 </button>

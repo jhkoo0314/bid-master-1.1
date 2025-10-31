@@ -98,27 +98,44 @@ export function toKRWNumber(v: string | number | undefined | null): number {
 export function parseMoneyValue(
   value: string | number | undefined | null
 ): number {
+  // 숫자인 경우 바로 반환
   if (typeof value === "number") {
+    if (isNaN(value)) {
+      console.error(`❌ [파싱] 입력값이 NaN입니다: ${value}`);
+      return 0;
+    }
     return value;
   }
+
+  // null, undefined, 빈 문자열 처리
   if (!value) {
     return 0;
   }
 
+  // 문자열인 경우 파싱
+  const strValue = String(value).trim();
+  
   // 숫자, 점(.), 마이너스(-)만 남기고 나머지 모두 제거
   // 콤마, 공백, '원' 문자 등 모든 비숫자 문자를 처리
-  const parsed = toKRWNumber(value);
+  const parsed = toKRWNumber(strValue);
 
+  // NaN 검증
+  if (isNaN(parsed)) {
+    console.error(`❌ [파싱] 숫자 변환 실패 - NaN: 원본="${strValue}", 파싱 결과=${parsed}`);
+    return 0;
+  }
+
+  // 0으로 변환된 경우 경고 (단, 원본이 "0"이 아닌 경우)
   if (
     parsed === 0 &&
-    value &&
-    String(value).trim() !== "0" &&
-    String(value).trim() !== ""
+    strValue !== "0" &&
+    strValue !== "" &&
+    !strValue.match(/^[0\s,원-]*$/)
   ) {
-    console.warn("⚠️ [파싱] 숫자 변환 실패 또는 0:", value);
+    console.warn(`⚠️ [파싱] 숫자 변환 결과가 0입니다. 원본: "${strValue}"`);
   } else if (typeof value === "string") {
     console.log(
-      `💰 [파싱] 금액 문자열 변환: "${value}" → ${parsed.toLocaleString()}원`
+      `💰 [파싱] 금액 문자열 변환: "${strValue}" → ${parsed.toLocaleString()}원`
     );
   }
 
@@ -377,6 +394,7 @@ export function calcAcquisitionAndMoS(
   input: AcquisitionInput
 ): AcquisitionResult {
   console.log("💰 [총인수금액] 총인수금액 계산 시작");
+  console.log("⚖️ [calcAcquisitionAndMoS] 함수 호출 - 입력값 검증 시작");
 
   const {
     bidPrice: B,
@@ -390,41 +408,101 @@ export function calcAcquisitionAndMoS(
     taxOptions,
   } = input;
 
-  // marketValue를 숫자로 파싱 (문자열 '522,550,000원' 형태 처리)
-  console.log("marketValue type:", typeof V, V);
-  const parsedV = parseMoneyValue(V);
-  const safeV = parsedV || 0;
-  if (!parsedV) {
-    console.warn("⚠️ [총인수금액] 시세(V)가 없습니다. 0으로 처리합니다.");
+  // 1️⃣ 각 입력값 검증 및 NaN 방지
+  const safeB = Number(B) || 0;
+  const safeR = Number(R) || 0;
+  const safeC = Number(C) || 0;
+  const safeE = Number(E) || 0;
+  const safeK = Number(K) || 0;
+  const safeU = Number(U) || 0;
+
+  // 입력값 검증 로그
+  console.log("⚖️ [calcAcquisitionAndMoS] 입력값 검증:");
+  console.log(`  - bidPrice (B): ${B} (타입: ${typeof B}) → ${safeB.toLocaleString()}원`);
+  if (isNaN(safeB) || safeB < 0) {
+    console.warn(`  ⚠️ bidPrice가 유효하지 않습니다: ${B}`);
   }
 
-  // 세금은 낙찰가(B)를 과세표준으로 계산
-  const tax = calcTaxes({ ...taxInput, price: B }, taxOptions);
+  console.log(`  - rights (R): ${R} (타입: ${typeof R}) → ${safeR.toLocaleString()}원`);
+  if (isNaN(safeR)) {
+    console.warn(`  ⚠️ rights가 유효하지 않습니다: ${R}`);
+  }
+
+  console.log(`  - capex (C): ${C} (타입: ${typeof C}) → ${safeC.toLocaleString()}원`);
+  console.log(`  - eviction (E): ${E} (타입: ${typeof E}) → ${safeE.toLocaleString()}원`);
+  console.log(`  - carrying (K): ${K} (타입: ${typeof K}) → ${safeK.toLocaleString()}원`);
+  console.log(`  - contingency (U): ${U} (타입: ${typeof U}) → ${safeU.toLocaleString()}원`);
+
+  // 2️⃣ marketValue 파싱 검증 강화
+  console.log(`⚖️ [calcAcquisitionAndMoS] marketValue 파싱:`);
+  console.log(`  - marketValue 원본: ${V} (타입: ${typeof V})`);
+  
+  const parsedV = parseMoneyValue(V);
+  console.log(`  - parseMoneyValue 결과: ${parsedV} (타입: ${typeof parsedV})`);
+  
+  // NaN 또는 0 체크
+  if (isNaN(parsedV)) {
+    console.error(`  ❌ [에러] marketValue 파싱 실패 - NaN: ${V}`);
+  }
+  
+  const safeV = isNaN(parsedV) || parsedV <= 0 ? 0 : parsedV;
+  
+  if (!safeV) {
+    console.warn(`  ⚠️ [총인수금액] 시세(V)가 없거나 0입니다. 원본: ${V}, 파싱 결과: ${parsedV}`);
+  } else {
+    console.log(`  ✅ marketValue 파싱 성공: ${safeV.toLocaleString()}원`);
+  }
+
+  // 3️⃣ 세금 계산 (낙찰가 B를 과세표준으로 사용)
+  const tax = calcTaxes({ ...taxInput, price: safeB }, taxOptions);
   const T = tax.totalTaxesAndFees;
 
-  const totalAcquisition = B + R + T + C + E + K + U; // A
+  // 세금 검증
+  if (isNaN(T)) {
+    console.error(`  ❌ [에러] 세금 계산 결과가 NaN입니다. bidPrice: ${safeB}`);
+  }
+
+  // 4️⃣ 총인수금액 계산: A = B + R + T + C + E + K + U
+  // ⚠️ 주의: bidPrice(B)는 한 번만 더해집니다. 외부에서 이미 포함되어 있다면 이중 합산 문제가 발생할 수 있습니다.
+  const totalAcquisition = safeB + safeR + T + safeC + safeE + safeK + safeU;
+  
+  // 계산 검증
+  if (isNaN(totalAcquisition)) {
+    console.error(`  ❌ [에러] 총인수금액 계산 결과가 NaN입니다!`);
+    console.error(`    - B: ${safeB}, R: ${safeR}, T: ${T}, C: ${safeC}, E: ${safeE}, K: ${safeK}, U: ${safeU}`);
+  }
+
+  // 5️⃣ 안전마진 계산: marginAmount = V - A
   const marginAmount = safeV - totalAcquisition;
   const marginRate = safeV > 0 ? marginAmount / safeV : 0;
 
-  console.log("💰 [총인수금액] 구성 요소:");
-  console.log(`  - 입찰가(B): ${B.toLocaleString()}원`);
-  console.log(`  - 인수권리(R): ${R.toLocaleString()}원`);
-  console.log(`  - 세금 및 수수료(T): ${T.toLocaleString()}원`);
-  console.log(`  - 수리비(C): ${C.toLocaleString()}원`);
-  console.log(`  - 명도비(E): ${E.toLocaleString()}원`);
-  console.log(`  - 보유비(K): ${K.toLocaleString()}원`);
-  console.log(`  - 예비비(U): ${U.toLocaleString()}원`);
-  console.log(`  ✅ 총인수금액(A): ${totalAcquisition.toLocaleString()}원`);
-  console.log(
-    `  - 시세(V): ${safeV.toLocaleString()}원${
-      typeof V === "string" ? " (파싱됨)" : !parsedV ? " (기본값)" : ""
-    }`
-  );
-  console.log(
-    `  ✅ 안전마진: ${marginAmount.toLocaleString()}원 (${(
-      marginRate * 100
-    ).toFixed(2)}%)`
-  );
+  // 안전마진 검증
+  if (isNaN(marginAmount)) {
+    console.error(`  ❌ [에러] 안전마진 계산 결과가 NaN입니다!`);
+    console.error(`    - safeV: ${safeV}, totalAcquisition: ${totalAcquisition}`);
+  }
+
+  // 6️⃣ 상세 로그 출력 (요청된 모든 항목)
+  console.log("💰 [총인수금액] 구성 요소 상세:");
+  console.log(`  📊 bidPrice (B): ${safeB.toLocaleString()}원`);
+  console.log(`  📊 rights (R): ${safeR.toLocaleString()}원`);
+  console.log(`  📊 taxes (T): ${T.toLocaleString()}원`);
+  console.log(`  📊 capex (C): ${safeC.toLocaleString()}원`);
+  console.log(`  📊 eviction (E): ${safeE.toLocaleString()}원`);
+  console.log(`  📊 carrying (K): ${safeK.toLocaleString()}원`);
+  console.log(`  📊 contingency (U): ${safeU.toLocaleString()}원`);
+  console.log(`  ✅ totalAcquisition (A = B+R+T+C+E+K+U): ${totalAcquisition.toLocaleString()}원`);
+  console.log(`  📊 marketValue (V): ${safeV.toLocaleString()}원${typeof V === "string" ? " (문자열에서 파싱됨)" : ""}`);
+  console.log(`  ✅ marginAmount (V-A): ${marginAmount.toLocaleString()}원 (${(marginRate * 100).toFixed(2)}%)`);
+
+  // 7️⃣ 계산식 검증 로그
+  console.log("⚖️ [calcAcquisitionAndMoS] 계산식 검증:");
+  console.log(`  - A = B + R + T + C + E + K + U`);
+  console.log(`  - A = ${safeB.toLocaleString()} + ${safeR.toLocaleString()} + ${T.toLocaleString()} + ${safeC.toLocaleString()} + ${safeE.toLocaleString()} + ${safeK.toLocaleString()} + ${safeU.toLocaleString()}`);
+  console.log(`  - A = ${totalAcquisition.toLocaleString()}원`);
+  console.log(`  - marginAmount = V - A`);
+  console.log(`  - marginAmount = ${safeV.toLocaleString()} - ${totalAcquisition.toLocaleString()}`);
+  console.log(`  - marginAmount = ${marginAmount.toLocaleString()}원`);
 
   return {
     tax,
