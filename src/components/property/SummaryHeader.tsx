@@ -57,10 +57,12 @@ function SummaryCard({ title, value, subtitle }: { title: string; value: number 
   return (
     <div className="rounded-xl border border-black/10 bg-white p-4">
       <div className="text-xs text-[#5B6475]">{title}</div>
-      <div className="mt-1 text-base font-semibold text-[#0B1220] tabular-nums">
-        {typeof value === "number" ? new Intl.NumberFormat("ko-KR").format(value) : value}
+      <div className="mt-1 flex items-baseline gap-1">
+        <div className="text-base font-semibold text-[#0B1220] tabular-nums">
+          {typeof value === "number" ? new Intl.NumberFormat("ko-KR").format(value) : value}
+        </div>
+        {subtitle ? <div className="text-xs text-[#5B6475]">{subtitle}</div> : null}
       </div>
-      {subtitle ? <div className="mt-0.5 text-xs text-[#5B6475]">{subtitle}</div> : null}
     </div>
   );
 }
