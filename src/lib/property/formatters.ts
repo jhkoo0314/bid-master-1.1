@@ -124,14 +124,74 @@ export function mapSimulationToPropertyDetail(
         date: sim.schedule.currentAuctionDate,
       },
     ],
-    rights: sim.rights.map((r, idx) => ({
-      order: idx + 1,
-      type: r.rightType,
-      holder: r.rightHolder,
-      date: r.registrationDate,
-      claim: r.claimAmount,
-      note: r.isMalsoBaseRight ? "말소기준" : undefined,
-    })),
+    rights: (() => {
+      // 기존 권리 배열에서 임차권 정보 보강
+      const rightsFromRights = sim.rights.map((r, idx) => {
+        const notes: string[] = [];
+        if (r.isMalsoBaseRight) {
+          notes.push("말소기준");
+        }
+
+        // 임차권인 경우 해당 임차인의 대항력 정보 추가
+        if (r.rightType.includes("임차")) {
+          // 임차인 정보 찾기 (보증금으로 매칭 시도, ±100만원 허용)
+          const matchingTenant = sim.tenants?.find(
+            (t) => Math.abs(t.deposit - r.claimAmount) < 1000000
+          );
+          if (matchingTenant?.hasDaehangryeok) {
+            notes.push("대항력");
+          }
+        }
+
+        return {
+          order: idx + 1,
+          type: r.rightType,
+          holder: r.rightHolder,
+          date: r.registrationDate,
+          claim: r.claimAmount,
+          note: notes.length > 0 ? notes.join(", ") : undefined,
+        };
+      });
+
+      // 임차인이 있지만 권리 배열에 임차권이 없는 경우 임차권 추가
+      const rightsFromTenants = (sim.tenants || [])
+        .filter((tenant) => {
+          // 이미 권리 배열에 해당 임차인과 매칭되는 임차권이 있는지 확인
+          return !sim.rights.some(
+            (r) =>
+              r.rightType.includes("임차") &&
+              Math.abs(tenant.deposit - r.claimAmount) < 1000000
+          );
+        })
+        .map((tenant, idx) => {
+          // 매물 유형에 따라 주택임차권 또는 상가임차권 결정
+          const imchaType =
+            sim.basicInfo.propertyType === "상가" ||
+            sim.basicInfo.propertyType === "오피스텔"
+              ? "상가임차권"
+              : "주택임차권";
+
+          const notes: string[] = [];
+          if (tenant.hasDaehangryeok) {
+            notes.push("대항력");
+          }
+
+          return {
+            order: rightsFromRights.length + idx + 1,
+            type: imchaType,
+            holder: tenant.tenantName,
+            date: tenant.moveInDate,
+            claim: tenant.deposit,
+            note: notes.length > 0 ? notes.join(", ") : undefined,
+          };
+        });
+
+      console.log(
+        `⚖️ [권리분석] 임차권 변환 완료: 권리 ${rightsFromRights.length}개, 임차인에서 추가 ${rightsFromTenants.length}개`
+      );
+
+      return [...rightsFromRights, ...rightsFromTenants];
+    })(),
     payout: {
       base: lowest,
       rows: sim.rights.map((r, idx) => ({

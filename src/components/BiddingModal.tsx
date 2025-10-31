@@ -605,19 +605,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
   const handleClose = () => {
     console.log("🔒 [입찰모달] handleClose 호출됨");
     setBiddingResult(null);
-    setFormData({
-      courtName: property.regionalAnalysis.court.name,
-      biddingDate: property.schedule.currentAuctionDate,
-      caseNumber: property.basicInfo.caseNumber,
-      propertyNumber: "1",
-      bidderName: "",
-      bidderId: "",
-      bidderAddress: "",
-      bidderPhone: "",
-      bidPrice: property.basicInfo.minimumBidPrice,
-      depositAmount: Math.round(property.basicInfo.minimumBidPrice * 0.1),
-      depositMethod: "cash",
-    });
+    // 모달을 닫을 때는 formData를 초기화하지 않음 (다음에 열릴 때 useEffect에서 초기화됨)
     setBidPriceDisplay(formatNumber(property.basicInfo.minimumBidPrice));
     setDepositAmountDisplay(
       formatNumber(Math.round(property.basicInfo.minimumBidPrice * 0.1))
@@ -741,6 +729,53 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
     return { title, content, details };
   };
 
+  // 동적 입찰기일 생성 함수
+  const generateDynamicBiddingDate = (): string => {
+    const today = new Date();
+    const currentDay = today.getDay(); // 0(일요일) ~ 6(토요일)
+    
+    // 경매 입찰일은 보통 화요일(2) 또는 목요일(4)에 열림
+    // 현재 날짜 기준으로 다음 화요일 또는 목요일을 계산
+    let daysToAdd = 0;
+    
+    if (currentDay === 0 || currentDay === 1) {
+      // 일요일 또는 월요일이면 다음 화요일 (1~2일 후)
+      daysToAdd = currentDay === 0 ? 2 : 1;
+    } else if (currentDay === 2) {
+      // 화요일이면 다음 화요일 (7일 후) 또는 이번 주 목요일 (2일 후)
+      daysToAdd = Math.random() > 0.5 ? 7 : 2; // 랜덤하게 선택
+    } else if (currentDay === 3 || currentDay === 4) {
+      // 수요일 또는 목요일이면 다음 목요일 또는 다음 화요일
+      daysToAdd = currentDay === 3 ? 1 : (Math.random() > 0.5 ? 6 : 1);
+    } else {
+      // 금요일 또는 토요일이면 다음 화요일 (4~5일 후)
+      daysToAdd = currentDay === 5 ? 4 : 3;
+    }
+    
+    // 최소 3일, 최대 21일 후로 제한 (실제 경매 일정 반영)
+    const minDays = 3;
+    const maxDays = 21;
+    daysToAdd = Math.max(minDays, Math.min(maxDays, daysToAdd));
+    
+    const biddingDate = new Date(today);
+    biddingDate.setDate(today.getDate() + daysToAdd);
+    
+    // YYYY-MM-DD 형식으로 변환
+    const year = biddingDate.getFullYear();
+    const month = String(biddingDate.getMonth() + 1).padStart(2, '0');
+    const day = String(biddingDate.getDate()).padStart(2, '0');
+    
+    const formattedDate = `${year}-${month}-${day}`;
+    
+    console.log("📅 [입찰기일] 동적 입찰기일 생성:", {
+      오늘: today.toISOString().split('T')[0],
+      생성일: formattedDate,
+      일수차이: daysToAdd,
+    });
+    
+    return formattedDate;
+  };
+
   // 모달이 열릴 때 또는 매물이 변경될 때 formData 초기화 (단일 useEffect로 통합)
   useEffect(() => {
     // 모달이 닫혀있으면 아무것도 하지 않음
@@ -764,7 +799,8 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
       // regionalAnalysis가 없는 경우를 대비한 안전성 검사
       const courtName =
         property.regionalAnalysis?.court?.name || "법원 정보 없음";
-      const biddingDate = property.schedule.currentAuctionDate;
+      // 동적으로 입찰기일 생성 (매번 모달이 열릴 때마다 새로운 날짜)
+      const biddingDate = generateDynamicBiddingDate();
       const caseNumber = property.basicInfo.caseNumber;
       const minimumBidPrice = property.basicInfo.minimumBidPrice;
 

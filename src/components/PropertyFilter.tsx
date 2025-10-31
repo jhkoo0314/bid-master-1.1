@@ -556,7 +556,7 @@ export function PropertyFilter({
               handleApplyFilter();
             }}
             disabled={isLoading}
-            className="px-4 py-1.5 text-xs bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-1"
+            className="px-4 py-1.5 text-xs bg-gray-700 text-white font-medium rounded-md hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-1"
           >
             {isLoading ? (
               <>
