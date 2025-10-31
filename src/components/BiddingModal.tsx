@@ -863,7 +863,11 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
 
     if (isOpen) {
       document.addEventListener("keydown", handleEscape);
-      document.body.style.overflow = "hidden";
+      // 데스크톱에서만 body 스크롤 막기 (모바일은 모달 컨테이너가 직접 스크롤)
+      const isMobile = window.innerWidth < 768;
+      if (!isMobile) {
+        document.body.style.overflow = "hidden";
+      }
     }
 
     return () => {
@@ -875,10 +879,16 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl mx-4 max-h-[90vh] overflow-y-auto border border-neutral-200">
-        {/* 헤더 */}
-        <div className="relative px-6 py-5 border-b bg-[#F9FAFB]">
+    <div className="fixed inset-0 z-50 overflow-y-auto md:flex md:items-center md:justify-center md:p-4 md:overflow-hidden">
+      {/* 배경 오버레이 */}
+      <div 
+        className="fixed inset-0 bg-black/20 pointer-events-none md:pointer-events-auto"
+        onClick={handleClose}
+      />
+      {/* 모바일: 전체 화면 스크롤 가능, 데스크톱: 모달 형태 */}
+      <div className="bg-white rounded-t-2xl md:rounded-2xl shadow-2xl w-full max-w-3xl min-h-screen md:min-h-0 md:h-auto md:max-h-[90vh] md:overflow-y-auto border border-neutral-200 relative z-10 flex flex-col md:mx-auto md:my-4">
+        {/* 헤더 - 모바일에서는 relative, 데스크톱에서는 sticky */}
+        <div className="relative md:sticky md:top-0 px-4 md:px-6 py-3 md:py-5 border-b bg-[#F9FAFB] md:z-10 flex-shrink-0">
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="inline-flex items-center gap-2 mb-2">
@@ -898,7 +908,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
             </div>
             <button
               onClick={handleClose}
-              className="shrink-0 h-9 w-9 inline-flex items-center justify-center rounded-full bg-white border border-neutral-200 text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition"
+              className="shrink-0 h-8 w-8 md:h-9 md:w-9 inline-flex items-center justify-center rounded-full bg-white border border-neutral-200 text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition text-lg md:text-xl"
               aria-label="닫기"
             >
               ×
@@ -907,17 +917,17 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
         </div>
 
         {/* 내용 */}
-        <div className="p-6">
+        <div className="p-4 md:p-6 flex-1">
           {!biddingResult ? (
             // 입찰표 폼 (Premium v2 Style)
-            <div className="space-y-6">
+            <div className="space-y-4 md:space-y-6">
               {/* 입찰표 본문 카드 */}
-              <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-6">
+              <div className="bg-white rounded-xl md:rounded-2xl shadow-sm border border-neutral-200 p-4 md:p-6">
                 <h3 className="text-base font-bold text-[#0B1220] border-b border-neutral-100 pb-2">
                   경매입찰표
                 </h3>
 
-                <div className="mt-6 space-y-5">
+                <div className="mt-4 md:mt-6 space-y-4 md:space-y-5">
                   {/* 1. 법원명 */}
                   <div>
                     <label className="block text-xs font-medium text-[#374151] mb-1">
@@ -1079,11 +1089,11 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                 </div>
 
                 {/* 제출 버튼 */}
-                <div className="flex justify-end pt-6 mt-4 border-t border-neutral-100">
-                  <div className="flex gap-3 w-full sm:w-auto">
+                <div className="flex justify-end pt-4 md:pt-6 mt-4 border-t border-neutral-100">
+                  <div className="flex gap-2 md:gap-3 w-full sm:w-auto">
                     <button
                       onClick={handleClose}
-                      className="px-5 py-2.5 border border-neutral-300 text-[#374151] rounded-lg hover:bg-[#F3F4F6] text-xs"
+                      className="flex-1 sm:flex-none px-4 md:px-5 py-2.5 border border-neutral-300 text-[#374151] rounded-lg hover:bg-[#F3F4F6] text-xs font-medium"
                     >
                       취소
                     </button>
@@ -1098,7 +1108,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                         isSubmitting ||
                         formData.bidPrice < property.basicInfo.minimumBidPrice
                       }
-                      className="px-5 py-2.5 bg-[#0B1220] hover:bg-[#1F2937] text-white rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2 text-xs"
+                      className="flex-1 sm:flex-none px-4 md:px-5 py-2.5 bg-[#0B1220] hover:bg-[#1F2937] text-white rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2 text-xs font-medium"
                     >
                       {isSubmitting ? (
                         <>
@@ -1115,9 +1125,9 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
             </div>
           ) : (
             // 입찰 결과
-            <div className="space-y-6">
+            <div className="space-y-4 md:space-y-6">
               {/* 입찰 결과 요약 (Premium v2 Card) */}
-              <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-6">
+              <div className="bg-white rounded-xl md:rounded-2xl shadow-sm border border-neutral-200 p-4 md:p-6">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-base font-bold text-[#0B1220]">
                     입찰 결과
@@ -1218,7 +1228,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
               </div>
 
               {/* 경쟁자 현황 (Premium v2 Card) */}
-              <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-6">
+              <div className="bg-white rounded-xl md:rounded-2xl shadow-sm border border-neutral-200 p-4 md:p-6">
                 <h4 className="font-semibold text-[#0B1220] mb-3 text-xs">
                   경쟁자 현황
                 </h4>
@@ -1251,7 +1261,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
               </div>
 
               {/* 하단 리포트 카드 탭 3개 */}
-              <div className="w-full max-w-4xl grid grid-cols-3 gap-4">
+              <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
                 {[
                   {
                     key: "right",
@@ -1274,7 +1284,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                     onClick={() =>
                       handleTabClick(tab.key as "right" | "auction" | "profit")
                     }
-                    className={`rounded-xl border p-5 cursor-pointer text-center transition-all duration-200 hover:shadow-md ${
+                    className={`rounded-xl border p-4 md:p-5 cursor-pointer text-center transition-all duration-200 hover:shadow-md ${
                       tab.color
                     } ${
                       activeTab === tab.key
@@ -1302,7 +1312,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
 
               {/* 선택된 탭의 리포트 내용 */}
               {biddingResult && activeTab !== null && (
-                <div className="mt-6 bg-white rounded-2xl shadow-sm border border-neutral-200 p-6">
+                <div className="mt-4 md:mt-6 bg-white rounded-xl md:rounded-2xl shadow-sm border border-neutral-200 p-4 md:p-6">
                   {/* 권리분석 리포트 */}
                   {activeTab === "right" && (
                     <div className="space-y-4">

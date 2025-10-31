@@ -33,7 +33,7 @@ export default function RegionPanel({ region }: RegionPanelProps) {
                     `🔗 [외부 링크] 클릭: ${link.label} -> ${link.url}`
                   )
                 }
-                className="text-xs rounded-full border border-black/20 px-3 py-1 hover:bg-gray-50"
+                className="text-xs rounded-full border border-black/20 px-3 py-1 hover:bg-gray-50 flex items-center justify-center text-center"
               >
                 {link.label}
               </a>
@@ -58,7 +58,7 @@ export default function RegionPanel({ region }: RegionPanelProps) {
                         `🔗 [외부 링크] 클릭: ${link.label} -> ${link.url}`
                       )
                     }
-                    className="text-xs rounded-full border border-black/20 px-3 py-1 hover:bg-gray-50"
+                    className="text-xs rounded-full border border-black/20 px-3 py-1 hover:bg-gray-50 flex items-center justify-center text-center"
                   >
                     {link.label}
                   </a>

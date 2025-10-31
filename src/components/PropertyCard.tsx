@@ -282,7 +282,7 @@ export function PropertyCard({
         <div className="flex gap-2 mt-auto transition-transform duration-300">
           <Link
             href={`/property/${property.basicInfo.caseNumber}`}
-            className="flex-1 px-3 py-2 bg-gray-100 text-gray-700 text-center text-xs font-semibold rounded-full hover:bg-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-200 border border-gray-200"
+            className="flex-1 px-3 py-2 bg-gray-100 text-gray-700 text-center text-xs font-semibold rounded-full hover:bg-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-200 border border-gray-200 flex items-center justify-center"
           >
             상세보기
           </Link>
@@ -293,7 +293,7 @@ export function PropertyCard({
               );
               handleOpenModal();
             }}
-            className="flex-1 px-3 py-2 bg-gray-100 text-gray-700 text-center text-xs font-semibold rounded-full hover:bg-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-200 border border-gray-200"
+            className="flex-1 px-3 py-2 bg-gray-100 text-gray-700 text-center text-xs font-semibold rounded-full hover:bg-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-200 border border-gray-200 flex items-center justify-center"
           >
             경매입찰
           </button>

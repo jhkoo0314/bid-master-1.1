@@ -64,6 +64,13 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* 모바일에서 폰트 크기 1단계 줄이기 */
+@media (max-width: 767px) {
+  html {
+    font-size: 0.875rem; /* 14px (기본 16px에서 1단계 축소) */
+  }
+}
+
 /* 터치 디바이스 최적화 */
 @media (hover: none) and (pointer: coarse) {
   /* 터치 타겟 최소 크기 */

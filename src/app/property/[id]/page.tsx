@@ -514,9 +514,9 @@ export default function PropertyPage({ params }: PageProps) {
           </SectionCard>
         </div>
       </div>
-      {/* 상세 리포트 진입 버튼 - 모바일 적응 */}
+      {/* 상세 리포트 진입 버튼 - 데스크톱만 표시 */}
       {devMode?.isDevMode ? (
-        <div className="flex flex-wrap gap-2 justify-end mb-4">
+        <div className="hidden md:flex flex-wrap gap-2 justify-end mb-4">
           <button
             className="px-3 py-1 text-xs rounded border bg-white text-blue-700 border-blue-200 hover:bg-blue-50 transition"
             onClick={() => {

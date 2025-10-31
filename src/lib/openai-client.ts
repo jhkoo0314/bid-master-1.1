@@ -29,6 +29,54 @@ function isDevelopmentMode(): boolean {
   );
 }
 
+// 동적 입찰기일 생성 함수
+// 경매 입찰일은 보통 화요일(2) 또는 목요일(4)에 열리며, 최소 3일 후부터 최대 21일 후까지 가능
+function generateDynamicAuctionDate(): string {
+  const today = new Date();
+  const currentDay = today.getDay(); // 0(일요일) ~ 6(토요일)
+  
+  // 경매 입찰일은 보통 화요일(2) 또는 목요일(4)에 열림
+  // 현재 날짜 기준으로 다음 화요일 또는 목요일을 계산
+  let daysToAdd = 0;
+  
+  if (currentDay === 0 || currentDay === 1) {
+    // 일요일 또는 월요일이면 다음 화요일 (1~2일 후)
+    daysToAdd = currentDay === 0 ? 2 : 1;
+  } else if (currentDay === 2) {
+    // 화요일이면 다음 화요일 (7일 후) 또는 이번 주 목요일 (2일 후)
+    daysToAdd = Math.random() > 0.5 ? 7 : 2; // 랜덤하게 선택
+  } else if (currentDay === 3 || currentDay === 4) {
+    // 수요일 또는 목요일이면 다음 목요일 또는 다음 화요일
+    daysToAdd = currentDay === 3 ? 1 : (Math.random() > 0.5 ? 6 : 1);
+  } else {
+    // 금요일 또는 토요일이면 다음 화요일 (4~5일 후)
+    daysToAdd = currentDay === 5 ? 4 : 3;
+  }
+  
+  // 최소 3일, 최대 21일 후로 제한 (실제 경매 일정 반영)
+  const minDays = 3;
+  const maxDays = 21;
+  daysToAdd = Math.max(minDays, Math.min(maxDays, daysToAdd));
+  
+  const biddingDate = new Date(today);
+  biddingDate.setDate(today.getDate() + daysToAdd);
+  
+  // YYYY-MM-DD 형식으로 변환
+  const year = biddingDate.getFullYear();
+  const month = String(biddingDate.getMonth() + 1).padStart(2, '0');
+  const day = String(biddingDate.getDate()).padStart(2, '0');
+  
+  const formattedDate = `${year}-${month}-${day}`;
+  
+  console.log("📅 [다음 입찰] 동적 입찰기일 생성:", {
+    오늘: today.toISOString().split('T')[0],
+    생성일: formattedDate,
+    일수차이: daysToAdd,
+  });
+  
+  return formattedDate;
+}
+
 // 더미 데이터 생성 함수
 function generateDummyData(difficulty: DifficultyLevel): any {
   return {
@@ -63,7 +111,7 @@ function generateDummyData(difficulty: DifficultyLevel): any {
       decisionDate: "2025-01-20",
       dividendDeadline: "2025-04-20",
       firstAuctionDate: "2025-09-15",
-      currentAuctionDate: "2025-10-15",
+      currentAuctionDate: generateDynamicAuctionDate(),
     },
     biddingHistory: [
       {
@@ -1515,7 +1563,7 @@ export async function generateSimulationProperty(): Promise<SimulationScenario> 
         decisionDate: "2025-02-15",
         dividendDeadline: "2025-05-15",
         firstAuctionDate: "2025-08-10",
-        currentAuctionDate: "2025-10-10",
+        currentAuctionDate: generateDynamicAuctionDate(),
       },
       biddingHistory: [
         {
