@@ -232,7 +232,8 @@ export interface RightsAnalysisResult {
   totalAssumedAmount: number; // 총 인수금액(권리만)
   assumedTenants: TenantRecord[]; // 인수해야 할 임차인
   totalTenantDeposit: number; // 임차보증금 총액
-  safetyMargin: number; // 안전마진(권리+임차보증금)
+  totalAcquisition: number; // 총인수금액(A) = B + R + T + C + E + K + U (taxlogic.md 기준)
+  safetyMargin: number; // 안전마진(V-A) (taxlogic.md 기준)
   recommendedBidRange: {
     min: number; // 최소 입찰가 (원)
     max: number; // 최대 입찰가 (원)

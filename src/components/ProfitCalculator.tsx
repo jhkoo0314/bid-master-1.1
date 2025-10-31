@@ -13,6 +13,7 @@ import {
 } from "@/lib/profit-calculator";
 import {
   formatNumber,
+  formatCurrency,
   parseFormattedNumber,
   getFormattedInputValue,
 } from "@/lib/format-utils";
@@ -349,13 +350,13 @@ export function ProfitCalculator() {
               <div className="flex justify-between">
                 <span className="text-blue-700">낙찰가</span>
                 <span className="font-medium">
-                  {result.bidPrice.toLocaleString("ko-KR")}원
+                  {formatCurrency(result.bidPrice)}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-blue-700">은행대출</span>
                 <span className="font-medium">
-                  {result.bankLoanAmount.toLocaleString("ko-KR")}원
+                  {formatCurrency(result.bankLoanAmount)}
                 </span>
               </div>
             </div>
@@ -368,19 +369,19 @@ export function ProfitCalculator() {
               <div className="flex justify-between">
                 <span className="text-red-700">취득세 (1%)</span>
                 <span className="font-medium">
-                  {result.acquisitionTax.toLocaleString("ko-KR")}원
+                  {formatCurrency(result.acquisitionTax)}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-red-700">기타 (0.15%)</span>
                 <span className="font-medium">
-                  {result.otherTaxes.toLocaleString("ko-KR")}원
+                  {formatCurrency(result.otherTaxes)}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-red-700 font-bold">세금 합계</span>
                 <span className="font-bold">
-                  {result.totalTaxes.toLocaleString("ko-KR")}원
+                  {formatCurrency(result.totalTaxes)}
                 </span>
               </div>
             </div>
@@ -393,7 +394,7 @@ export function ProfitCalculator() {
               <div className="flex justify-between">
                 <span className="text-green-700">인수해야 할 보증금</span>
                 <span className="font-medium">
-                  {result.totalAcquisitionCosts.toLocaleString("ko-KR")}원
+                  {formatCurrency(result.totalAcquisitionCosts)}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -401,7 +402,7 @@ export function ProfitCalculator() {
                   총 자기자본 (은행대출 제외)
                 </span>
                 <span className="font-medium">
-                  {result.selfCapital.toLocaleString("ko-KR")}원
+                  {formatCurrency(result.selfCapital)}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -409,7 +410,7 @@ export function ProfitCalculator() {
                   실제 투자금액 (총)
                 </span>
                 <span className="font-bold">
-                  {result.actualInvestment.toLocaleString("ko-KR")}원
+                  {formatCurrency(result.actualInvestment)}
                 </span>
               </div>
             </div>
@@ -424,13 +425,13 @@ export function ProfitCalculator() {
               <div className="flex justify-between">
                 <span className="text-purple-700">월별 지출</span>
                 <span className="font-medium">
-                  {result.monthlyExpenses.toLocaleString("ko-KR")}원
+                  {formatCurrency(result.monthlyExpenses)}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-purple-700">월별 수입</span>
                 <span className="font-medium">
-                  {result.monthlyIncome.toLocaleString("ko-KR")}원
+                  {formatCurrency(result.monthlyIncome)}
                 </span>
               </div>
             </div>
@@ -443,37 +444,37 @@ export function ProfitCalculator() {
               <div className="flex justify-between">
                 <span className="text-yellow-700">매도 금액</span>
                 <span className="font-medium">
-                  {result.saleAmount.toLocaleString("ko-KR")}원
+                  {formatCurrency(result.saleAmount)}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-yellow-700">매도 전까지 투입 금액</span>
                 <span className="font-medium">
-                  {result.totalInvestmentBeforeSale.toLocaleString("ko-KR")}원
+                  {formatCurrency(result.totalInvestmentBeforeSale)}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-yellow-700">이자비용</span>
                 <span className="font-medium">
-                  {result.totalInterestCost.toLocaleString("ko-KR")}원
+                  {formatCurrency(result.totalInterestCost)}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-yellow-700">중개수수료</span>
                 <span className="font-medium">
-                  {result.brokerageFees.toLocaleString("ko-KR")}원
+                  {formatCurrency(result.brokerageFees)}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-yellow-700">양도세</span>
                 <span className="font-medium">
-                  {result.capitalGainsTax.toLocaleString("ko-KR")}원
+                  {formatCurrency(result.capitalGainsTax)}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-yellow-700">기타수입</span>
                 <span className="font-medium">
-                  {result.otherIncome.toLocaleString("ko-KR")}원
+                  {formatCurrency(result.otherIncome)}
                 </span>
               </div>
               <div className="flex justify-between border-t pt-2">
@@ -485,7 +486,7 @@ export function ProfitCalculator() {
                     result.netProfit >= 0 ? "text-green-600" : "text-red-600"
                   }`}
                 >
-                  {result.netProfit.toLocaleString("ko-KR")}원
+                  {formatCurrency(result.netProfit)}
                 </span>
               </div>
             </div>
@@ -514,7 +515,7 @@ export function ProfitCalculator() {
                 손익분기점 (최소 매도가)
               </span>
               <span className="text-xl font-bold text-orange-900">
-                {result.breakEvenPrice.toLocaleString("ko-KR")}원
+                {formatCurrency(result.breakEvenPrice)}
               </span>
             </div>
           </div>

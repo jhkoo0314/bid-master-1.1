@@ -22,13 +22,10 @@ import { useSimulationStore } from "@/store/simulation-store";
 import { mapSimulationToPropertyDetail } from "@/lib/property/formatters";
 import { analyzeRights } from "@/lib/rights-analysis-engine";
 import {
-  calculateSafetyMargin,
-  calculateAdvancedAssumption,
-} from "@/lib/property/safety-calc";
-import {
-  calculateSafetyMarginWithRisk,
   calculateRightsAmount,
   mapPropertyTypeToUse,
+  calcAcquisitionAndMoS,
+  type TaxInput,
   type RiskLevel,
 } from "@/lib/auction-cost";
 
@@ -64,23 +61,12 @@ export default function PropertyPage({ params }: PageProps) {
         "low"
       );
 
-      // 고도화 계산(매물유형/위험도/난이도 적용)
-      const lowestForCalc =
-        data.price?.lowest && data.price.lowest > 0
-          ? data.price.lowest
-          : Math.floor((data.price?.appraised || 0) * 0.7);
-
-      console.log("⚖️ [권리분석] 최저가 기반값 선택", {
-        rawLowest: data.price?.lowest,
-        appraised: data.price?.appraised,
-        usedLowest: lowestForCalc,
-        reason:
-          (data.price?.lowest || 0) > 0 ? "raw" : "fallback(appraised×70%)",
-      });
-
-      // 새로운 auction-cost 모듈 사용
+      // taxlogic.md 기준: marginAmount = V - A
       const propertyType = data.meta?.type || "기타";
       const appraisalValue = data.price?.appraised || 0;
+      const marketValue = data.price?.market ?? appraisalValue;
+      const minimumBidPrice =
+        data.price?.lowest || Math.floor(appraisalValue * 0.7);
 
       // 권리유형별 인수금액 계산
       const assumedAmount = calculateRightsAmount(
@@ -89,20 +75,46 @@ export default function PropertyPage({ params }: PageProps) {
         propertyType
       );
 
-      // 위험도를 반영한 안전마진 계산
-      const safetyMarginResult = calculateSafetyMarginWithRisk({
-        rights: data.rights || [],
-        propertyType,
-        lowestPrice: lowestForCalc,
-        riskLevel: topSeverity as RiskLevel,
-        propertyValue: appraisalValue,
+      // taxlogic.md 기준으로 안전마진 계산
+      const propertyUse = mapPropertyTypeToUse(propertyType);
+      const capex = 5_000_000; // 수리비
+      const eviction = 2_000_000; // 명도비
+      const carrying = 0; // 보유비
+      const contingency = 1_000_000; // 예비비
+
+      const taxInput: TaxInput = {
+        use: propertyUse,
+        price: minimumBidPrice,
+      };
+
+      // calcAcquisitionAndMoS 함수 실행 직전 marketValue 확인
+      console.log(
+        "💰 [프로퍼티 페이지] calcAcquisitionAndMoS 호출 직전 - marketValue 확인"
+      );
+      console.log(
+        "marketValue type:",
+        typeof marketValue,
+        "marketValue:",
+        marketValue
+      );
+      console.log("marketValue is NaN:", isNaN(Number(marketValue)));
+      console.log("marketValue is undefined:", marketValue === undefined);
+
+      const acquisitionResult = calcAcquisitionAndMoS({
+        bidPrice: minimumBidPrice,
+        rights: assumedAmount, // 권리만 (임차보증금은 별도로 계산되지 않음)
+        capex,
+        eviction,
+        carrying,
+        contingency,
+        marketValue,
+        taxInput,
       });
 
-      console.log("⚖️ [권리분석] 고도화 안전마진 계산:", safetyMarginResult);
       return {
-        safetyMargin: safetyMarginResult.minSafetyMargin,
+        safetyMargin: acquisitionResult.marginAmount,
         totalAssumedAmount: assumedAmount,
-        trace: safetyMarginResult.trace,
+        trace: [],
       };
     } catch (e) {
       console.error(

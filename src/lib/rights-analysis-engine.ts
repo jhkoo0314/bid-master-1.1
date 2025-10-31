@@ -12,6 +12,13 @@ import {
   RightsAnalysisResult,
   CaseBasicInfo,
 } from "@/types/simulation";
+import {
+  calcAcquisitionAndMoS,
+  mapPropertyTypeToUse,
+  parseMoneyValue,
+  type TaxInput,
+} from "@/lib/auction-cost";
+import { estimateMarketPrice } from "@/lib/property/market-price";
 
 // ============================================
 // 1. 권리 우선순위 및 특성 정의
@@ -486,11 +493,12 @@ export function determineTenantDaehangryeok(
 // ============================================
 
 /**
- * 인수해야 할 권리와 임차보증금의 총액을 계산합니다.
+ * @deprecated 이 함수는 기존 로직이며, taxlogic.md 기준의 calcAcquisitionAndMoS를 사용해야 합니다.
+ * 인수해야 할 권리와 임차보증금의 총액을 계산합니다. (권리 + 임차보증금 합산)
  *
  * @param rights 권리 목록
  * @param tenants 임차인 목록
- * @returns 안전 마진 (인수 권리 총액 + 임차보증금 총액)
+ * @returns 인수 권리 총액 + 임차보증금 총액
  */
 export function calculateSafetyMargin(
   rights: RightRecord[],
@@ -498,10 +506,6 @@ export function calculateSafetyMargin(
   propertyValue: number = 0,
   propertyType?: string
 ): number {
-  console.log("🔍 [권리분석 엔진] 안전 마진 계산 시작");
-  console.log(`  - 매물 유형: ${propertyType || "아파트"}`);
-  console.log(`  - 감정가: ${propertyValue.toLocaleString()}원`);
-
   // 인수해야 할 권리 총액 (청구금액이 없는 경우 자동 계산)
   const assumedRights = rights.filter((right) => right.willBeAssumed);
   const totalAssumedRights = assumedRights.reduce((sum, right) => {
@@ -509,46 +513,19 @@ export function calculateSafetyMargin(
       right.claimAmount > 0
         ? right.claimAmount
         : calculateRightClaimAmount(right, propertyValue, propertyType);
-    const rightInfo = getRightPriority(right.rightType);
-    console.log(
-      `    - ${right.rightType} (${
-        rightInfo.riskLevel
-      }): ${claimAmount.toLocaleString()}원`
-    );
     return sum + claimAmount;
   }, 0);
-
-  console.log(
-    `  - 인수 권리 총액: ${totalAssumedRights.toLocaleString()}원 (${
-      assumedRights.length
-    }개 권리)`
-  );
 
   // 인수해야 할 임차보증금 총액
   const assumedTenants = tenants.filter((tenant) => tenant.willBeAssumed);
   const totalTenantDeposit = assumedTenants.reduce((sum, tenant) => {
-    // 소액임차인은 우선변제금액만 계산
     const tenantAmount = tenant.isSmallTenant
       ? tenant.priorityPaymentAmount
       : tenant.deposit;
-    console.log(
-      `    - ${tenant.tenantName}: ${tenantAmount.toLocaleString()}원 (${
-        tenant.isSmallTenant ? "우선변제" : "전액"
-      })`
-    );
     return sum + tenantAmount;
   }, 0);
 
-  console.log(
-    `  - 인수 임차보증금 총액: ${totalTenantDeposit.toLocaleString()}원 (${
-      assumedTenants.length
-    }명 임차인)`
-  );
-
-  const safetyMargin = totalAssumedRights + totalTenantDeposit;
-  console.log(`  ✅ 총 안전 마진: ${safetyMargin.toLocaleString()}원`);
-
-  return safetyMargin;
+  return totalAssumedRights + totalTenantDeposit;
 }
 
 // ============================================
@@ -667,81 +644,92 @@ export function analyzeRights(
     }
   }
 
-  // 💰 [안전마진 계산] 권리 총액 + 임차보증금 총액
-  let safetyMargin = calculateSafetyMargin(
-    analyzedRights,
-    analyzedTenants,
-    basicInfo.appraisalValue,
-    propertyType
-  );
+  // 💰 [안전마진 계산] taxlogic.md 기준: marginAmount = V - A
+  // A = B + R + T + C + E + K + U
+  const estimatedBidPrice = basicInfo.minimumBidPrice;
 
-  console.log("💰 [권리분석 엔진] 안전마진 계산 결과");
+  // 시세(V) 계산: marketValue가 있으면 사용, 없으면 감정가와 최저가 기반으로 추정
+  // marketValue가 문자열('522,550,000원') 형태일 수 있으므로 파싱 필요
+  const rawMarketValue = basicInfo.marketValue ?? estimateMarketPrice(scenario);
+  const marketValue =
+    parseMoneyValue(rawMarketValue) || estimateMarketPrice(scenario);
+
+  console.log("💰 [권리분석 엔진] 시세(V) 계산");
+  console.log("marketValue type:", typeof marketValue, marketValue);
   console.log(
-    `  - 총 인수금액(권리만): ${totalAssumedAmount.toLocaleString()}원`
+    `  - marketValue 원본: ${
+      basicInfo.marketValue
+        ? typeof basicInfo.marketValue === "string"
+          ? `"${basicInfo.marketValue}"`
+          : `${basicInfo.marketValue.toLocaleString()}원`
+        : "없음"
+    }`
   );
-  console.log(`  - 임차보증금 총액: ${totalTenantDeposit.toLocaleString()}원`);
-  console.log(`  - 계산된 안전마진: ${safetyMargin.toLocaleString()}원`);
+  console.log(`  - marketValue 파싱 후: ${marketValue.toLocaleString()}원`);
+  console.log(`  - 감정가: ${basicInfo.appraisalValue.toLocaleString()}원`);
+  console.log(`  - 최저가: ${basicInfo.minimumBidPrice.toLocaleString()}원`);
+  console.log(`  - 최종 시세(V): ${marketValue.toLocaleString()}원`);
+
+  // 매물 유형에 따른 세금 용도 결정
+  const propertyUse = mapPropertyTypeToUse(propertyType);
+
+  // 기본 비용 설정
+  const capex = 5_000_000; // 수리비 500만원
+  const eviction = 2_000_000; // 명도비 200만원
+  const carrying = 0; // 보유비 (보유 기간 없음)
+  const contingency = 1_000_000; // 예비비 100만원
+
+  // R: 인수권리 + 임차보증금
+  const rightsAmount = totalAssumedAmount + totalTenantDeposit;
+
+  // 세금 계산 입력
+  const taxInput: TaxInput = {
+    use: propertyUse,
+    price: estimatedBidPrice,
+  };
+
+  // calcAcquisitionAndMoS를 사용해서 총인수금액과 안전마진 계산
+  // 함수 실행 직전 marketValue 확인
   console.log(
-    `  - 안전마진 검증: ${totalAssumedAmount.toLocaleString()}원 + ${totalTenantDeposit.toLocaleString()}원 = ${(
-      totalAssumedAmount + totalTenantDeposit
-    ).toLocaleString()}원`
+    "💰 [권리분석 엔진] calcAcquisitionAndMoS 호출 직전 - marketValue 확인"
   );
+  console.log(
+    "marketValue type:",
+    typeof marketValue,
+    "marketValue:",
+    marketValue
+  );
+  console.log("marketValue is NaN:", isNaN(Number(marketValue)));
+  console.log("marketValue is undefined:", marketValue === undefined);
 
-  // 안전마진 검증: totalAssumedAmount + totalTenantDeposit과 safetyMargin이 일치하는지 확인
-  const expectedSafetyMargin = totalAssumedAmount + totalTenantDeposit;
-  if (Math.abs(safetyMargin - expectedSafetyMargin) > 1) {
+  const acquisitionResult = calcAcquisitionAndMoS({
+    bidPrice: estimatedBidPrice,
+    rights: rightsAmount,
+    capex,
+    eviction,
+    carrying,
+    contingency,
+    marketValue,
+    taxInput,
+  });
+
+  // 안전마진 = 시세 - 총인수금액
+  const safetyMargin = acquisitionResult.marginAmount;
+  const totalAcquisition = acquisitionResult.totalAcquisition;
+
+  // 안전마진이 마이너스인 경우 경고
+  if (safetyMargin < 0) {
     console.warn(
-      `⚠️ [권리분석 엔진] 안전마진 불일치 감지! 계산된 값: ${safetyMargin.toLocaleString()}원, 예상 값: ${expectedSafetyMargin.toLocaleString()}원`
+      `⚠️ [권리분석 엔진] 안전마진이 마이너스입니다: ${safetyMargin.toLocaleString()}원`
+    );
+    console.warn(`  - 총인수금액(A): ${totalAcquisition.toLocaleString()}원`);
+    console.warn(`  - 시세(V): ${marketValue.toLocaleString()}원`);
+    console.warn(
+      `  - 차이: ${(marketValue - totalAcquisition).toLocaleString()}원`
     );
     console.warn(
-      `  - 차이: ${Math.abs(
-        safetyMargin - expectedSafetyMargin
-      ).toLocaleString()}원`
+      `  - 원인: 총인수금액이 시세보다 큽니다. 최저가(${estimatedBidPrice.toLocaleString()}원)가 높거나 권리/비용이 큰 경우입니다.`
     );
-    // 계산 방식이 다를 수 있으므로 calculateSafetyMargin의 결과를 신뢰하되, 로그를 남김
-  }
-
-  // 방어 로직: 안전마진/인수금액이 0으로 산출될 경우 보수적 대체 계산 적용
-  if (safetyMargin === 0) {
-    console.log(
-      "⚠️ [권리분석 엔진] 안전마진이 0원으로 계산되어 대체 계산을 적용합니다."
-    );
-
-    // 1) 권리 보수적 합: 말소기준권리 판단 실패 또는 인수 판단 실패 시에도
-    //    인수 가능성이 높은 권리(canBeAssumed=true)를 대상으로 동적 청구액을 합산
-    const fallbackRights = rights.filter(
-      (r) => getRightPriority(r.rightType).canBeAssumed
-    );
-    const fallbackAssumedAmount = fallbackRights.reduce((sum, r) => {
-      const amount =
-        r.claimAmount > 0
-          ? r.claimAmount
-          : calculateRightClaimAmount(
-              r,
-              basicInfo.appraisalValue,
-              propertyType
-            );
-      return sum + amount;
-    }, 0);
-
-    // 2) 임차 보수적 합: 대항력 판단 실패 시에도 소액임차인 기준으로 우선변제금액 가정
-    const fallbackTenantDeposit = tenants.reduce((sum, t) => {
-      const isSmallTenant = t.deposit <= 170000000; // 보수적 서울 기준
-      const assumed = isSmallTenant ? Math.min(t.deposit / 2, 50000000) : 0;
-      return sum + assumed;
-    }, 0);
-
-    const fallbackSafety = fallbackAssumedAmount + fallbackTenantDeposit;
-    console.log("🛟 [권리분석 엔진] 대체 안전마진 계산", {
-      fallbackAssumedAmount: fallbackAssumedAmount.toLocaleString(),
-      fallbackTenantDeposit: fallbackTenantDeposit.toLocaleString(),
-      fallbackSafety: fallbackSafety.toLocaleString(),
-    });
-
-    // 대체값이 0보다 크면 적용
-    if (fallbackSafety > 0) {
-      safetyMargin = fallbackSafety;
-    }
   }
 
   // 6. 권장 입찰가 범위 계산 (총인수금액과 안전마진 기준)
@@ -763,17 +751,12 @@ export function analyzeRights(
     `  - 총 인수금액(권리만): ${totalAssumedAmount.toLocaleString()}원`
   );
   console.log(`  - 임차보증금 총액: ${totalTenantDeposit.toLocaleString()}원`);
+  console.log(`  - 총인수금액(A): ${totalAcquisition.toLocaleString()}원`);
+  console.log(`  - 시세(V): ${marketValue.toLocaleString()}원`);
   console.log(
-    `  - 최종 안전마진(권리+임차보증금): ${safetyMargin.toLocaleString()}원`
-  );
-  console.log(
-    `  - 안전마진 구성: 권리 ${totalAssumedAmount.toLocaleString()}원 + 임차보증금 ${totalTenantDeposit.toLocaleString()}원`
-  );
-  console.log(
-    `  - 안전마진 비율: ${(
-      (safetyMargin / basicInfo.appraisalValue) *
-      100
-    ).toFixed(1)}%`
+    `  - 안전마진(V-A): ${safetyMargin.toLocaleString()}원 (${(
+      acquisitionResult.marginRate * 100
+    ).toFixed(2)}%)`
   );
   console.log(
     `  - 리스크 레벨: ${riskAnalysis.overallRiskLevel} (${riskAnalysis.riskScore}/100)`
@@ -786,6 +769,7 @@ export function analyzeRights(
     totalAssumedAmount,
     assumedTenants,
     totalTenantDeposit,
+    totalAcquisition,
     safetyMargin,
     recommendedBidRange,
     riskAnalysis,
@@ -898,10 +882,10 @@ function analyzeRightsRisk(
 
 /**
  * 권장 입찰가 범위를 계산합니다.
- * 총 인수금액(권리)과 안전마진(권리+임차보증금) 기준으로 계산합니다.
+ * taxlogic.md 기준: 안전마진 = V - A를 고려하여 계산합니다.
  *
  * @param basicInfo 기본 정보
- * @param safetyMargin 안전 마진
+ * @param safetyMargin 안전 마진 (V - A)
  * @param totalAssumedAmount 총 인수금액(권리만)
  * @returns 권장 입찰가 범위
  */
@@ -910,53 +894,88 @@ function calculateRecommendedBidRange(
   safetyMargin: number,
   totalAssumedAmount: number
 ): { min: number; max: number; optimal: number } {
-  console.log(
-    "🔍 [권리분석 엔진] 권장 입찰가 범위 계산 (총인수금액/안전마진 기준)"
-  );
+  console.log("🔍 [권리분석 엔진] 권장 입찰가 범위 계산 (taxlogic.md 기준)");
 
-  const { minimumBidPrice, appraisalValue } = basicInfo;
+  const { minimumBidPrice, appraisalValue, marketValue } = basicInfo;
 
-  // 권장 최소 입찰가: 최저가 + 총 인수금액(권리)
-  const min = Math.round(minimumBidPrice + totalAssumedAmount);
+  // marketValue 파싱 (문자열 '522,550,000원' 형태 처리)
+  const parsedMarketValue = parseMoneyValue(marketValue);
+  const V = parsedMarketValue || appraisalValue || 0;
 
-  // 권장 최대 입찰가: 최저가 + 안전마진 * 2.0 (일반적인 경매 권장 범위)
-  // 또는 감정가의 80% 중 작은 값 사용
-  const maxBasedOnSafetyMargin = Math.round(
-    minimumBidPrice + safetyMargin * 2.0
-  );
-  const maxBasedOnAppraisal = Math.round(appraisalValue * 0.8);
-  const max = Math.min(maxBasedOnSafetyMargin, maxBasedOnAppraisal);
+  // 권장 최소 입찰가: 최저가
+  const min = minimumBidPrice;
 
-  // 최적 입찰가: 권장 범위의 중간값 (안전마진 비율 고려)
-  const marginRatio = safetyMargin / appraisalValue;
-  let optimal: number;
+  // 안전마진이 음수인 경우 (총인수금액 > 시세): 더 보수적으로 계산
+  if (safetyMargin < 0) {
+    console.warn("⚠️ [권장범위] 안전마진이 음수이므로 보수적으로 계산합니다.");
+    console.warn(
+      `  - 총인수금액이 시세보다 ${Math.abs(
+        safetyMargin
+      ).toLocaleString()}원 큽니다.`
+    );
 
-  if (marginRatio > 0.3) {
-    // 안전 마진이 크면 최소에 가까운 값 (총인수금액이 크므로 보수적으로)
-    optimal = Math.round(min + (max - min) * 0.3);
-  } else if (marginRatio > 0.1) {
-    // 중간 수준이면 중간 값
-    optimal = Math.round((min + max) / 2);
-  } else {
-    // 안전 마진이 작으면 최대에 가까운 값
-    optimal = Math.round(min + (max - min) * 0.7);
+    // 안전마진이 음수면 투자 위험이 큼. 최저가에 가깝게 제한
+    // 최대 입찰가는 최저가의 105% 정도로 제한
+    const max = Math.round(min + min * 0.05);
+
+    // 최소값보다 작으면 보정
+    const safeMax = Math.max(min, max);
+    const optimal = Math.round((min + safeMax) / 2);
+
+    console.log(`  - 최저가: ${minimumBidPrice.toLocaleString()}원`);
+    console.log(`  - 시세(V): ${V.toLocaleString()}원`);
+    console.log(
+      `  - 총 인수금액(권리): ${totalAssumedAmount.toLocaleString()}원`
+    );
+    console.log(
+      `  - 안전마진(V-A): ${safetyMargin.toLocaleString()}원 (음수 - 위험!)`
+    );
+    console.log(`  - 권장 최소 입찰가: ${min.toLocaleString()}원`);
+    console.log(`  - 권장 최대 입찰가: ${safeMax.toLocaleString()}원 (보수적)`);
+    console.log(`  - 최적 입찰가: ${optimal.toLocaleString()}원`);
+
+    return { min, max: safeMax, optimal };
   }
 
+  // 안전마진이 양수인 경우: 정상 계산
+  // 권장 최대 입찰가: 감정가의 80% 또는 시세의 80% 중 작은 값
+  // 하지만 안전마진을 확보하려면 더 보수적으로 계산
+  const maxBasedOnAppraisal = Math.round(appraisalValue * 0.8);
+  const maxBasedOnMarket = V > 0 ? Math.round(V * 0.8) : maxBasedOnAppraisal;
+  let max = Math.min(maxBasedOnAppraisal, maxBasedOnMarket);
+
+  // 안전마진을 고려: 안전마진이 작으면 (예: 시세의 10% 미만) 더 보수적으로
+  if (V > 0) {
+    const marginRate = safetyMargin / V;
+    if (marginRate < 0.1) {
+      // 안전마진이 시세의 10% 미만이면 더 보수적으로 (시세의 70%로 제한)
+      const conservativeMax = Math.round(V * 0.7);
+      max = Math.min(max, conservativeMax);
+      console.log(
+        `  - 안전마진율이 낮아 보수적으로 계산 (${(marginRate * 100).toFixed(
+          1
+        )}%)`
+      );
+    }
+  }
+
+  // max가 min보다 작으면 보정
+  if (max < min) {
+    max = Math.round(min + min * 0.1); // 최소값의 110%
+  }
+
+  // 최적 입찰가: 권장 범위의 중간값
+  const optimal = Math.round((min + max) / 2);
+
   console.log(`  - 최저가: ${minimumBidPrice.toLocaleString()}원`);
+  console.log(`  - 시세(V): ${V.toLocaleString()}원`);
   console.log(
     `  - 총 인수금액(권리): ${totalAssumedAmount.toLocaleString()}원`
   );
-  console.log(
-    `  - 안전마진(권리+임차보증금): ${safetyMargin.toLocaleString()}원`
-  );
-  console.log(
-    `  - 권장 최소 입찰가 (최저가 + 총인수금액): ${min.toLocaleString()}원`
-  );
-  console.log(
-    `  - 권장 최대 입찰가 (최저가 + 안전마진*2.0): ${max.toLocaleString()}원`
-  );
+  console.log(`  - 안전마진(V-A): ${safetyMargin.toLocaleString()}원`);
+  console.log(`  - 권장 최소 입찰가: ${min.toLocaleString()}원`);
+  console.log(`  - 권장 최대 입찰가: ${max.toLocaleString()}원`);
   console.log(`  - 최적 입찰가: ${optimal.toLocaleString()}원`);
-  console.log(`  - 안전 마진 비율: ${(marginRatio * 100).toFixed(1)}%`);
 
   return { min, max, optimal };
 }

@@ -73,7 +73,7 @@ export interface AcquisitionInput {
   eviction: number; // E: 명도비
   carrying: number; // K: 보유/이자/관리비(예상 보유기간 기준)
   contingency: number; // U: 예비비
-  marketValue: number; // V: 시세(보수적)
+  marketValue: string | number; // V: 시세(보수적) - 문자열('522,550,000원') 또는 숫자
   taxInput: TaxInput; // 세금 산출용
   taxOptions?: TaxOptions; // 세율/표/수수료 덮어쓰기
 }
@@ -88,6 +88,42 @@ export interface AcquisitionResult {
 
 /** 금액 반올림 도우미 */
 const roundTo = (n: number, unit: number) => Math.round(n / unit) * unit;
+
+/** 한국 원화 금액을 숫자로 변환 (모든 비숫자 문자 제거) */
+export function toKRWNumber(v: string | number | undefined | null): number {
+  return Number(String(v).replace(/[^\d.-]/g, "")) || 0;
+}
+
+/** 금액 문자열을 숫자로 파싱 (콤마와 '원' 제거) */
+export function parseMoneyValue(
+  value: string | number | undefined | null
+): number {
+  if (typeof value === "number") {
+    return value;
+  }
+  if (!value) {
+    return 0;
+  }
+
+  // 숫자, 점(.), 마이너스(-)만 남기고 나머지 모두 제거
+  // 콤마, 공백, '원' 문자 등 모든 비숫자 문자를 처리
+  const parsed = toKRWNumber(value);
+
+  if (
+    parsed === 0 &&
+    value &&
+    String(value).trim() !== "0" &&
+    String(value).trim() !== ""
+  ) {
+    console.warn("⚠️ [파싱] 숫자 변환 실패 또는 0:", value);
+  } else if (typeof value === "string") {
+    console.log(
+      `💰 [파싱] 금액 문자열 변환: "${value}" → ${parsed.toLocaleString()}원`
+    );
+  }
+
+  return parsed;
+}
 
 /** 기본 인지세 테이블
  *  - 1억 이하: 50,000
@@ -354,9 +390,11 @@ export function calcAcquisitionAndMoS(
     taxOptions,
   } = input;
 
-  // marketValue가 undefined인 경우 기본값 처리
-  const safeV = V ?? 0;
-  if (!V) {
+  // marketValue를 숫자로 파싱 (문자열 '522,550,000원' 형태 처리)
+  console.log("marketValue type:", typeof V, V);
+  const parsedV = parseMoneyValue(V);
+  const safeV = parsedV || 0;
+  if (!parsedV) {
     console.warn("⚠️ [총인수금액] 시세(V)가 없습니다. 0으로 처리합니다.");
   }
 
@@ -378,7 +416,9 @@ export function calcAcquisitionAndMoS(
   console.log(`  - 예비비(U): ${U.toLocaleString()}원`);
   console.log(`  ✅ 총인수금액(A): ${totalAcquisition.toLocaleString()}원`);
   console.log(
-    `  - 시세(V): ${safeV.toLocaleString()}원${!V ? " (기본값)" : ""}`
+    `  - 시세(V): ${safeV.toLocaleString()}원${
+      typeof V === "string" ? " (파싱됨)" : !parsedV ? " (기본값)" : ""
+    }`
   );
   console.log(
     `  ✅ 안전마진: ${marginAmount.toLocaleString()}원 (${(
@@ -564,4 +604,46 @@ export function findMaxBidByTargetAmount(
     else hi = mid;
   }
   return roundTo(lo, 10);
+}
+
+/** 안전마진 계산 함수 (시세와 총비용 기반) */
+export function calcSafetyMargin(
+  marketValue: string | number,
+  totalCost: string | number
+): { totalCost: number; safetyMargin: number; safetyRate: number } {
+  console.log("💰 [안전마진 계산] calcSafetyMargin 시작");
+  console.log("marketValue type:", typeof marketValue, marketValue);
+  console.log(
+    `  - marketValue 입력: ${
+      typeof marketValue === "string"
+        ? `"${marketValue}"`
+        : marketValue.toLocaleString()
+    }`
+  );
+  console.log(
+    `  - totalCost 입력: ${
+      typeof totalCost === "string"
+        ? `"${totalCost}"`
+        : totalCost.toLocaleString()
+    }`
+  );
+
+  // 콤마와 '원' 문자를 모두 제거한 후 숫자로 변환
+  const V = toKRWNumber(marketValue);
+  const A = toKRWNumber(totalCost);
+
+  console.log(`  - marketValue 파싱 후: ${V.toLocaleString()}원`);
+  console.log(`  - totalCost 파싱 후: ${A.toLocaleString()}원`);
+
+  // ✅ 안전마진 계산: marketValue - totalCost (시세에서 총비용을 뺀 값)
+  // 양수면 이익, 음수면 손실
+  const margin = V - A;
+  // ✅ 안전마진율 계산: (안전마진 / 시세) * 100
+  const rate = V > 0 ? (margin / V) * 100 : 0;
+
+  console.log(
+    `  ✅ 안전마진: ${margin.toLocaleString()}원 (${rate.toFixed(2)}%)`
+  );
+
+  return { totalCost: A, safetyMargin: margin, safetyRate: rate };
 }
