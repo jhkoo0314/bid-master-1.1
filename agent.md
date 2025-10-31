@@ -51,43 +51,92 @@ bid-master-ai/
 │   │   │   └── submit-waitlist.ts        # 사전 알림 신청
 │   │   ├── api/                # API 엔드포인트
 │   │   │   ├── sheets/write/            # 구글 시트 쓰기
+│   │   │   ├── failure-log/             # 실패 로그
 │   │   │   ├── test-read/route.ts       # 데이터 읽기 테스트
 │   │   │   ├── test-sheets/route.ts     # 구글 시트 연결 테스트
 │   │   │   ├── test-simple/route.ts     # 로컬 파일 저장 테스트
 │   │   │   └── test-waitlist/route.ts   # 사전 알림 테스트
 │   │   ├── calculator/         # 수익 계산기 페이지
+│   │   ├── contact/           # 문의 페이지
+│   │   ├── guide/             # 실전 가이드 페이지
 │   │   ├── property/[id]/      # 매물 상세 페이지
-│   │   ├── simulation/[id]/    # 시뮬레이션 페이지
-│   │   ├── test-sheets/        # 구글 시트 테스트 페이지
-│   │   ├── test-simple/        # 간단한 테스트 페이지
-│   │   ├── test-images/        # 이미지 테스트 페이지
+│   │   ├── privacy-policy/    # 개인정보처리방침
+│   │   ├── terms-of-service/  # 이용약관
+│   │   ├── legacy/            # 레거시 페이지
+│   │   ├── test-sheets/       # 구글 시트 테스트 페이지
+│   │   ├── test-simple/       # 간단한 테스트 페이지
+│   │   ├── test-images/       # 이미지 테스트 페이지
+│   │   ├── test-gmail/        # Gmail 테스트 페이지
+│   │   ├── test-graphs/       # 그래프 테스트 페이지
 │   │   ├── layout.tsx          # 루트 레이아웃
 │   │   └── page.tsx            # 메인 페이지
 │   ├── components/             # UI 컴포넌트
-│   │   ├── AuctionAnalysisModal.tsx      # 경매 분석 모달
-│   │   ├── BiddingModal.tsx              # 입찰 모달
-│   │   ├── DevModeToggle.tsx             # 개발자 모드 토글
-│   │   ├── ProfitCalculator.tsx          # 수익 계산기
-│   │   ├── PropertyCard.tsx              # 매물 카드
-│   │   ├── PropertyFilter.tsx            # 매물 필터
-│   │   └── WaitlistModal.tsx             # 사전 알림 모달
+│   │   ├── common/            # 공통 컴포넌트 (EmptyState, ErrorState, InfoTip, SkeletonCard)
+│   │   ├── filters/           # 필터 컴포넌트 (FilterBar, ActiveChips)
+│   │   ├── list/              # 리스트 컴포넌트 (PropertyCard, PropertyGrid, MobileCarousel)
+│   │   ├── property/          # 매물 상세 컴포넌트
+│   │   │   ├── SummaryHeader.tsx
+│   │   │   ├── StickyBar.tsx
+│   │   │   ├── DecisionPanel.tsx
+│   │   │   ├── ScheduleTable.tsx
+│   │   │   ├── RightsTable.tsx
+│   │   │   ├── PayoutTable.tsx
+│   │   │   ├── RegionPanel.tsx
+│   │   │   ├── LearnBlock.tsx
+│   │   │   ├── SectionCard.tsx
+│   │   │   ├── RightsAnalysisReportModal.tsx
+│   │   │   ├── AuctionAnalysisReportModal.tsx
+│   │   │   └── CourtDocumentModal.tsx
+│   │   ├── hero/              # 히어로 섹션 (MainHero)
+│   │   ├── learn/             # 학습 컴포넌트 (QuickGuides)
+│   │   ├── layout/            # 레이아웃 컴포넌트 (TopHeader)
+│   │   ├── metrics/           # 메트릭 컴포넌트 (ActivityStrip)
+│   │   ├── AuctionAnalysisModal.tsx
+│   │   ├── AuctionTermsModal.tsx
+│   │   ├── BiddingModal.tsx
+│   │   ├── CircularProgressChart.tsx
+│   │   ├── DashboardHeader.tsx
+│   │   ├── DevModeToggle.tsx
+│   │   ├── FeedbackFAB.tsx
+│   │   ├── Footer.tsx
+│   │   ├── HeroBelow.tsx
+│   │   ├── MobileBottomNav.tsx
+│   │   ├── ProfitCalculator.tsx
+│   │   ├── PropertyCard.tsx
+│   │   ├── PropertyFilter.tsx
+│   │   └── WaitlistModal.tsx
 │   ├── lib/                    # 핵심 로직
-│   │   ├── format-utils.ts     # 포맷 유틸리티
+│   │   ├── auction-cost.ts    # 경매 비용 계산
+│   │   ├── auction-engine.ts   # 경매 엔진
+│   │   ├── auction-metrics.ts  # 경매 메트릭
+│   │   ├── format-utils.ts    # 포맷 유틸리티
+│   │   ├── gmail-client.ts    # Gmail SMTP 클라이언트
 │   │   ├── google-sheets.ts   # 구글 시트 연동
-│   │   ├── openai-client.ts    # AI 매물 생성
+│   │   ├── openai-client.ts   # AI 매물 생성 (GPT-4o)
+│   │   ├── point-calculator.ts # 포인트 계산
 │   │   ├── profit-calculator.ts # 수익 계산
+│   │   ├── property/          # 매물 관련 유틸리티
+│   │   │   ├── fetchers.ts
+│   │   │   ├── formatters.ts
+│   │   │   ├── market-price.ts
+│   │   │   └── safety-calc.ts
 │   │   ├── regional-analysis.ts # 지역분석
 │   │   ├── rights-analysis-engine.ts # 권리분석 엔진
 │   │   └── unsplash-client.ts  # Unsplash 이미지 API
 │   ├── store/                  # 상태 관리
-│   │   └── simulation-store.ts # 시뮬레이션 상태
+│   │   └── simulation-store.ts # 시뮬레이션 상태 (Zustand)
 │   └── types/                  # 타입 정의
-│       └── simulation.ts       # 시뮬레이션 타입
-├── docs/                       # 미래 계획 문서
+│       ├── property.ts         # 매물 타입
+│       ├── simulation.ts       # 시뮬레이션 타입
+│       └── list.ts             # 리스트 타입
+├── docs/                       # 문서
+│   ├── PRD.md                  # 제품 요구사항 문서
+│   ├── pointplan_v1.2.md      # 포인트 시스템 계획
+│   ├── game-guide.md          # 게임 가이드
 │   ├── future-supabase-schema.md
 │   └── future-clerk-integration.md
-├── bid-master-v1-sheet-mcp.json # 구글 서비스 계정 키
-├── waitlist-data.json         # 사전 알림 데이터 (로컬)
+├── public/                     # 정적 파일
+├── bid-master-v1-sheet-mcp.json # 구글 서비스 계정 키 (MCP 설정)
 └── README.md
 ```
 
@@ -119,8 +168,14 @@ bid-master-ai/
 
 ### 4. 개발자 모드
 
-- 일반 모드: 매물 생성 10회 제한
-- 개발자 모드: 무제한 생성 + 디버그 정보 표시
+- **일반 모드**: 매물 생성 무제한 사용 가능 (제한 제거됨)
+- **개발자 모드**: 무제한 생성 + 디버그 정보 표시 + 상세 리포트 접근
+- **개발자 모드 전용 기능**:
+  - 권리분석 리포트 상세 보기
+  - 경매분석 리포트 상세 보기
+  - 매각 물건 명세서 상세 보기
+  - 대시보드 통계 초기화 및 테스트 데이터 추가
+  - 디버그 정보 표시 (생성 시간, 토큰 사용량, 권리분석 상세 로그)
 
 ### 5. 사전 알림 시스템
 
@@ -168,6 +223,16 @@ interface SimulationStore {
   // 교육용 매물 목록 (메인 페이지)
   educationalProperties: SimulationScenario[];
   setEducationalProperties: (properties: SimulationScenario[]) => void;
+
+  // 매물 데이터 저장소 (caseId로 조회)
+  propertyCache: Map<string, SimulationScenario>;
+  setPropertyCache: (caseId: string, scenario: SimulationScenario) => void;
+  getPropertyFromCache: (caseId: string) => SimulationScenario | null;
+
+  // 대시보드 통계
+  dashboardStats: DashboardStats;
+  updateDashboardStats: (stats: Partial<DashboardStats>) => void;
+  resetDashboardStats: () => void;
 }
 ```
 
@@ -253,9 +318,14 @@ const safetyMargin = calculateSafetyMargin(analyzedRights, analyzedTenants);
 
 ### 3. 개발자 모드
 
-- **일반 모드**: 매물 생성 10회 제한으로 사전 알림 유도
-- **개발자 모드**: 무제한 생성 + 디버그 정보 표시
+- **일반 모드**: 매물 생성 무제한 사용 가능 (제한 제거됨)
+- **개발자 모드**: 무제한 생성 + 디버그 정보 표시 + 상세 리포트 접근
 - **상태 관리**: Zustand persist로 브라우저 새로고침 시에도 상태 유지
+- **개발자 모드 전용 기능**:
+  - 권리분석 리포트 상세 보기
+  - 경매분석 리포트 상세 보기
+  - 매각 물건 명세서 상세 보기
+  - 대시보드 통계 초기화 및 테스트 데이터 추가
 
 ### 4. 사전 알림 시스템 프로세스
 
@@ -299,17 +369,18 @@ const safetyMargin = calculateSafetyMargin(analyzedRights, analyzedTenants);
 ### Phase 1: MVP (현재)
 
 - ✅ 익명 사용자 경매 시뮬레이션
-- ✅ AI 기반 교육용 매물 생성
+- ✅ AI 기반 교육용 매물 생성 (OpenAI GPT-4o)
 - ✅ 권리분석 엔진
 - ✅ 수익 계산기
 - ✅ 사전 알림 시스템 (구글 시트 + 로컬 백업)
-- ✅ 이메일 확인 시스템 (Gmail API)
+- ✅ 이메일 확인 시스템 (Gmail SMTP)
 - ✅ Unsplash 이미지 통합 시스템
-- ✅ 이미지 테스트 및 디버깅 도구
-- ✅ 테스트 및 디버깅 도구
+- ✅ 개발자 모드 (무제한 생성 + 디버그 정보)
+- ✅ 필터링 시스템 (매물 유형, 지역, 가격 범위, 난이도, 권리 유형)
+- ✅ 테스트 페이지들 (구글 시트, 로컬 파일, 이미지, Gmail, 그래프)
 - ✅ 상세한 로깅 시스템
 - ✅ 모바일 최적화 및 반응형 디자인
-- ✅ PropertyCard 컴포넌트 업데이트 (2025.10.27)
+- ✅ 컴포넌트 구조화 (common, filters, list, property 등)
 
 ### Phase 2: 사용자 인증 (Clerk)
 
@@ -404,6 +475,13 @@ console.log("🧪 [테스트] 테스트 완료 - 응답시간: 2.3초");
 ```
 
 ## 📝 최근 업데이트 내역
+
+### 2025.01.29
+
+- PRD 및 agent.md 문서 업데이트
+- 개발자 모드 기능 확장 (상세 리포트 접근)
+- 컴포넌트 구조 정리 및 문서화
+- 페이지 구조 최신화 반영
 
 ### 2025.10.27
 

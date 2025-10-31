@@ -672,31 +672,6 @@ export default function GuidePage() {
                     </div>
                   </div>
                 </div>
-
-                {/* 포인트 계산 예시 */}
-                <div className="bg-blue-50 rounded-lg p-6">
-                  <h4 className="text-lg font-semibold text-gray-900 mb-3">
-                    포인트 계산 예시
-                  </h4>
-                  <p className="text-gray-700 mb-3">
-                    <strong>시나리오:</strong>
-                  </p>
-                  <ul className="list-disc list-inside space-y-1 text-gray-700 mb-4">
-                    <li>난이도: 중급 (기본 200점)</li>
-                    <li>매물 유형: 상가 (희소성 1.2배)</li>
-                    <li>권리 개수: 3개 (복잡도 1.2배)</li>
-                    <li>입찰가: 최적가 ±15% (정확도 1.3배)</li>
-                    <li>ROI: 12% (수익률 1.3배)</li>
-                    <li>낙찰 성공: 1.0배</li>
-                    <li>보너스: 복잡도 보너스 +20점</li>
-                  </ul>
-                  <div className="bg-white rounded p-4 mb-3">
-                    <code className="text-sm text-gray-800">
-                      포인트 = 200 × 1.5 × 1.2 × 1.2 × 1.3 × 1.3 × 1.0 + 20 =
-                      628점
-                    </code>
-                  </div>
-                </div>
               </div>
             </section>
 
@@ -826,8 +801,7 @@ export default function GuidePage() {
                 {[
                   {
                     level: "초급 (Beginner)",
-                    points: "100점",
-                    multiplier: "1.0배",
+                    multiplier: "0.8배",
                     features: [
                       "권리 구조가 단순함 (0~2개)",
                       "임차인 없거나 간단한 경우",
@@ -838,8 +812,7 @@ export default function GuidePage() {
                   },
                   {
                     level: "중급 (Intermediate)",
-                    points: "200점",
-                    multiplier: "1.5배",
+                    multiplier: "1.0배",
                     features: [
                       "권리 구조가 복잡함 (3~4개)",
                       "임차인이 있거나 복잡한 경우",
@@ -850,8 +823,7 @@ export default function GuidePage() {
                   },
                   {
                     level: "고급 (Advanced)",
-                    points: "300점",
-                    multiplier: "2.0배",
+                    multiplier: "1.2배",
                     features: [
                       "매우 복잡한 권리 구조 (5개 이상)",
                       "여러 임차인, 대항력 충돌",
@@ -870,7 +842,7 @@ export default function GuidePage() {
                         {item.level}
                       </h3>
                       <p className="text-sm text-gray-600">
-                        기본 포인트: {item.points} | 배수: {item.multiplier}
+                        난이도 계수: {item.multiplier}
                       </p>
                     </div>
                     <p className="text-gray-600 mb-2">
@@ -1054,15 +1026,25 @@ export default function GuidePage() {
                     a: (
                       <div>
                         <p className="text-gray-700 mb-2">
-                          레벨은 XP 100점 단위로 올라갑니다.
+                          레벨은 누적 포인트에 따라 결정됩니다.
                         </p>
+                        <p className="text-gray-700 mb-2 font-medium">
+                          레벨 기준:
+                        </p>
+                        <ul className="list-disc list-inside space-y-1 text-gray-700 mb-3">
+                          <li>L1: 0~199pt (입문자)</li>
+                          <li>L2: 200~499pt (초보자)</li>
+                          <li>L3: 500~999pt (중급자)</li>
+                          <li>L4: 1000~1999pt (고급자)</li>
+                          <li>L5: 2000pt 이상 (전문가)</li>
+                        </ul>
                         <p className="text-gray-700 mb-2 font-medium">
                           확인 사항:
                         </p>
                         <ul className="list-disc list-inside space-y-1 text-gray-700">
-                          <li>현재 XP가 100의 배수인가요?</li>
+                          <li>현재 누적 포인트를 확인하세요</li>
                           <li>대시보드의 진행률 바를 확인하세요</li>
-                          <li>다음 레벨까지 남은 XP를 확인하세요</li>
+                          <li>다음 레벨까지 남은 포인트를 확인하세요</li>
                         </ul>
                       </div>
                     ),
@@ -1099,7 +1081,9 @@ export default function GuidePage() {
                           <li>난이도가 높은 매물 선택 (중급, 고급)</li>
                           <li>권리분석을 정확히 하고 최적가에 입찰</li>
                           <li>수익률(ROI)이 높은 매물 선택</li>
-                          <li>낙찰 성공 (낙찰 실패 시 70% 감소)</li>
+                          <li>정답 적중(±3%) 또는 근접 적중(±5%)</li>
+                          <li>리스크 노트 제출(200자 이상)</li>
+                          <li>상위 20% 성과 달성</li>
                         </ul>
                       </div>
                     ),
