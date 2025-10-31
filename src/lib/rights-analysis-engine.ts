@@ -25,49 +25,179 @@ function getRightPriority(rightType: string): {
   isSecured: boolean; // 담보권 여부
   canBeAssumed: boolean; // 인수 가능 여부
   description: string;
-  riskLevel: 'high' | 'medium' | 'low'; // 리스크 레벨
+  riskLevel: "high" | "medium" | "low"; // 리스크 레벨
   claimRatio: number; // 감정가 대비 청구금액 비율
 } {
-  const priorityMap: Record<string, { basePriority: number; isSecured: boolean; canBeAssumed: boolean; description: string; riskLevel: 'high' | 'medium' | 'low'; claimRatio: number }> = {
+  const priorityMap: Record<
+    string,
+    {
+      basePriority: number;
+      isSecured: boolean;
+      canBeAssumed: boolean;
+      description: string;
+      riskLevel: "high" | "medium" | "low";
+      claimRatio: number;
+    }
+  > = {
     // 1. 채권담보권 (최고 우선순위)
-    "근저당권": { basePriority: 1, isSecured: true, canBeAssumed: true, description: "은행 등 금융기관의 담보권", riskLevel: 'high', claimRatio: 0.7 },
-    "저당권": { basePriority: 2, isSecured: true, canBeAssumed: true, description: "개인 또는 법인의 담보권", riskLevel: 'high', claimRatio: 0.6 },
+    근저당권: {
+      basePriority: 1,
+      isSecured: true,
+      canBeAssumed: true,
+      description: "은행 등 금융기관의 담보권",
+      riskLevel: "high",
+      claimRatio: 0.7,
+    },
+    저당권: {
+      basePriority: 2,
+      isSecured: true,
+      canBeAssumed: true,
+      description: "개인 또는 법인의 담보권",
+      riskLevel: "high",
+      claimRatio: 0.6,
+    },
 
     // 2. 강제집행권 (압류계)
-    "압류": { basePriority: 3, isSecured: false, canBeAssumed: true, description: "법원의 강제집행권", riskLevel: 'high', claimRatio: 0.5 },
-    "가압류": { basePriority: 4, isSecured: false, canBeAssumed: true, description: "미리 압류하는 권리", riskLevel: 'medium', claimRatio: 0.3 },
+    압류: {
+      basePriority: 3,
+      isSecured: false,
+      canBeAssumed: true,
+      description: "법원의 강제집행권",
+      riskLevel: "high",
+      claimRatio: 0.5,
+    },
+    가압류: {
+      basePriority: 4,
+      isSecured: false,
+      canBeAssumed: true,
+      description: "미리 압류하는 권리",
+      riskLevel: "medium",
+      claimRatio: 0.3,
+    },
 
     // 3. 등기권
-    "담보가등기": { basePriority: 5, isSecured: true, canBeAssumed: true, description: "담보를 위한 가등기", riskLevel: 'medium', claimRatio: 0.4 },
-    "소유권이전청구권가등기": { basePriority: 6, isSecured: false, canBeAssumed: true, description: "소유권 이전 청구권 가등기", riskLevel: 'high', claimRatio: 0.6 },
-    "가등기": { basePriority: 7, isSecured: false, canBeAssumed: false, description: "일반 가등기", riskLevel: 'low', claimRatio: 0.1 },
-    "예고등기": { basePriority: 8, isSecured: false, canBeAssumed: false, description: "소유권 보전을 위한 등기", riskLevel: 'low', claimRatio: 0.05 },
+    담보가등기: {
+      basePriority: 5,
+      isSecured: true,
+      canBeAssumed: true,
+      description: "담보를 위한 가등기",
+      riskLevel: "medium",
+      claimRatio: 0.4,
+    },
+    소유권이전청구권가등기: {
+      basePriority: 6,
+      isSecured: false,
+      canBeAssumed: true,
+      description: "소유권 이전 청구권 가등기",
+      riskLevel: "high",
+      claimRatio: 0.6,
+    },
+    가등기: {
+      basePriority: 7,
+      isSecured: false,
+      canBeAssumed: false,
+      description: "일반 가등기",
+      riskLevel: "low",
+      claimRatio: 0.1,
+    },
+    예고등기: {
+      basePriority: 8,
+      isSecured: false,
+      canBeAssumed: false,
+      description: "소유권 보전을 위한 등기",
+      riskLevel: "low",
+      claimRatio: 0.05,
+    },
 
     // 4. 임차권
-    "전세권": { basePriority: 9, isSecured: false, canBeAssumed: true, description: "전세권자 보호권", riskLevel: 'medium', claimRatio: 0.15 },
-    "주택임차권": { basePriority: 10, isSecured: false, canBeAssumed: true, description: "주택 임차권", riskLevel: 'medium', claimRatio: 0.1 },
-    "상가임차권": { basePriority: 11, isSecured: false, canBeAssumed: true, description: "상가 임차권", riskLevel: 'medium', claimRatio: 0.1 },
+    전세권: {
+      basePriority: 9,
+      isSecured: false,
+      canBeAssumed: true,
+      description: "전세권자 보호권",
+      riskLevel: "medium",
+      claimRatio: 0.15,
+    },
+    주택임차권: {
+      basePriority: 10,
+      isSecured: false,
+      canBeAssumed: true,
+      description: "주택 임차권",
+      riskLevel: "medium",
+      claimRatio: 0.1,
+    },
+    상가임차권: {
+      basePriority: 11,
+      isSecured: false,
+      canBeAssumed: true,
+      description: "상가 임차권",
+      riskLevel: "medium",
+      claimRatio: 0.1,
+    },
 
     // 5. 기타 권리
-    "가처분": { basePriority: 12, isSecured: false, canBeAssumed: true, description: "임시 처분권", riskLevel: 'medium', claimRatio: 0.2 },
-    "유치권": { basePriority: 13, isSecured: false, canBeAssumed: true, description: "점유자의 유치권", riskLevel: 'low', claimRatio: 0.1 },
-    "법정지상권": { basePriority: 14, isSecured: false, canBeAssumed: true, description: "법적으로 인정되는 지상권", riskLevel: 'low', claimRatio: 0.1 },
-    "분묘기지권": { basePriority: 15, isSecured: false, canBeAssumed: true, description: "분묘 보호권", riskLevel: 'low', claimRatio: 0.05 },
+    가처분: {
+      basePriority: 12,
+      isSecured: false,
+      canBeAssumed: true,
+      description: "임시 처분권",
+      riskLevel: "medium",
+      claimRatio: 0.2,
+    },
+    유치권: {
+      basePriority: 13,
+      isSecured: false,
+      canBeAssumed: true,
+      description: "점유자의 유치권",
+      riskLevel: "low",
+      claimRatio: 0.1,
+    },
+    법정지상권: {
+      basePriority: 14,
+      isSecured: false,
+      canBeAssumed: true,
+      description: "법적으로 인정되는 지상권",
+      riskLevel: "low",
+      claimRatio: 0.1,
+    },
+    분묘기지권: {
+      basePriority: 15,
+      isSecured: false,
+      canBeAssumed: true,
+      description: "분묘 보호권",
+      riskLevel: "low",
+      claimRatio: 0.05,
+    },
   };
 
-  return priorityMap[rightType] || { basePriority: 99, isSecured: false, canBeAssumed: false, description: "알 수 없는 권리", riskLevel: 'low', claimRatio: 0.1 };
+  return (
+    priorityMap[rightType] || {
+      basePriority: 99,
+      isSecured: false,
+      canBeAssumed: false,
+      description: "알 수 없는 권리",
+      riskLevel: "low",
+      claimRatio: 0.1,
+    }
+  );
 }
 
 /**
  * 권리유형별 청구금액을 동적으로 계산합니다.
  * 매물 유형과 권리 특성에 따라 변동됩니다.
  */
-function calculateRightClaimAmount(right: RightRecord, propertyValue: number, propertyType?: string): number {
+function calculateRightClaimAmount(
+  right: RightRecord,
+  propertyValue: number,
+  propertyType?: string
+): number {
   const { rightType, claimAmount } = right;
 
   // 이미 청구금액이 설정되어 있는 경우 그대로 사용
   if (claimAmount > 0) {
-    console.log(`💰 [권리분석] ${rightType} 고정 청구금액: ${claimAmount.toLocaleString()}원`);
+    console.log(
+      `💰 [권리분석] ${rightType} 고정 청구금액: ${claimAmount.toLocaleString()}원`
+    );
     return claimAmount;
   }
 
@@ -77,39 +207,43 @@ function calculateRightClaimAmount(right: RightRecord, propertyValue: number, pr
 
   // 매물 유형별 가중치 적용
   const propertyMultipliers: Record<string, number> = {
-    '아파트': 1.0,      // 표준
-    '오피스텔': 0.9,    // 상대적으로 낮음
-    '단독주택': 0.8,    // 상대적으로 낮음
-    '빌라': 0.9,        // 상대적으로 낮음
-    '원룸': 0.85,
-    '주택': 0.9,
-    '다가구주택': 1.0,
-    '근린주택': 1.1,
-    '도시형생활주택': 0.9,
-    '토지': 1.1,        // 상대적으로 높음
+    아파트: 1.0, // 표준
+    오피스텔: 0.9, // 상대적으로 낮음
+    단독주택: 0.8, // 상대적으로 낮음
+    빌라: 0.9, // 상대적으로 낮음
+    원룸: 0.85,
+    주택: 0.9,
+    다가구주택: 1.0,
+    근린주택: 1.1,
+    도시형생활주택: 0.9,
+    토지: 1.1, // 상대적으로 높음
   };
 
-  const multiplier = propertyMultipliers[propertyType || '아파트'] || 1.0;
+  const multiplier = propertyMultipliers[propertyType || "아파트"] || 1.0;
   const adjustedRatio = baseRatio * multiplier;
 
   // 권리 유형별 추가 조정
   let finalRatio = adjustedRatio;
-  
-  if (rightType === '근저당권' || rightType === '저당권') {
+
+  if (rightType === "근저당권" || rightType === "저당권") {
     // 담보권은 감정가의 60-80% 범위에서 변동
     finalRatio = Math.min(Math.max(adjustedRatio, 0.6), 0.8);
-  } else if (rightType === '압류' || rightType === '가압류') {
+  } else if (rightType === "압류" || rightType === "가압류") {
     // 압류권은 감정가의 30-60% 범위에서 변동
     finalRatio = Math.min(Math.max(adjustedRatio, 0.3), 0.6);
-  } else if (rightType.includes('임차권') || rightType === '전세권') {
+  } else if (rightType.includes("임차권") || rightType === "전세권") {
     // 임차권은 감정가의 5-20% 범위에서 변동
     finalRatio = Math.min(Math.max(adjustedRatio, 0.05), 0.2);
   }
 
   const calculatedAmount = Math.floor(propertyValue * finalRatio);
-  
-  console.log(`💰 [권리분석] ${rightType} 동적 계산: ${calculatedAmount.toLocaleString()}원 (비율: ${(finalRatio * 100).toFixed(1)}%, 매물: ${propertyType || '아파트'})`);
-  
+
+  console.log(
+    `💰 [권리분석] ${rightType} 동적 계산: ${calculatedAmount.toLocaleString()}원 (비율: ${(
+      finalRatio * 100
+    ).toFixed(1)}%, 매물: ${propertyType || "아파트"})`
+  );
+
   return calculatedAmount;
 }
 
@@ -143,9 +277,9 @@ export function determineMalsoBaseRight(
     const isEligible = right.registrationDate <= dividendDeadline;
     const priorityInfo = getRightPriority(right.rightType);
     console.log(
-      `  - ${right.rightType} (${right.registrationDate}, 우선순위: ${priorityInfo.basePriority}): ${
-        isEligible ? "적격" : "부적격"
-      }`
+      `  - ${right.rightType} (${right.registrationDate}, 우선순위: ${
+        priorityInfo.basePriority
+      }): ${isEligible ? "적격" : "부적격"}`
     );
     return isEligible;
   });
@@ -181,9 +315,13 @@ export function determineMalsoBaseRight(
     `  ✅ 말소기준권리 결정: ${malsoBaseRight.rightType} (${malsoBaseRight.registrationDate})`
   );
   console.log(
-    `     권리자: ${malsoBaseRight.rightHolder}, 청구금액: ${malsoBaseRight.claimAmount.toLocaleString()}원`
+    `     권리자: ${
+      malsoBaseRight.rightHolder
+    }, 청구금액: ${malsoBaseRight.claimAmount.toLocaleString()}원`
   );
-  console.log(`     우선순위: ${priorityInfo.basePriority}, 설명: ${priorityInfo.description}`);
+  console.log(
+    `     우선순위: ${priorityInfo.basePriority}, 설명: ${priorityInfo.description}`
+  );
 
   return malsoBaseRight;
 }
@@ -226,16 +364,25 @@ export function determineRightStatus(
       rightPriority.basePriority < malsoPriority.basePriority ||
       (rightPriority.basePriority === malsoPriority.basePriority &&
         (right.registrationDate < malsoBaseRight.registrationDate ||
-         (right.registrationDate === malsoBaseRight.registrationDate &&
-          (right.priority || 0) < (malsoBaseRight.priority || 0))));
+          (right.registrationDate === malsoBaseRight.registrationDate &&
+            (right.priority || 0) < (malsoBaseRight.priority || 0))));
 
     // 권리유형별 인수 가능 여부와 말소기준권리 여부를 고려
     const willBeAssumed = isPriorToMalsoBase && rightPriority.canBeAssumed;
-    const willBeExtinguished = !isPriorToMalsoBase && !isMalsoBase && rightPriority.canBeAssumed;
+    const willBeExtinguished =
+      !isPriorToMalsoBase && !isMalsoBase && rightPriority.canBeAssumed;
 
     console.log(
-      `  - ${right.rightType} (우선순위: ${rightPriority.basePriority}, ${right.registrationDate}): ${
-        isMalsoBase ? "말소기준권리" : willBeAssumed ? "인수" : willBeExtinguished ? "소멸" : "유지"
+      `  - ${right.rightType} (우선순위: ${rightPriority.basePriority}, ${
+        right.registrationDate
+      }): ${
+        isMalsoBase
+          ? "말소기준권리"
+          : willBeAssumed
+          ? "인수"
+          : willBeExtinguished
+          ? "소멸"
+          : "유지"
       }`
     );
 
@@ -313,12 +460,15 @@ export function determineTenantDaehangryeok(
 
     console.log(
       `  - ${tenant.tenantName} (전입: ${tenant.moveInDate}, 확정: ${
-        tenant.confirmationDate || "없음"}, 보증금: ${tenant.deposit.toLocaleString()}원)`
+        tenant.confirmationDate || "없음"
+      }, 보증금: ${tenant.deposit.toLocaleString()}원)`
     );
     console.log(
       `    대항력: ${hasDaehangryeok ? "있음" : "없음"}, 소액임차인: ${
         isSmallTenant ? "예" : "아니오"
-      }, 인수: ${willBeAssumed ? "예" : "아니오"}, 우선변제금액: ${priorityPaymentAmount.toLocaleString()}원`
+      }, 인수: ${
+        willBeAssumed ? "예" : "아니오"
+      }, 우선변제금액: ${priorityPaymentAmount.toLocaleString()}원`
     );
 
     return {
@@ -349,31 +499,50 @@ export function calculateSafetyMargin(
   propertyType?: string
 ): number {
   console.log("🔍 [권리분석 엔진] 안전 마진 계산 시작");
-  console.log(`  - 매물 유형: ${propertyType || '아파트'}`);
+  console.log(`  - 매물 유형: ${propertyType || "아파트"}`);
   console.log(`  - 감정가: ${propertyValue.toLocaleString()}원`);
 
   // 인수해야 할 권리 총액 (청구금액이 없는 경우 자동 계산)
   const assumedRights = rights.filter((right) => right.willBeAssumed);
   const totalAssumedRights = assumedRights.reduce((sum, right) => {
-    const claimAmount = right.claimAmount > 0 ? right.claimAmount : calculateRightClaimAmount(right, propertyValue, propertyType);
+    const claimAmount =
+      right.claimAmount > 0
+        ? right.claimAmount
+        : calculateRightClaimAmount(right, propertyValue, propertyType);
     const rightInfo = getRightPriority(right.rightType);
-    console.log(`    - ${right.rightType} (${rightInfo.riskLevel}): ${claimAmount.toLocaleString()}원`);
+    console.log(
+      `    - ${right.rightType} (${
+        rightInfo.riskLevel
+      }): ${claimAmount.toLocaleString()}원`
+    );
     return sum + claimAmount;
   }, 0);
 
-  console.log(`  - 인수 권리 총액: ${totalAssumedRights.toLocaleString()}원 (${assumedRights.length}개 권리)`);
+  console.log(
+    `  - 인수 권리 총액: ${totalAssumedRights.toLocaleString()}원 (${
+      assumedRights.length
+    }개 권리)`
+  );
 
   // 인수해야 할 임차보증금 총액
   const assumedTenants = tenants.filter((tenant) => tenant.willBeAssumed);
   const totalTenantDeposit = assumedTenants.reduce((sum, tenant) => {
     // 소액임차인은 우선변제금액만 계산
-    const tenantAmount = tenant.isSmallTenant ? tenant.priorityPaymentAmount : tenant.deposit;
-    console.log(`    - ${tenant.tenantName}: ${tenantAmount.toLocaleString()}원 (${tenant.isSmallTenant ? '우선변제' : '전액'})`);
+    const tenantAmount = tenant.isSmallTenant
+      ? tenant.priorityPaymentAmount
+      : tenant.deposit;
+    console.log(
+      `    - ${tenant.tenantName}: ${tenantAmount.toLocaleString()}원 (${
+        tenant.isSmallTenant ? "우선변제" : "전액"
+      })`
+    );
     return sum + tenantAmount;
   }, 0);
 
   console.log(
-    `  - 인수 임차보증금 총액: ${totalTenantDeposit.toLocaleString()}원 (${assumedTenants.length}명 임차인)`
+    `  - 인수 임차보증금 총액: ${totalTenantDeposit.toLocaleString()}원 (${
+      assumedTenants.length
+    }명 임차인)`
   );
 
   const safetyMargin = totalAssumedRights + totalTenantDeposit;
@@ -400,7 +569,9 @@ export function analyzeRights(
   console.log(`  - 사건번호: ${scenario.basicInfo.caseNumber}`);
   console.log(`  - 권리 개수: ${scenario.rights.length}`);
   console.log(`  - 임차인 개수: ${scenario.tenants.length}`);
-  console.log(`  - 감정가: ${scenario.basicInfo.appraisalValue.toLocaleString()}원`);
+  console.log(
+    `  - 감정가: ${scenario.basicInfo.appraisalValue.toLocaleString()}원`
+  );
 
   const { schedule, rights, tenants, basicInfo, propertyDetails } = scenario;
 
@@ -410,7 +581,9 @@ export function analyzeRights(
     rights,
     schedule.dividendDeadline
   );
-  console.log(`✅ [권리분석 엔진] 말소기준권리: ${malsoBaseRight?.rightType || "없음"}`);
+  console.log(
+    `✅ [권리분석 엔진] 말소기준권리: ${malsoBaseRight?.rightType || "없음"}`
+  );
 
   // 2. 권리 인수/소멸 판단
   console.log("🔍 [권리분석 엔진] 2단계: 권리 인수/소멸 판단 시작");
@@ -424,13 +597,15 @@ export function analyzeRights(
     malsoBaseRight,
     schedule.dividendDeadline
   );
-  console.log(`✅ [권리분석 엔진] 임차인 분석 완료: ${analyzedTenants.length}명`);
+  console.log(
+    `✅ [권리분석 엔진] 임차인 분석 완료: ${analyzedTenants.length}명`
+  );
 
   // 4. 인수 권리 및 임차인 필터링
   const assumedRights = analyzedRights.filter((r) => r.willBeAssumed);
   const extinguishedRights = analyzedRights.filter((r) => r.willBeExtinguished);
   const assumedTenants = analyzedTenants.filter((t) => t.willBeAssumed);
-  
+
   console.log("🔍 [권리분석 엔진] 필터링 결과:");
   console.log(`  - 분석된 권리: ${analyzedRights.length}개`);
   console.log(`  - 인수 권리: ${assumedRights.length}개`);
@@ -439,24 +614,49 @@ export function analyzeRights(
   console.log(`  - 인수 임차인: ${assumedTenants.length}명`);
 
   // 5. 총액 계산
-  const propertyType = propertyDetails?.usage || '아파트';
+  const propertyType = propertyDetails?.usage || "아파트";
+
+  // 💰 [총 인수금액 계산] 인수해야 할 권리 총액만 계산 (임차보증금 제외)
   let totalAssumedAmount = assumedRights.reduce(
-    (sum, r) => sum + (r.claimAmount > 0 ? r.claimAmount : calculateRightClaimAmount(r, basicInfo.appraisalValue, propertyType)),
+    (sum, r) =>
+      sum +
+      (r.claimAmount > 0
+        ? r.claimAmount
+        : calculateRightClaimAmount(r, basicInfo.appraisalValue, propertyType)),
     0
   );
+
+  // 💰 [임차보증금 계산] 인수해야 할 임차보증금 총액 계산
   const totalTenantDeposit = assumedTenants.reduce(
     (sum, t) => sum + (t.isSmallTenant ? t.priorityPaymentAmount : t.deposit),
     0
   );
 
+  console.log("💰 [권리분석 엔진] 총액 계산 시작");
+  console.log(`  - 인수 권리 개수: ${assumedRights.length}개`);
+  console.log(`  - 인수 임차인 개수: ${assumedTenants.length}명`);
+  console.log(
+    `  - 초기 총 인수금액(권리만): ${totalAssumedAmount.toLocaleString()}원`
+  );
+  console.log(`  - 임차보증금 총액: ${totalTenantDeposit.toLocaleString()}원`);
+
   // 총 인수금액(권리) 보수적 추정치 적용: 0원일 때 canBeAssumed 권리를 기준으로 동적 청구액 합산
   if (totalAssumedAmount === 0) {
-    console.log("⚠️ [권리분석 엔진] 총 인수금액(권리)이 0원 → 추정치 산출 로직 적용");
-    const fallbackRightsForAssume = rights.filter((r) => getRightPriority(r.rightType).canBeAssumed);
+    console.log(
+      "⚠️ [권리분석 엔진] 총 인수금액(권리)이 0원 → 추정치 산출 로직 적용"
+    );
+    const fallbackRightsForAssume = rights.filter(
+      (r) => getRightPriority(r.rightType).canBeAssumed
+    );
     const estimatedAssumedAmount = fallbackRightsForAssume.reduce((sum, r) => {
-      const amount = r.claimAmount > 0
-        ? r.claimAmount
-        : calculateRightClaimAmount(r, basicInfo.appraisalValue, propertyType);
+      const amount =
+        r.claimAmount > 0
+          ? r.claimAmount
+          : calculateRightClaimAmount(
+              r,
+              basicInfo.appraisalValue,
+              propertyType
+            );
       return sum + amount;
     }, 0);
     if (estimatedAssumedAmount > 0) {
@@ -466,19 +666,61 @@ export function analyzeRights(
       });
     }
   }
-  let safetyMargin = calculateSafetyMargin(analyzedRights, analyzedTenants, basicInfo.appraisalValue, propertyType);
+
+  // 💰 [안전마진 계산] 권리 총액 + 임차보증금 총액
+  let safetyMargin = calculateSafetyMargin(
+    analyzedRights,
+    analyzedTenants,
+    basicInfo.appraisalValue,
+    propertyType
+  );
+
+  console.log("💰 [권리분석 엔진] 안전마진 계산 결과");
+  console.log(
+    `  - 총 인수금액(권리만): ${totalAssumedAmount.toLocaleString()}원`
+  );
+  console.log(`  - 임차보증금 총액: ${totalTenantDeposit.toLocaleString()}원`);
+  console.log(`  - 계산된 안전마진: ${safetyMargin.toLocaleString()}원`);
+  console.log(
+    `  - 안전마진 검증: ${totalAssumedAmount.toLocaleString()}원 + ${totalTenantDeposit.toLocaleString()}원 = ${(
+      totalAssumedAmount + totalTenantDeposit
+    ).toLocaleString()}원`
+  );
+
+  // 안전마진 검증: totalAssumedAmount + totalTenantDeposit과 safetyMargin이 일치하는지 확인
+  const expectedSafetyMargin = totalAssumedAmount + totalTenantDeposit;
+  if (Math.abs(safetyMargin - expectedSafetyMargin) > 1) {
+    console.warn(
+      `⚠️ [권리분석 엔진] 안전마진 불일치 감지! 계산된 값: ${safetyMargin.toLocaleString()}원, 예상 값: ${expectedSafetyMargin.toLocaleString()}원`
+    );
+    console.warn(
+      `  - 차이: ${Math.abs(
+        safetyMargin - expectedSafetyMargin
+      ).toLocaleString()}원`
+    );
+    // 계산 방식이 다를 수 있으므로 calculateSafetyMargin의 결과를 신뢰하되, 로그를 남김
+  }
 
   // 방어 로직: 안전마진/인수금액이 0으로 산출될 경우 보수적 대체 계산 적용
   if (safetyMargin === 0) {
-    console.log("⚠️ [권리분석 엔진] 안전마진이 0원으로 계산되어 대체 계산을 적용합니다.");
+    console.log(
+      "⚠️ [권리분석 엔진] 안전마진이 0원으로 계산되어 대체 계산을 적용합니다."
+    );
 
     // 1) 권리 보수적 합: 말소기준권리 판단 실패 또는 인수 판단 실패 시에도
     //    인수 가능성이 높은 권리(canBeAssumed=true)를 대상으로 동적 청구액을 합산
-    const fallbackRights = rights.filter((r) => getRightPriority(r.rightType).canBeAssumed);
+    const fallbackRights = rights.filter(
+      (r) => getRightPriority(r.rightType).canBeAssumed
+    );
     const fallbackAssumedAmount = fallbackRights.reduce((sum, r) => {
-      const amount = r.claimAmount > 0
-        ? r.claimAmount
-        : calculateRightClaimAmount(r, basicInfo.appraisalValue, propertyType);
+      const amount =
+        r.claimAmount > 0
+          ? r.claimAmount
+          : calculateRightClaimAmount(
+              r,
+              basicInfo.appraisalValue,
+              propertyType
+            );
       return sum + amount;
     }, 0);
 
@@ -502,10 +744,11 @@ export function analyzeRights(
     }
   }
 
-  // 6. 권장 입찰가 범위 계산
+  // 6. 권장 입찰가 범위 계산 (총인수금액과 안전마진 기준)
   const recommendedBidRange = calculateRecommendedBidRange(
     basicInfo,
-    safetyMargin
+    safetyMargin,
+    totalAssumedAmount
   );
 
   // 7. 리스크 분석
@@ -516,11 +759,25 @@ export function analyzeRights(
   console.log(`  - 인수권리 개수: ${assumedRights.length}개`);
   console.log(`  - 소멸권리 개수: ${extinguishedRights.length}개`);
   console.log(`  - 인수임차인 개수: ${assumedTenants.length}명`);
-  console.log(`  - 인수권리 총액: ${totalAssumedAmount.toLocaleString()}원`);
-  console.log(`  - 인수임차보증금 총액: ${totalTenantDeposit.toLocaleString()}원`);
-  console.log(`  - 최종 안전마진: ${safetyMargin.toLocaleString()}원`);
-  console.log(`  - 안전마진 비율: ${((safetyMargin / basicInfo.appraisalValue) * 100).toFixed(1)}%`);
-  console.log(`  - 리스크 레벨: ${riskAnalysis.overallRiskLevel} (${riskAnalysis.riskScore}/100)`);
+  console.log(
+    `  - 총 인수금액(권리만): ${totalAssumedAmount.toLocaleString()}원`
+  );
+  console.log(`  - 임차보증금 총액: ${totalTenantDeposit.toLocaleString()}원`);
+  console.log(
+    `  - 최종 안전마진(권리+임차보증금): ${safetyMargin.toLocaleString()}원`
+  );
+  console.log(
+    `  - 안전마진 구성: 권리 ${totalAssumedAmount.toLocaleString()}원 + 임차보증금 ${totalTenantDeposit.toLocaleString()}원`
+  );
+  console.log(
+    `  - 안전마진 비율: ${(
+      (safetyMargin / basicInfo.appraisalValue) *
+      100
+    ).toFixed(1)}%`
+  );
+  console.log(
+    `  - 리스크 레벨: ${riskAnalysis.overallRiskLevel} (${riskAnalysis.riskScore}/100)`
+  );
 
   return {
     malsoBaseRight,
@@ -542,8 +799,11 @@ export function analyzeRights(
 /**
  * 권리들의 리스크를 분석합니다.
  */
-function analyzeRightsRisk(rights: RightRecord[], propertyType: string): {
-  overallRiskLevel: 'high' | 'medium' | 'low';
+function analyzeRightsRisk(
+  rights: RightRecord[],
+  propertyType: string
+): {
+  overallRiskLevel: "high" | "medium" | "low";
   riskScore: number;
   riskFactors: string[];
   recommendations: string[];
@@ -567,9 +827,9 @@ function analyzeRightsRisk(rights: RightRecord[], propertyType: string): {
   }
 
   // 고위험 권리 분석
-  const highRiskRights = rights.filter(r => {
+  const highRiskRights = rights.filter((r) => {
     const info = getRightPriority(r.rightType);
-    return info.riskLevel === 'high';
+    return info.riskLevel === "high";
   });
 
   if (highRiskRights.length > 0) {
@@ -579,7 +839,7 @@ function analyzeRightsRisk(rights: RightRecord[], propertyType: string): {
   }
 
   // 담보권 분석
-  const securedRights = rights.filter(r => {
+  const securedRights = rights.filter((r) => {
     const info = getRightPriority(r.rightType);
     return info.isSecured;
   });
@@ -592,31 +852,31 @@ function analyzeRightsRisk(rights: RightRecord[], propertyType: string): {
 
   // 매물 유형별 리스크 조정
   const propertyRiskMultipliers: Record<string, number> = {
-    '아파트': 1.0,
-    '오피스텔': 1.2,
-    '단독주택': 0.8,
-    '빌라': 1.1,
-    '원룸': 1.0,
-    '주택': 1.0,
-    '다가구주택': 1.2,
-    '근린주택': 1.3,
-    '도시형생활주택': 1.1,
-    '토지': 1.3,
+    아파트: 1.0,
+    오피스텔: 1.2,
+    단독주택: 0.8,
+    빌라: 1.1,
+    원룸: 1.0,
+    주택: 1.0,
+    다가구주택: 1.2,
+    근린주택: 1.3,
+    도시형생활주택: 1.1,
+    토지: 1.3,
   };
 
   const multiplier = propertyRiskMultipliers[propertyType] || 1.0;
   riskScore = Math.round(riskScore * multiplier);
 
   // 리스크 레벨 결정
-  let overallRiskLevel: 'high' | 'medium' | 'low';
+  let overallRiskLevel: "high" | "medium" | "low";
   if (riskScore >= 70) {
-    overallRiskLevel = 'high';
+    overallRiskLevel = "high";
     recommendations.push("매우 신중한 검토가 필요합니다");
   } else if (riskScore >= 40) {
-    overallRiskLevel = 'medium';
+    overallRiskLevel = "medium";
     recommendations.push("주의 깊은 검토가 필요합니다");
   } else {
-    overallRiskLevel = 'low';
+    overallRiskLevel = "low";
     recommendations.push("상대적으로 안전한 매물입니다");
   }
 
@@ -638,43 +898,63 @@ function analyzeRightsRisk(rights: RightRecord[], propertyType: string): {
 
 /**
  * 권장 입찰가 범위를 계산합니다.
+ * 총 인수금액(권리)과 안전마진(권리+임차보증금) 기준으로 계산합니다.
  *
  * @param basicInfo 기본 정보
  * @param safetyMargin 안전 마진
+ * @param totalAssumedAmount 총 인수금액(권리만)
  * @returns 권장 입찰가 범위
  */
 function calculateRecommendedBidRange(
   basicInfo: CaseBasicInfo,
-  safetyMargin: number
+  safetyMargin: number,
+  totalAssumedAmount: number
 ): { min: number; max: number; optimal: number } {
-  console.log("🔍 [권리분석 엔진] 권장 입찰가 범위 계산");
+  console.log(
+    "🔍 [권리분석 엔진] 권장 입찰가 범위 계산 (총인수금액/안전마진 기준)"
+  );
 
   const { minimumBidPrice, appraisalValue } = basicInfo;
 
-  // 최소 입찰가: 최저가 (안전 마진은 별도로 고려)
-  const min = minimumBidPrice;
+  // 권장 최소 입찰가: 최저가 + 총 인수금액(권리)
+  const min = Math.round(minimumBidPrice + totalAssumedAmount);
 
-  // 최대 입찰가: 감정가의 80% (일반적인 시세)
-  const max = Math.round(appraisalValue * 0.8);
+  // 권장 최대 입찰가: 최저가 + 안전마진 * 2.0 (일반적인 경매 권장 범위)
+  // 또는 감정가의 80% 중 작은 값 사용
+  const maxBasedOnSafetyMargin = Math.round(
+    minimumBidPrice + safetyMargin * 2.0
+  );
+  const maxBasedOnAppraisal = Math.round(appraisalValue * 0.8);
+  const max = Math.min(maxBasedOnSafetyMargin, maxBasedOnAppraisal);
 
-  // 최적 입찰가: 안전 마진을 고려하여 계산
-  // 안전 마진이 크면 최저가에 가까운 값, 작으면 중간 값
+  // 최적 입찰가: 권장 범위의 중간값 (안전마진 비율 고려)
   const marginRatio = safetyMargin / appraisalValue;
   let optimal: number;
 
   if (marginRatio > 0.3) {
-    // 안전 마진이 크면 최저가에 가까운 값
-    optimal = Math.round(min + (max - min) * 0.2);
+    // 안전 마진이 크면 최소에 가까운 값 (총인수금액이 크므로 보수적으로)
+    optimal = Math.round(min + (max - min) * 0.3);
   } else if (marginRatio > 0.1) {
     // 중간 수준이면 중간 값
     optimal = Math.round((min + max) / 2);
   } else {
-    // 안전 마진이 작으면 감정가에 가까운 값
-    optimal = Math.round(min + (max - min) * 0.8);
+    // 안전 마진이 작으면 최대에 가까운 값
+    optimal = Math.round(min + (max - min) * 0.7);
   }
 
-  console.log(`  - 최소 입찰가: ${min.toLocaleString()}원`);
-  console.log(`  - 최대 입찰가: ${max.toLocaleString()}원`);
+  console.log(`  - 최저가: ${minimumBidPrice.toLocaleString()}원`);
+  console.log(
+    `  - 총 인수금액(권리): ${totalAssumedAmount.toLocaleString()}원`
+  );
+  console.log(
+    `  - 안전마진(권리+임차보증금): ${safetyMargin.toLocaleString()}원`
+  );
+  console.log(
+    `  - 권장 최소 입찰가 (최저가 + 총인수금액): ${min.toLocaleString()}원`
+  );
+  console.log(
+    `  - 권장 최대 입찰가 (최저가 + 안전마진*2.0): ${max.toLocaleString()}원`
+  );
   console.log(`  - 최적 입찰가: ${optimal.toLocaleString()}원`);
   console.log(`  - 안전 마진 비율: ${(marginRatio * 100).toFixed(1)}%`);
 

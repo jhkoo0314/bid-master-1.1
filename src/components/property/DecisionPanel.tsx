@@ -30,28 +30,12 @@ export default function DecisionPanel({
   const min = new Intl.NumberFormat("ko-KR").format(recommendedRange.min);
   const max = new Intl.NumberFormat("ko-KR").format(recommendedRange.max);
 
-  const onOpenFormula = () => {
-    console.log(
-      `📊 [사용자 액션] 산식 버튼 클릭: range_min=${recommendedRange.min}, range_max=${recommendedRange.max}`
-    );
-    alert(
-      "산식: 최저가 × 가중치 - 인수비용 (자세한 설명은 정식 서비스에서 제공됩니다)"
-    );
-  };
-
   return (
     <div className="rounded-2xl shadow-sm border border-black/10 bg-white p-5">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center">
         <h3 className="text-base font-semibold text-[#0B1220]">
           낙찰가 가이드
         </h3>
-        <button
-          type="button"
-          onClick={onOpenFormula}
-          className="text-xs rounded-full border border-black/20 px-3 py-1 hover:bg-gray-50"
-        >
-          산식 보기
-        </button>
       </div>
       <p className="mt-2 text-sm text-[#0B1220] tabular-nums">
         권장 입찰가 범위:{" "}

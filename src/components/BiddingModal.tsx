@@ -12,7 +12,12 @@ import { AuctionAnalysisModal } from "./AuctionAnalysisModal";
 import { calculatePoints, calculateAccuracy } from "@/lib/point-calculator";
 import { analyzeRights } from "@/lib/rights-analysis-engine";
 import { useSimulationStore } from "@/store/simulation-store";
-import { CourtDocumentModal } from "./property/CourtDocumentModal";
+import {
+  calcAcquisitionAndMoS,
+  calcTaxes,
+  mapPropertyTypeToUse,
+  type TaxInput,
+} from "@/lib/auction-cost";
 import { mapSimulationToPropertyDetail } from "@/lib/property/formatters";
 import { SaleSpecificationModal } from "./property/CourtDocumentModal";
 import RightsAnalysisReportModal from "./property/RightsAnalysisReportModal";
@@ -306,17 +311,99 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
       const recommendedRange = rightsAnalysisResult.recommendedBidRange;
       const totalAssumedAmount = rightsAnalysisResult.totalAssumedAmount;
       const safetyMargin = rightsAnalysisResult.safetyMargin;
+      const totalTenantDeposit = rightsAnalysisResult.totalTenantDeposit;
+
+      console.log("💰 [입찰결과] 권리분석 결과 추출");
+      console.log(
+        `  - 총 인수금액(권리만): ${totalAssumedAmount.toLocaleString()}원`
+      );
+      console.log(
+        `  - 임차보증금 총액: ${totalTenantDeposit.toLocaleString()}원`
+      );
+      console.log(
+        `  - 안전마진(권리+임차보증금): ${safetyMargin.toLocaleString()}원`
+      );
+      console.log(
+        `  - 검증: 총 인수금액 + 임차보증금 = ${(
+          totalAssumedAmount + totalTenantDeposit
+        ).toLocaleString()}원`
+      );
+
+      if (
+        Math.abs(safetyMargin - (totalAssumedAmount + totalTenantDeposit)) > 1
+      ) {
+        console.warn(
+          `⚠️ [입찰결과] 안전마진 불일치! 계산된 안전마진: ${safetyMargin.toLocaleString()}원, 예상 값: ${(
+            totalAssumedAmount + totalTenantDeposit
+          ).toLocaleString()}원`
+        );
+      }
 
       // recommendedRange가 undefined인 경우 기본값 제공
       if (!recommendedRange) {
         console.log("⚠️ [입찰결과] 권장 범위가 없어 기본값 사용");
       }
 
-      // ROI 계산 (간단한 버전) - 임시 변수로 계산
-      const tempTotalInvestment = winningBid + safetyMargin + 5000000; // 명도비용 500만원 추가
-      const expectedProfit =
-        property.basicInfo.marketValue - tempTotalInvestment;
-      const tempRoi = (expectedProfit / tempTotalInvestment) * 100;
+      // 총인수금액 계산 (세금 포함)
+      const propertyType =
+        property.propertyDetails?.usage ||
+        property.basicInfo.propertyType ||
+        "아파트";
+      const propertyUse = mapPropertyTypeToUse(propertyType);
+
+      console.log("💰 [입찰결과] 총인수금액 계산 시작");
+      console.log(`  - 매물 유형: ${propertyType}`);
+      console.log(`  - 세금 용도: ${propertyUse}`);
+
+      // 세금 계산 입력 준비
+      const taxInput: TaxInput = {
+        use: propertyUse,
+        price: winningBid,
+      };
+
+      // 총인수금액 계산: A = B(입찰가) + R(인수권리) + T(세금) + C(수리비) + E(명도비) + K(보유비) + U(예비비)
+      const capex = 5000000; // 수리비 (예시: 500만원)
+      const eviction = 2000000; // 명도비 (예시: 200만원)
+      const carrying = 0; // 보유비 (보유 기간 없음)
+      const contingency = 1000000; // 예비비 (예시: 100만원)
+
+      // marketValue가 없는 경우 appraisalValue를 기본값으로 사용
+      const marketValue =
+        property.basicInfo.marketValue ??
+        property.basicInfo.appraisalValue ??
+        0;
+      if (!property.basicInfo.marketValue) {
+        console.warn(
+          "⚠️ [입찰결과] marketValue가 없어 appraisalValue를 사용합니다."
+        );
+      }
+
+      const acquisitionResult = calcAcquisitionAndMoS({
+        bidPrice: winningBid,
+        rights: totalAssumedAmount + totalTenantDeposit, // R: 인수권리 + 임차보증금
+        capex,
+        eviction,
+        carrying,
+        contingency,
+        marketValue,
+        taxInput,
+      });
+
+      const tempTotalInvestment = acquisitionResult.totalAcquisition;
+      const expectedProfit = marketValue - tempTotalInvestment;
+      const tempRoi =
+        marketValue > 0 ? (expectedProfit / tempTotalInvestment) * 100 : 0;
+
+      console.log("💰 [입찰결과] 총인수금액 계산 완료:");
+      console.log(`  - 총인수금액: ${tempTotalInvestment.toLocaleString()}원`);
+      console.log(
+        `  - 세금 및 수수료: ${acquisitionResult.tax.totalTaxesAndFees.toLocaleString()}원`
+      );
+      console.log(
+        `  - 안전마진: ${acquisitionResult.marginAmount.toLocaleString()}원 (${(
+          acquisitionResult.marginRate * 100
+        ).toFixed(2)}%)`
+      );
 
       // 포인트 계산
       console.log("⭐ [입찰결과] 포인트 계산 시작");
@@ -327,8 +414,6 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
         isSuccess: isUserWinner,
         roi: tempRoi,
         rightsAnalysisResult: {
-          totalAssumedAmount: rightsAnalysisResult.totalAssumedAmount,
-          safetyMargin: rightsAnalysisResult.safetyMargin,
           recommendedRange: recommendedRange || {
             min: property.basicInfo.minimumBidPrice,
             max: property.basicInfo.appraisalValue * 0.8,
@@ -402,16 +487,20 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
         )
       );
 
-      // 수익모델 분석 (권리유형 13가지 반영)
-      const totalInvestment =
-        winningBid +
-        rightsAnalysisResult.totalAssumedAmount +
-        rightsAnalysisResult.totalTenantDeposit;
-      const netProfit = property.basicInfo.appraisalValue - totalInvestment;
-      const roi = (netProfit / totalInvestment) * 100;
+      // 수익모델 분석 (권리유형 13가지 반영, 세금 포함)
+      // 이미 위에서 계산한 acquisitionResult 사용
+      const totalInvestment = acquisitionResult.totalAcquisition;
+      const netProfit = marketValue - totalInvestment;
+      const roi = marketValue > 0 ? (netProfit / totalInvestment) * 100 : 0;
       const breakEvenPrice = totalInvestment;
       const profitMargin =
-        (netProfit / property.basicInfo.appraisalValue) * 100;
+        marketValue > 0 ? (netProfit / marketValue) * 100 : 0;
+
+      console.log("💰 [입찰결과] 수익모델 분석:");
+      console.log(`  - 총 투자금액: ${totalInvestment.toLocaleString()}원`);
+      console.log(`  - 순수익: ${netProfit.toLocaleString()}원`);
+      console.log(`  - ROI: ${roi.toFixed(2)}%`);
+      console.log(`  - 수익률: ${profitMargin.toFixed(2)}%`);
 
       // 리스크 분석 (권리 분석 결과 반영)
       const riskLevel = rightsAnalysisResult.riskAnalysis.overallRiskLevel;
@@ -696,6 +785,20 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
     prevIsOpenRef.current = isOpen;
     prevPropertyIdRef.current = property.id;
   }, [isOpen, property.id]); // property.id만 의존성으로 사용하여 무한 루프 방지
+
+  // 권리분석 결과 표시 시 로그 출력
+  useEffect(() => {
+    if (biddingResult && showRightsAnalysis) {
+      console.log("💰 [UI 표시] 권리분석 결과 표시:", {
+        총인수금액_권리만: biddingResult.rightsAnalysis.totalAssumedAmount,
+        안전마진_권리_임차보증금: biddingResult.rightsAnalysis.safetyMargin,
+        차이:
+          biddingResult.rightsAnalysis.safetyMargin -
+          biddingResult.rightsAnalysis.totalAssumedAmount,
+        권장범위: biddingResult.rightsAnalysis.recommendedRange,
+      });
+    }
+  }, [biddingResult, showRightsAnalysis]);
 
   // ESC 키로 모달 닫기
   useEffect(() => {
@@ -1117,11 +1220,12 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                         권리분석 결과
                       </h5>
                       <p className="text-sm text-gray-800">
-                        총 인수금액{" "}
+                        <span className="font-semibold">총인수금액</span>{" "}
                         {formatNumber(
                           biddingResult.rightsAnalysis.totalAssumedAmount
                         )}
-                        원, 안전마진{" "}
+                        원, <span className="font-semibold">안전마진</span>
+                        {" "}
                         {formatNumber(
                           biddingResult.rightsAnalysis.safetyMargin
                         )}
@@ -1537,9 +1641,6 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                           </>
                         ) : (
                           <div className="text-center py-8">
-                            {console.log(
-                              "🚧 [수익분석] 일반모드 - 서비스 준비중 메시지 표시"
-                            )}
                             <div className="text-gray-500 text-lg mb-2">🚧</div>
                             <p className="text-gray-600 font-medium">
                               서비스 준비중입니다
@@ -1617,14 +1718,22 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
           analysis={analyzeRights(property)}
         />
       )}
-      {showAuctionReportModal && property && (
-        <AuctionAnalysisReportModal
-          isOpen={showAuctionReportModal}
-          onClose={() => setShowAuctionReportModal(false)}
-          data={mapSimulationToPropertyDetail(property)}
-          analysis={analyzeRights(property)}
-        />
-      )}
+      {showAuctionReportModal &&
+        property &&
+        (() => {
+          const rightsAnalysis = analyzeRights(property);
+          return (
+            <AuctionAnalysisReportModal
+              isOpen={showAuctionReportModal}
+              onClose={() => setShowAuctionReportModal(false)}
+              data={mapSimulationToPropertyDetail(property)}
+              analysis={{
+                safetyMargin: rightsAnalysis.safetyMargin,
+                totalAssumedAmount: rightsAnalysis.totalAssumedAmount,
+              }}
+            />
+          );
+        })()}
     </div>
   );
 }

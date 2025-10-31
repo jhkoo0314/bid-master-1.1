@@ -21,7 +21,16 @@ import { SimulationScenario } from "@/types/simulation";
 import { useSimulationStore } from "@/store/simulation-store";
 import { mapSimulationToPropertyDetail } from "@/lib/property/formatters";
 import { analyzeRights } from "@/lib/rights-analysis-engine";
-import { calculateSafetyMargin, calculateAdvancedAssumption } from "@/lib/property/safety-calc";
+import {
+  calculateSafetyMargin,
+  calculateAdvancedAssumption,
+} from "@/lib/property/safety-calc";
+import {
+  calculateSafetyMarginWithRisk,
+  calculateRightsAmount,
+  mapPropertyTypeToUse,
+  type RiskLevel,
+} from "@/lib/auction-cost";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -38,7 +47,8 @@ export default function PropertyPage({ params }: PageProps) {
   const [auctionReportOpen, setAuctionReportOpen] = useState(false);
   const [isWaitlistModalOpen, setIsWaitlistModalOpen] = useState(false);
 
-  const { getPropertyFromCache, educationalProperties, devMode } = useSimulationStore();
+  const { getPropertyFromCache, educationalProperties, devMode } =
+    useSimulationStore();
 
   // 권리분석 요약 계산을 컴포넌트 상단에서 일원화하여 하위에서 공용 사용
   const analysis = useMemo(() => {
@@ -46,10 +56,13 @@ export default function PropertyPage({ params }: PageProps) {
     try {
       // 권리 기반 위험도 요약
       const severityOrder = { high: 3, mid: 2, low: 1 } as const;
-      const topSeverity = (data.rights || []).reduce<"low" | "mid" | "high">((acc, r) => {
-        const s = (r.severity as "low" | "mid" | "high") || "low";
-        return severityOrder[s] > severityOrder[acc] ? s : acc;
-      }, "low");
+      const topSeverity = (data.rights || []).reduce<"low" | "mid" | "high">(
+        (acc, r) => {
+          const s = (r.severity as "low" | "mid" | "high") || "low";
+          return severityOrder[s] > severityOrder[acc] ? s : acc;
+        },
+        "low"
+      );
 
       // 고도화 계산(매물유형/위험도/난이도 적용)
       const lowestForCalc =
@@ -61,21 +74,35 @@ export default function PropertyPage({ params }: PageProps) {
         rawLowest: data.price?.lowest,
         appraised: data.price?.appraised,
         usedLowest: lowestForCalc,
-        reason: (data.price?.lowest || 0) > 0 ? "raw" : "fallback(appraised×70%)",
+        reason:
+          (data.price?.lowest || 0) > 0 ? "raw" : "fallback(appraised×70%)",
       });
 
-      const advanced = calculateAdvancedAssumption({
+      // 새로운 auction-cost 모듈 사용
+      const propertyType = data.meta?.type || "기타";
+      const appraisalValue = data.price?.appraised || 0;
+
+      // 권리유형별 인수금액 계산
+      const assumedAmount = calculateRightsAmount(
+        data.rights || [],
+        appraisalValue,
+        propertyType
+      );
+
+      // 위험도를 반영한 안전마진 계산
+      const safetyMarginResult = calculateSafetyMarginWithRisk({
         rights: data.rights || [],
-        propertyType: data.meta?.type || "기타",
+        propertyType,
         lowestPrice: lowestForCalc,
-        riskLevel: topSeverity,
-        difficulty: "intermediate",
+        riskLevel: topSeverity as RiskLevel,
+        propertyValue: appraisalValue,
       });
-      console.log("⚖️ [권리분석] 고도화 안전마진 계산:", advanced);
+
+      console.log("⚖️ [권리분석] 고도화 안전마진 계산:", safetyMarginResult);
       return {
-        safetyMargin: advanced.minSafetyMargin,
-        totalAssumedAmount: advanced.assumedAmount,
-        trace: advanced.trace,
+        safetyMargin: safetyMarginResult.minSafetyMargin,
+        totalAssumedAmount: assumedAmount,
+        trace: safetyMarginResult.trace,
       };
     } catch (e) {
       console.error(
@@ -289,7 +316,9 @@ export default function PropertyPage({ params }: PageProps) {
                         type="button"
                         className="text-xs px-3 py-1 rounded border border-blue-200 bg-white text-blue-700 font-semibold hover:bg-blue-50 transition"
                         onClick={() => {
-                          console.log("👤 [사용자 액션] 명세서 자세히 클릭 (일반 모드)");
+                          console.log(
+                            "👤 [사용자 액션] 명세서 자세히 클릭 (일반 모드)"
+                          );
                           console.log("📧 [사전 알림] 모달 오픈 트리거");
                           setIsWaitlistModalOpen(true);
                         }}
@@ -456,7 +485,9 @@ export default function PropertyPage({ params }: PageProps) {
                         type="button"
                         className="text-xs px-3 py-1 rounded border border-blue-200 bg-white text-blue-700 font-semibold hover:bg-blue-50 transition"
                         onClick={() => {
-                          console.log("👤 [사용자 액션] 명세서 자세히 클릭 (일반 모드)");
+                          console.log(
+                            "👤 [사용자 액션] 명세서 자세히 클릭 (일반 모드)"
+                          );
                           console.log("📧 [사전 알림] 모달 오픈 트리거");
                           setIsWaitlistModalOpen(true);
                         }}
@@ -477,7 +508,9 @@ export default function PropertyPage({ params }: PageProps) {
           <button
             className="px-3 py-1 text-xs rounded border bg-white text-blue-700 border-blue-200 hover:bg-blue-50 transition"
             onClick={() => {
-              console.log("👤 [사용자 액션] 매각물건명세서 버튼 클릭 (개발자 모드)");
+              console.log(
+                "👤 [사용자 액션] 매각물건명세서 버튼 클릭 (개발자 모드)"
+              );
               setCourtModalOpen(true);
             }}
           >
@@ -486,7 +519,9 @@ export default function PropertyPage({ params }: PageProps) {
           <button
             className="px-3 py-1 text-xs rounded border bg-white text-yellow-800 border-yellow-300 hover:bg-yellow-50 transition"
             onClick={() => {
-              console.log("👤 [사용자 액션] 권리분석 리포트 버튼 클릭 (개발자 모드)");
+              console.log(
+                "👤 [사용자 액션] 권리분석 리포트 버튼 클릭 (개발자 모드)"
+              );
               setRightsReportOpen(true);
             }}
           >
@@ -495,7 +530,9 @@ export default function PropertyPage({ params }: PageProps) {
           <button
             className="px-3 py-1 text-xs rounded border bg-white text-green-800 border-green-200 hover:bg-green-50 transition"
             onClick={() => {
-              console.log("👤 [사용자 액션] 경매분석 리포트 버튼 클릭 (개발자 모드)");
+              console.log(
+                "👤 [사용자 액션] 경매분석 리포트 버튼 클릭 (개발자 모드)"
+              );
               setAuctionReportOpen(true);
             }}
           >
