@@ -243,3 +243,38 @@ export interface ModalContent {
   content: React.ReactNode;
   size?: 'sm' | 'md' | 'lg';
 }
+
+// ============================================
+// 16. 사이드바 컴포넌트 타입
+// ============================================
+
+/**
+ * 유사 낙찰 사례
+ */
+export interface SimilarCase {
+  id: string;                    // 고유 ID
+  title: string;                 // 제목 (예: "송파구 ○○ 오피스텔")
+  won: number;                   // 낙찰가 (원)
+  rate: string;                  // 경쟁률 (예: "5:1")
+  roi: number;                   // 수익률 (%)
+  tag: string;                   // 시간 태그 (예: "최근 1개월 낙찰", "3개월 전 낙찰")
+}
+
+/**
+ * 권장 입찰가 범위
+ */
+export interface RecommendedBidRange {
+  min: Money;                    // 최소 권장 입찰가
+  max: Money;                    // 최대 권장 입찰가
+  optimal?: Money;               // 최적 입찰가 (선택)
+}
+
+/**
+ * 사이드바 요약 컴포넌트 Props
+ */
+export interface SidebarSummaryProps {
+  rights: RightRow[];            // 권리 목록
+  bidRange: RecommendedBidRange; // 권장 입찰가 범위
+  roi: number;                   // 예상 수익률 (%)
+  tip?: string;                  // 추천 팁
+}

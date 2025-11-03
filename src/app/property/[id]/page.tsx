@@ -16,6 +16,10 @@ import {
 import RightsAnalysisReportModal from "@/components/property/RightsAnalysisReportModal";
 import AuctionAnalysisReportModal from "@/components/property/AuctionAnalysisReportModal";
 import { WaitlistModal } from "@/components/WaitlistModal";
+import { BiddingModal } from "@/components/BiddingModal";
+import SidebarSummary from "@/components/property/SidebarSummary";
+import SimilarCases from "@/components/property/SimilarCases";
+import ActionButtons from "@/components/property/ActionButtons";
 import { PropertyDetail } from "@/types/property";
 import { SimulationScenario } from "@/types/simulation";
 import { useSimulationStore } from "@/store/simulation-store";
@@ -28,6 +32,8 @@ import {
   type TaxInput,
   type RiskLevel,
 } from "@/lib/auction-cost";
+import { generateSimilarCases } from "@/lib/property/generateSimilarCases";
+import { estimateMarketPrice } from "@/lib/property/market-price";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -43,6 +49,7 @@ export default function PropertyPage({ params }: PageProps) {
   const [rightsReportOpen, setRightsReportOpen] = useState(false);
   const [auctionReportOpen, setAuctionReportOpen] = useState(false);
   const [isWaitlistModalOpen, setIsWaitlistModalOpen] = useState(false);
+  const [isBiddingModalOpen, setIsBiddingModalOpen] = useState(false);
 
   const { getPropertyFromCache, educationalProperties, devMode } =
     useSimulationStore();
@@ -124,6 +131,96 @@ export default function PropertyPage({ params }: PageProps) {
       return undefined;
     }
   }, [scenario, data]);
+
+  // 권장 입찰가 범위 계산
+  const bidRange = useMemo(() => {
+    if (!scenario || !data || !analysis) {
+      return {
+        min: data?.price?.lowest || 0,
+        max: data?.price?.lowest ? Math.round(data.price.lowest * 1.1) : 0,
+        optimal: data?.price?.lowest || 0,
+      };
+    }
+
+    const propertyType = data.meta?.type || "기타";
+    const appraisalValue = data.price?.appraised || 0;
+    const minimumBidPrice = data.price?.lowest || Math.floor(appraisalValue * 0.7);
+
+    // 시세 추정
+    const marketValue = scenario ? estimateMarketPrice(scenario) : appraisalValue;
+
+    // 권장 입찰가 범위 계산 (간단한 로직)
+    // 최소: 최저가의 95%
+    // 최대: 시세의 80% 또는 감정가의 80% 중 작은 값
+    const min = Math.round(minimumBidPrice * 0.95);
+    const maxBasedOnMarket = marketValue > 0 ? Math.round(marketValue * 0.8) : Infinity;
+    const maxBasedOnAppraisal = Math.round(appraisalValue * 0.8);
+    const max = Math.min(maxBasedOnMarket, maxBasedOnAppraisal);
+    const optimal = Math.round((min + Math.max(min, max)) / 2);
+
+    console.log("📊 [권장 입찰가] 범위 계산", {
+      min,
+      max,
+      optimal,
+      marketValue,
+      appraisalValue,
+    });
+
+    return { min, max: Math.max(min, max), optimal };
+  }, [scenario, data, analysis]);
+
+  // ROI 계산 (간단한 로직)
+  const roi = useMemo(() => {
+    if (!data || !bidRange || !analysis) return 0;
+
+    const optimalBid = bidRange.optimal;
+    const marketValue = scenario
+      ? estimateMarketPrice(scenario)
+      : data.price?.appraised || 0;
+
+    if (optimalBid <= 0 || marketValue <= 0) return 0;
+
+    // 총 투자금액 = 낙찰가 + 권리 인수금액 + 취득세 등 (간단 계산)
+    const totalInvestment =
+      optimalBid + (analysis.totalAssumedAmount || 0) + Math.round(optimalBid * 0.0115); // 취득세 1% + 기타 0.15%
+
+    // 예상 매도가 = 시세의 95% (매도 시 수수료 등 고려)
+    const expectedSalePrice = Math.round(marketValue * 0.95);
+
+    // 순수익 = 매도가 - 투자금액
+    const netProfit = expectedSalePrice - totalInvestment;
+
+    // ROI = (순수익 / 투자금액) * 100
+    const calculatedRoi = totalInvestment > 0 ? (netProfit / totalInvestment) * 100 : 0;
+
+    console.log("💰 [ROI 계산]", {
+      optimalBid,
+      totalInvestment,
+      expectedSalePrice,
+      netProfit,
+      roi: calculatedRoi,
+    });
+
+    return Math.round(calculatedRoi * 10) / 10; // 소수점 1자리까지
+  }, [data, bidRange, analysis, scenario]);
+
+  // 유사 낙찰 사례 생성
+  const similarCases = useMemo(() => {
+    if (!data || !scenario) return [];
+
+    try {
+      const cases = generateSimilarCases({
+        property: data,
+        scenario,
+        bidRange,
+      });
+      console.log("✅ [유사 사례] 생성 완료", { count: cases.length });
+      return cases;
+    } catch (e) {
+      console.error("❌ [에러] 유사 사례 생성 실패", e);
+      return [];
+    }
+  }, [data, scenario, bidRange]);
 
   useEffect(() => {
     const loadParams = async () => {
@@ -271,13 +368,15 @@ export default function PropertyPage({ params }: PageProps) {
 
       <div className="mt-4 grid grid-cols-1 lg:grid-cols-12 gap-4">
         <div className="lg:col-span-8 space-y-4">
-          <DecisionPanel
-            recommendedRange={{
-              min: Math.round(data.price.lowest * 0.95),
-              max: Math.round(data.price.lowest * 1.05),
-            }}
-            risks={data.risks}
-          />
+          <div data-section="decision-panel">
+            <DecisionPanel
+              recommendedRange={{
+                min: Math.round(data.price.lowest * 0.95),
+                max: Math.round(data.price.lowest * 1.05),
+              }}
+              risks={data.risks}
+            />
+          </div>
 
           <SectionCard
             title="진행/매각 일정"
@@ -512,6 +611,72 @@ export default function PropertyPage({ params }: PageProps) {
               );
             })()}
           </SectionCard>
+
+          {/* 핵심 요약 섹션 */}
+          <SectionCard
+            title="핵심 요약"
+            description="권리유형, 권장입찰가, 예상수익률을 한눈에 확인하세요"
+            source="권리분석"
+            collapsible={true}
+            defaultCollapsed={!devMode?.isDevMode}
+          >
+            {!devMode?.isDevMode ? (
+              <div className="text-sm text-gray-600 p-3 rounded bg-gray-50 border border-gray-200">
+                서비스 준비중 입니다
+              </div>
+            ) : data ? (
+              <SidebarSummary
+                rights={data.rights || []}
+                bidRange={bidRange}
+                roi={roi}
+                tip={`권장: 1차 입찰가를 하단 범위 중심으로 설정하고, 경쟁률 4~6:1 가정.`}
+              />
+            ) : null}
+          </SectionCard>
+
+          {/* 최근 낙찰 사례 섹션 */}
+          <SectionCard
+            title="최근 낙찰 사례"
+            description="유사한 매물의 최근 낙찰 정보를 참고하세요"
+            source="참고 데이터"
+            collapsible={true}
+            defaultCollapsed={!devMode?.isDevMode}
+          >
+            {!devMode?.isDevMode ? (
+              <div className="text-sm text-gray-600 p-3 rounded bg-gray-50 border border-gray-200">
+                서비스 준비중 입니다
+              </div>
+            ) : (
+              <SimilarCases items={similarCases} />
+            )}
+          </SectionCard>
+
+          {/* CTA 버튼 */}
+          {devMode?.isDevMode && (
+            <ActionButtons
+              onViewRecommended={() => {
+                const decisionPanel = document.querySelector(
+                  '[data-section="decision-panel"]'
+                );
+                if (decisionPanel) {
+                  decisionPanel.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start",
+                  });
+                }
+              }}
+              onStartPractice={() => {
+                console.log("🎯 [사용자 액션] 이 물건으로 연습하기 버튼 클릭");
+                console.log("🔓 [입찰 모달] 모달 열기 시작");
+                if (!scenario) {
+                  console.warn("⚠️ [입찰 모달] scenario가 없어 모달을 열 수 없습니다");
+                  return;
+                }
+                setIsBiddingModalOpen(true);
+                console.log("✅ [입찰 모달] 모달 열기 완료");
+              }}
+            />
+          )}
         </div>
       </div>
       {/* 상세 리포트 진입 버튼 - 데스크톱만 표시 */}
@@ -596,6 +761,18 @@ export default function PropertyPage({ params }: PageProps) {
           setIsWaitlistModalOpen(false);
         }}
       />
+
+      {/* 입찰 모달 */}
+      {scenario && (
+        <BiddingModal
+          property={scenario}
+          isOpen={isBiddingModalOpen}
+          onClose={() => {
+            console.log("🔒 [입찰 모달] 닫기");
+            setIsBiddingModalOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 }
