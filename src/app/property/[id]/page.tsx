@@ -18,6 +18,7 @@ import AuctionAnalysisReportModal from "@/components/property/AuctionAnalysisRep
 import { WaitlistModal } from "@/components/WaitlistModal";
 import { BiddingModal } from "@/components/BiddingModal";
 import SidebarSummary from "@/components/property/SidebarSummary";
+import FMVDisplay from "@/components/common/FMVDisplay";
 import SimilarCases from "@/components/property/SimilarCases";
 import ActionButtons from "@/components/property/ActionButtons";
 import { PropertyDetail } from "@/types/property";
@@ -874,6 +875,96 @@ export default function PropertyPage({ params }: PageProps) {
             })()}
           </SectionCard>
 
+          {/* FMV 표시 섹션 */}
+          {devMode?.isDevMode && data && (data as any)?.analysisV12?.fmv?.fairMarketValue && (
+            <SectionCard
+              title="공정시세(FMV)"
+              description="안전마진 계산에 사용되는 공정시세 정보"
+              source="시세 분석"
+              collapsible={true}
+              defaultCollapsed={false}
+            >
+              <div className="p-2">
+                <FMVDisplay
+                  fairMarketValue={(data as any).analysisV12.fmv.fairMarketValue}
+                  min={(data as any).analysisV12.fmv.fairMarketValue * 0.95}
+                  max={(data as any).analysisV12.fmv.fairMarketValue * 1.05}
+                  auctionCenter={(data as any).analysisV12.fmv.auctionCenter}
+                  showRange={true}
+                  compact={true}
+                />
+              </div>
+            </SectionCard>
+          )}
+
+          {/* ✅ 점유 및 명도 리스크 섹션 */}
+          {devMode?.isDevMode && data && scenario && (() => {
+            const rightsAnalysis = analyzeRights(scenario);
+            if (!rightsAnalysis.tenantRisk) return null;
+            const tenantRisk = rightsAnalysis.tenantRisk;
+            const riskColor =
+              tenantRisk.riskLabel === "높음"
+                ? "text-red-700 bg-red-50 border-red-200"
+                : tenantRisk.riskLabel === "중간"
+                ? "text-orange-700 bg-orange-50 border-orange-200"
+                : "text-green-700 bg-green-50 border-green-200";
+            const riskBadgeColor =
+              tenantRisk.riskLabel === "높음"
+                ? "bg-red-100 text-red-800"
+                : tenantRisk.riskLabel === "중간"
+                ? "bg-orange-100 text-orange-800"
+                : "bg-green-100 text-green-800";
+
+            return (
+              <SectionCard
+                title="점유 및 명도 리스크"
+                description="AI 예측 점유 위험도 및 예상 명도 비용"
+                source="권리분석"
+                collapsible={true}
+                defaultCollapsed={false}
+              >
+                <div className="p-3 space-y-3">
+                  <div className="grid gap-3 grid-cols-1 md:grid-cols-2 text-sm">
+                    <div className={`p-3 rounded border ${riskColor}`}>
+                      <div className="text-xs mb-1 flex items-center">
+                        AI 예측 점유 위험도
+                      </div>
+                      <div className="font-semibold text-base">
+                        <span className={`inline-block px-2 py-0.5 rounded text-xs mr-2 ${riskBadgeColor}`}>
+                          {tenantRisk.riskLabel}
+                        </span>
+                        {tenantRisk.riskScore}%
+                      </div>
+                    </div>
+                    <div className={`p-3 rounded border ${riskColor}`}>
+                      <div className="text-xs mb-1">예상 명도 비용</div>
+                      <div className="font-semibold text-base">
+                        {tenantRisk.evictionCostMin.toLocaleString()}원 ~{" "}
+                        {tenantRisk.evictionCostMax.toLocaleString()}원
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-2 bg-yellow-50 border border-yellow-300 rounded text-xs">
+                    <div className="mb-1">
+                      <strong>배당요구:</strong>{" "}
+                      {tenantRisk.hasDividendRequest
+                        ? "있음"
+                        : "없음 (보증금 인수 가능성 있음)"}
+                    </div>
+                    {tenantRisk.assumedTenants > 0 && (
+                      <div className="mt-1 text-gray-700">
+                        인수 대상 임차인: {tenantRisk.assumedTenants}명
+                      </div>
+                    )}
+                    <div className="text-red-700 font-medium mt-2">
+                      ⚠️ 실제 점유 상태는 매각물건명세서/현장 방문으로 확인 필요
+                    </div>
+                  </div>
+                </div>
+              </SectionCard>
+            );
+          })()}
+
           {/* 핵심 요약 섹션 */}
           <SectionCard
             title="핵심 요약"
@@ -1001,22 +1092,112 @@ export default function PropertyPage({ params }: PageProps) {
                 safetyMargin: rightsAnalysis.safetyMargin,
                 totalAssumedAmount: rightsAnalysis.totalAssumedAmount,
                 advancedSafetyMargin: rightsAnalysis.advancedSafetyMargin,
+                extinguishedRights: rightsAnalysis.extinguishedRights.map(
+                  (r) => ({
+                    rightType: r.rightType,
+                    order: r.order?.toString(),
+                    holder: r.holder,
+                    registrationDate: r.registrationDate,
+                    claim: r.claimAmount,
+                    willBeExtinguished: r.willBeExtinguished,
+                    isMalsoBaseRight: r.isMalsoBaseRight,
+                  })
+                ),
+                assumedRights: rightsAnalysis.assumedRights.map((r) => ({
+                  rightType: r.rightType,
+                  order: r.order?.toString(),
+                  holder: r.holder,
+                  registrationDate: r.registrationDate,
+                  claim: r.claimAmount,
+                  willBeAssumed: r.willBeAssumed,
+                  isMalsoBaseRight: r.isMalsoBaseRight,
+                })),
+                malsoBaseRight: rightsAnalysis.malsoBaseRight
+                  ? {
+                      rightType: rightsAnalysis.malsoBaseRight.rightType,
+                      order:
+                        rightsAnalysis.malsoBaseRight.order?.toString(),
+                      holder: rightsAnalysis.malsoBaseRight.holder,
+                      registrationDate:
+                        rightsAnalysis.malsoBaseRight.registrationDate,
+                      claim: rightsAnalysis.malsoBaseRight.claimAmount,
+                    }
+                  : null,
+                tenantRisk: rightsAnalysis.tenantRisk
+                  ? {
+                      riskScore: rightsAnalysis.tenantRisk.riskScore,
+                      riskLabel: rightsAnalysis.tenantRisk.riskLabel,
+                      evictionCostMin: rightsAnalysis.tenantRisk.evictionCostMin,
+                      evictionCostMax: rightsAnalysis.tenantRisk.evictionCostMax,
+                      hasDividendRequest:
+                        rightsAnalysis.tenantRisk.hasDividendRequest,
+                      assumedTenants: rightsAnalysis.tenantRisk.assumedTenants,
+                    }
+                  : undefined,
               };
             })()}
           />
         )}
       {/* 권리분석 리포트 모달 */}
-      {devMode?.isDevMode && rightsReportOpen && data && scenario && (
-        <RightsAnalysisReportModal
-          isOpen={rightsReportOpen}
-          onClose={() => {
-            console.log("👤 [사용자 액션] 권리분석 리포트 닫기");
-            setRightsReportOpen(false);
-          }}
-          data={data}
-          analysis={analyzeRights(scenario)}
-        />
-      )}
+      {devMode?.isDevMode && rightsReportOpen && data && scenario && (() => {
+        const rightsAnalysisResult = analyzeRights(scenario);
+        return (
+          <RightsAnalysisReportModal
+            isOpen={rightsReportOpen}
+            onClose={() => {
+              console.log("👤 [사용자 액션] 권리분석 리포트 닫기");
+              setRightsReportOpen(false);
+            }}
+            data={data}
+            analysis={{
+              safetyMargin: rightsAnalysisResult.safetyMargin,
+              totalAssumedAmount: rightsAnalysisResult.totalAssumedAmount,
+              advancedSafetyMargin: rightsAnalysisResult.advancedSafetyMargin,
+              extinguishedRights: rightsAnalysisResult.extinguishedRights.map(
+                (r) => ({
+                  rightType: r.rightType,
+                  order: r.order?.toString(),
+                  holder: r.holder,
+                  registrationDate: r.registrationDate,
+                  claim: r.claimAmount,
+                  willBeExtinguished: r.willBeExtinguished,
+                  isMalsoBaseRight: r.isMalsoBaseRight,
+                })
+              ),
+              assumedRights: rightsAnalysisResult.assumedRights.map((r) => ({
+                rightType: r.rightType,
+                order: r.order?.toString(),
+                holder: r.holder,
+                registrationDate: r.registrationDate,
+                claim: r.claimAmount,
+                willBeAssumed: r.willBeAssumed,
+                isMalsoBaseRight: r.isMalsoBaseRight,
+              })),
+              malsoBaseRight: rightsAnalysisResult.malsoBaseRight
+                ? {
+                    rightType: rightsAnalysisResult.malsoBaseRight.rightType,
+                    order: rightsAnalysisResult.malsoBaseRight.order?.toString(),
+                    holder: rightsAnalysisResult.malsoBaseRight.holder,
+                    registrationDate:
+                      rightsAnalysisResult.malsoBaseRight.registrationDate,
+                    claim: rightsAnalysisResult.malsoBaseRight.claimAmount,
+                  }
+                : null,
+              tenantRisk: rightsAnalysisResult.tenantRisk
+                ? {
+                    riskScore: rightsAnalysisResult.tenantRisk.riskScore,
+                    riskLabel: rightsAnalysisResult.tenantRisk.riskLabel,
+                    evictionCostMin: rightsAnalysisResult.tenantRisk.evictionCostMin,
+                    evictionCostMax: rightsAnalysisResult.tenantRisk.evictionCostMax,
+                    hasDividendRequest:
+                      rightsAnalysisResult.tenantRisk.hasDividendRequest,
+                    assumedTenants: rightsAnalysisResult.tenantRisk.assumedTenants,
+                  }
+                : undefined,
+            }}
+          />
+        );
+      })()}
       {/* 경매분석 리포트 모달 */}
       {devMode?.isDevMode && auctionReportOpen && data && scenario && (
         <AuctionAnalysisReportModal

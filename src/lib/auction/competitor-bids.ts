@@ -1,109 +1,77 @@
-// src/lib/auction/competitor-bids.ts
+// competitor-bids.ts (v1.5) - 3단계 전략 분포 적용
 
-export type CompetitorParams = {
+export interface CompetitorParams {
   n: number; // 경쟁자 수
-  fmv: number; // 시장가(예상 거래가, FMV)
+  fmv: number; // AI 시장가(FMV)
   appraisal: number; // 감정가
-  lowestBid: number; // 최저가
-  userBid: number; // 사용자(내) 입찰가
+  lowestBid: number; // 최저 입찰가
+  userBid: number; // 사용자가 입력한 입찰가
   difficulty?: "easy" | "normal" | "hard";
-  overheatScore?: number; // 0~1: 과열 강도 (입찰 시나리오에서 계산)
-  tick?: number; // 호가 단위
-};
-
-const clamp = (x: number, lo: number, hi: number) =>
-  Math.min(Math.max(x, lo), hi);
-
-// 절단 정규 샘플링 (Box-Muller, 간단 구현)
-function sampleTruncatedNormal(
-  mean: number,
-  sd: number,
-  lo: number,
-  hi: number
-): number {
-  for (let i = 0; i < 12; i++) {
-    // 표준정규 근사 (합성법)
-    let z = 0;
-    for (let k = 0; k < 12; k++) z += Math.random(); // [0,12)
-    z = z - 6; // 대략 N(0,1)
-    const v = mean + sd * z;
-    if (v >= lo && v <= hi) return v;
-  }
-  // 실패 시 중앙값 반환
-  return clamp(mean, lo, hi);
+  overheatScore?: number; // 과열지수 (0~1)
+  tick?: number; // 금액 단위 (기본 1,000)
 }
 
-export function generateCompetitorBids(p: CompetitorParams): number[] {
+function randomInRange(min: number, max: number, tick = 1000): number {
+  const raw = Math.random() * (max - min) + min;
+  return Math.round(raw / tick) * tick;
+}
+
+export function generateCompetitorBids(params: CompetitorParams): number[] {
   const {
     n,
     fmv,
     appraisal,
     lowestBid,
-    userBid,
     difficulty = "normal",
     overheatScore = 0,
-    tick = 10000,
-  } = p;
+    tick = 1000,
+  } = params;
 
-  // 1) 분포 기준(평균): FMV를 중심으로, 난이도별 약간 상향
-  const diffBias =
-    difficulty === "easy" ? -0.02 : difficulty === "hard" ? 0.03 : 0.0;
-  let mean = fmv * (1.0 + diffBias);
+  if (n <= 0) return [];
 
-  // 2) 과열일수록 평균을 살짝 올리되, 하드캡 내에서만
-  //    평균 상승폭은 최대 +3% (overheatScore=1일 때)
-  mean *= 1 + 0.03 * overheatScore;
+  // ✅ 경쟁자 그룹 분배 (상위 1명, 중위 50~60%, 나머지 하위)
+  const topCount = 1;
+  const midCount = Math.max(1, Math.floor(n * 0.55));
+  const lowCount = Math.max(0, n - topCount - midCount);
 
-  // 3) 분산(표준편차): FMV의 4~8% 범위에서 난이도·과열에 따라 조정
-  let sd =
-    fmv * (0.05 + 0.02 * overheatScore) * (difficulty === "hard" ? 1.1 : 0.9);
+  // ✅ 난이도에 따라 분포 영향
+  const difficultyBoost =
+    difficulty === "hard" ? 1.12 : difficulty === "easy" ? 0.9 : 1.0;
 
-  // 4) 하단/상단 절단 경계 설정
-  //    - 하단: 최저가 + 2% 이상
-  //    - 상단: FMV * 1.05 와 감정가 * 0.99 중 작은 값
-  //    - 추가 하드캡: 사용자 입찰가를 절대 따라가지 않음 (userBid * 0.985)
-  const lo = Math.max(lowestBid * 1.02, fmv * 0.85);
-  const capByFMV = fmv * 1.05;
-  const capByAppr = appraisal * 0.99;
-  const capByUser = userBid * 0.985; // 사용자보다 낮게 형성
-  const hi = Math.min(capByFMV, capByAppr, capByUser);
+  // ✅ 과열 점수 반영 (입찰가 전체 상승 압력)
+  const heat = 1 + (overheatScore ?? 0) * 0.25;
 
-  // mean이 경계 밖이면 경계 안으로
-  mean = clamp(mean, lo + tick, hi - tick);
-
-  // 5) 샘플링
   const bids: number[] = [];
-  for (let i = 0; i < n; i++) {
-    const v = sampleTruncatedNormal(mean, sd, lo, hi);
-    // 호가 단위 반올림 + 동점 회피
-    const rounded = Math.round(v / tick) * tick;
-    const jitter =
-      (i % 2 === 0 ? -1 : 1) * (Math.floor(Math.random() * 3) * (tick / 2));
-    bids.push(clamp(rounded + jitter, lo, hi));
+
+  // ✅ (1) 상위 그룹: 공격형 (FMV +5% ~ +15%)
+  const topMin = fmv * 1.05 * difficultyBoost * heat;
+  const topMax = fmv * 1.15 * difficultyBoost * heat;
+
+  for (let i = 0; i < topCount; i++) {
+    bids.push(randomInRange(topMin, topMax, tick));
   }
 
-  // 6) 상단 꼬리("과열의 체감")를 소수만 부여: 평균 위쪽으로 약간 밀어주기
-  //    단, 절대 userBid를 넘지 않음
-  const tailCount = Math.min(
-    Math.max(Math.round(n * 0.1 * overheatScore), 0),
-    Math.floor(n / 3)
-  );
-  for (let i = 0; i < tailCount; i++) {
-    const idx = Math.floor(Math.random() * bids.length);
-    const bump = Math.max(tick, sd * 0.8);
-    bids[idx] = clamp(Math.round((bids[idx] + bump) / tick) * tick, lo, hi);
+  // ✅ (2) 중위 그룹: 실제 시장 평균층 (FMV -2% ~ +4%)
+  const midMin = fmv * 0.98 * heat;
+  const midMax = fmv * 1.04 * heat;
+
+  for (let i = 0; i < midCount; i++) {
+    bids.push(randomInRange(midMin, midMax, tick));
   }
 
-  // 7) 사용자와 동일/상회 방지: 동률 제거 및 안전 여백
-  for (let i = 0; i < bids.length; i++) {
-    if (Math.abs(bids[i] - userBid) < tick) {
-      bids[i] = clamp(bids[i] - tick, lo, hi);
-    }
-    if (bids[i] >= userBid) {
-      bids[i] = clamp(userBid - tick, lo, hi);
-    }
+  // ✅ (3) 하위 그룹: 보수형 투자자 (최저가 ~ FMV -8%)
+  const lowMin = lowestBid;
+  const lowMax = fmv * 0.92;
+
+  for (let i = 0; i < lowCount; i++) {
+    bids.push(randomInRange(lowMin, lowMax, tick));
   }
 
-  // 낮은→높은 순 정렬 반환
-  return bids.sort((a, b) => a - b);
+  // ✅ 금액 정렬 (높은 가격 우선)
+  const sorted = bids.sort((a, b) => b - a);
+
+  // ✅ 디버그 로그
+  console.log("RAW BIDS >>>", sorted);
+
+  return sorted;
 }

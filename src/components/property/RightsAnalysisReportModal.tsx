@@ -4,6 +4,11 @@ import type { PropertyDetail, RightRow } from "@/types/property";
 import { useSimulationStore } from "@/store/simulation-store";
 import InfoTip from "@/components/common/InfoTip";
 import SafetyMarginComparison from "@/components/report/SafetyMarginComparison";
+import FMVDisplay from "@/components/common/FMVDisplay";
+import {
+  getTerminologyExplanation,
+  getRightTypeExplanation,
+} from "@/lib/rights-terminology";
 
 interface RightsAnalysisReportModalProps {
   isOpen: boolean;
@@ -17,6 +22,41 @@ interface RightsAnalysisReportModalProps {
       minSafetyMargin: number;
       assumedAmount: number;
       trace: string[];
+    };
+    // ✅ 권리 소멸/인수 정보 추가
+    extinguishedRights?: Array<{
+      rightType: string;
+      order?: string;
+      holder?: string;
+      registrationDate?: string;
+      claim?: number;
+      willBeExtinguished: boolean;
+      isMalsoBaseRight?: boolean;
+    }>;
+    assumedRights?: Array<{
+      rightType: string;
+      order?: string;
+      holder?: string;
+      registrationDate?: string;
+      claim?: number;
+      willBeAssumed: boolean;
+      isMalsoBaseRight?: boolean;
+    }>;
+    malsoBaseRight?: {
+      rightType: string;
+      order?: string;
+      holder?: string;
+      registrationDate?: string;
+      claim?: number;
+    } | null;
+    // ✅ 점유 리스크 정보 추가
+    tenantRisk?: {
+      riskScore: number;
+      riskLabel: "낮음" | "중간" | "높음";
+      evictionCostMin: number;
+      evictionCostMax: number;
+      hasDividendRequest: boolean;
+      assumedTenants: number;
     };
   };
 }
@@ -171,12 +211,19 @@ export default function RightsAnalysisReportModal({
               <div className="p-3 bg-white border border-gray-300">
                 <div className="text-[11px] text-gray-600 flex items-center">
                   인수추정액
-                  <InfoTip
-                    title="인수추정액"
-                    description={
-                      "미소멸 가능성이 있는 권리 합계(전세/임차/지상/유치/가처분 등).\n권리별 청구액 합산 기준."
-                    }
-                  />
+                  {(() => {
+                    const term = getTerminologyExplanation("인수추정액");
+                    return term ? (
+                      <InfoTip title={term.title} description={term.description} />
+                    ) : (
+                      <InfoTip
+                        title="인수추정액"
+                        description={
+                          "미소멸 가능성이 있는 권리 합계(전세/임차/지상/유치/가처분 등).\n권리별 청구액 합산 기준."
+                        }
+                      />
+                    );
+                  })()}
                 </div>
                 <div className="font-semibold text-gray-900">
                   {totalAssumedLabel}
@@ -194,6 +241,18 @@ export default function RightsAnalysisReportModal({
                   {notExtinguished.length}건
                 </div>
               </div>
+              {/* ✅ FMV 표시 추가 */}
+              {(data as any)?.analysisV12?.fmv?.fairMarketValue && (
+                <div className="col-span-2 md:col-span-3">
+                  <FMVDisplay
+                    fairMarketValue={(data as any).analysisV12.fmv.fairMarketValue}
+                    min={(data as any).analysisV12.fmv.fairMarketValue * 0.95}
+                    max={(data as any).analysisV12.fmv.fairMarketValue * 1.05}
+                    auctionCenter={(data as any).analysisV12.fmv.auctionCenter}
+                    showRange={true}
+                  />
+                </div>
+              )}
             </div>
             {/* 고도화 안전마진 정보 추가 */}
             {analysis?.advancedSafetyMargin && (
@@ -255,8 +314,14 @@ export default function RightsAnalysisReportModal({
             </h3>
             <div className="text-sm">
               <div className="mb-2">
-                <span className="text-[12px] text-gray-600 mr-2">
+                <span className="text-[12px] text-gray-600 mr-2 flex items-center">
                   최선순위권리
+                  {(() => {
+                    const term = getTerminologyExplanation("말소기준권리");
+                    return term ? (
+                      <InfoTip title={term.title} description={term.description} />
+                    ) : null;
+                  })()}
                 </span>
                 <span className="font-semibold text-gray-900">
                   {mainRight
@@ -268,20 +333,35 @@ export default function RightsAnalysisReportModal({
                 </span>
               </div>
               <div className="mt-2">
-                <div className="text-[12px] text-gray-600 mb-1">
+                <div className="text-[12px] text-gray-600 mb-1 flex items-center">
                   등기상 소멸되지 않는 권리
+                  {(() => {
+                    const term = getTerminologyExplanation("미소멸권리");
+                    return term ? (
+                      <InfoTip title={term.title} description={term.description} />
+                    ) : null;
+                  })()}
                 </div>
                 {notExtinguished.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
-                    {notExtinguished.map((r, i) => (
-                      <span
-                        key={i}
-                        className="inline-block px-2 py-0.5 bg-gray-50 border border-gray-300 text-gray-900 text-xs"
-                      >
-                        {r.type}
-                        {r.holder ? `(${r.holder})` : ""}
-                      </span>
-                    ))}
+                    {notExtinguished.map((r, i) => {
+                      const rightExplanation = getRightTypeExplanation(r.type);
+                      return (
+                        <span
+                          key={i}
+                          className="inline-block px-2 py-0.5 bg-gray-50 border border-gray-300 text-gray-900 text-xs flex items-center"
+                        >
+                          {r.type}
+                          {rightExplanation && (
+                            <InfoTip
+                              title={rightExplanation.title}
+                              description={rightExplanation.description}
+                            />
+                          )}
+                          {r.holder ? `(${r.holder})` : ""}
+                        </span>
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="text-gray-500 text-xs">없음</div>
@@ -354,25 +434,36 @@ export default function RightsAnalysisReportModal({
                 </tr>
               </thead>
               <tbody>
-                {rights.map((r, idx) => (
-                  <tr key={idx}>
-                    <td className="px-2 py-1 border-t border-r border-gray-300">
-                      {r.order}
-                    </td>
-                    <td className="px-2 py-1 border-t border-r border-gray-300">
-                      {r.type}
-                    </td>
-                    <td className="px-2 py-1 border-t border-r border-gray-300">
-                      {r.holder}
-                    </td>
-                    <td className="px-2 py-1 border-t border-r border-gray-300">
-                      {r.date}
-                    </td>
-                    <td className="px-2 py-1 border-t border-gray-300 text-right">
-                      {r.claim?.toLocaleString?.()}원
-                    </td>
-                  </tr>
-                ))}
+                {rights.map((r, idx) => {
+                  const rightExplanation = getRightTypeExplanation(r.type);
+                  return (
+                    <tr key={idx}>
+                      <td className="px-2 py-1 border-t border-r border-gray-300">
+                        {r.order}
+                      </td>
+                      <td className="px-2 py-1 border-t border-r border-gray-300">
+                        <span className="flex items-center">
+                          {r.type}
+                          {rightExplanation && (
+                            <InfoTip
+                              title={rightExplanation.title}
+                              description={rightExplanation.description}
+                            />
+                          )}
+                        </span>
+                      </td>
+                      <td className="px-2 py-1 border-t border-r border-gray-300">
+                        {r.holder}
+                      </td>
+                      <td className="px-2 py-1 border-t border-r border-gray-300">
+                        {r.date}
+                      </td>
+                      <td className="px-2 py-1 border-t border-gray-300 text-right">
+                        {r.claim?.toLocaleString?.()}원
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
             {notExtinguished.length > 0 && (
@@ -382,10 +473,64 @@ export default function RightsAnalysisReportModal({
             )}
           </section>
 
+          {/* ✅ 점유 및 명도 리스크 섹션 */}
+          {analysis?.tenantRisk && (
+            <section className="px-8 py-5 bg-orange-50 border-t border-orange-200">
+              <h3 className="font-semibold mb-3 text-sm text-orange-900">
+                점유 및 명도 리스크
+              </h3>
+              <div className="grid gap-4 grid-cols-1 md:grid-cols-2 text-sm">
+                <div className="p-3 bg-white border border-orange-300 rounded">
+                  <div className="text-[11px] text-orange-700 mb-1 flex items-center">
+                    AI 예측 점유 위험도
+                    <InfoTip
+                      title="점유 위험도"
+                      description="확정일자, 전입일시, 배당요구, 판례 리스크, 유찰 횟수를 종합하여 산정한 점유 리스크 점수입니다."
+                    />
+                  </div>
+                  <div className="font-semibold text-orange-900 text-base">
+                    {analysis.tenantRisk.riskScore}% ({analysis.tenantRisk.riskLabel})
+                  </div>
+                </div>
+                <div className="p-3 bg-white border border-orange-300 rounded">
+                  <div className="text-[11px] text-orange-700 mb-1">
+                    예상 명도 비용
+                  </div>
+                  <div className="font-semibold text-orange-900 text-base">
+                    {analysis.tenantRisk.evictionCostMin.toLocaleString()}원 ~{" "}
+                    {analysis.tenantRisk.evictionCostMax.toLocaleString()}원
+                  </div>
+                </div>
+              </div>
+              <div className="mt-3 p-3 bg-yellow-50 border border-yellow-300 rounded text-xs">
+                <div className="mb-1 flex items-center">
+                  <strong>배당요구:</strong>{" "}
+                  {analysis.tenantRisk.hasDividendRequest
+                    ? "있음"
+                    : "없음 (보증금 인수 가능성 있음)"}
+                  {(() => {
+                    const term = getTerminologyExplanation("배당요구");
+                    return term ? (
+                      <InfoTip title={term.title} description={term.description} />
+                    ) : null;
+                  })()}
+                </div>
+                <div className="text-red-700 font-medium mt-2">
+                  ⚠️ 실제 점유 상태는 매각물건명세서/현장 방문으로 확인 필요
+                </div>
+                {analysis.tenantRisk.assumedTenants > 0 && (
+                  <div className="mt-1 text-gray-700">
+                    인수 대상 임차인: {analysis.tenantRisk.assumedTenants}명
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
           {/* 4. 배당관계 요약 */}
           <section className="px-8 py-5 bg-white">
             <h3 className="font-semibold mb-2 text-sm text-gray-900">
-              3. 배당관계 요약
+              {analysis?.tenantRisk ? "4. 배당관계 요약" : "3. 배당관계 요약"}
             </h3>
             <div className="text-xs text-gray-700">
               <div>
@@ -398,22 +543,98 @@ export default function RightsAnalysisReportModal({
                   .toLocaleString()}
                 원
               </div>
-              <div className="mt-1 text-gray-600">
+              <div className="mt-1 text-gray-600 flex items-center">
                 ※ 최우선변제, 선순위 임차인 배당요구 여부를 반드시 확인
+                {(() => {
+                  const term = getTerminologyExplanation("배당요구");
+                  return term ? (
+                    <InfoTip title={term.title} description={term.description} />
+                  ) : null;
+                })()}
               </div>
             </div>
           </section>
 
-          {/* 5. 실무 코멘트 */}
+          {/* 5. 실무 코멘트 (사실 기반 + 경고 기반 + 교육적 해석) */}
           <section className="px-8 py-5 bg-white">
-            <h3 className="font-semibold mb-2 text-sm text-gray-900">
-              4. 실무 코멘트
+            <h3 className="font-semibold mb-3 text-sm text-gray-900">
+              {analysis?.tenantRisk ? "5. 실무 코멘트" : "4. 실무 코멘트"}
             </h3>
-            <ul className="list-disc pl-5 text-xs text-gray-700 space-y-1">
-              <li>최선순위권리 확인 후 말소기준권리 판단이 우선입니다.</li>
-              <li>미소멸권리 유무에 따른 인수/소멸 여부를 확정하세요.</li>
-              <li>인수액을 기반으로 입찰 가능 최고가를 역산합니다.</li>
-            </ul>
+            <div className="space-y-3 text-xs">
+              {/* 사실 기반 정보 */}
+              <div className="p-3 bg-gray-50 border border-gray-200 rounded">
+                <div className="font-semibold text-gray-900 mb-2">📊 사실 확인</div>
+                <ul className="list-disc pl-5 text-gray-700 space-y-1">
+                  <li>최선순위권리: {mainRight ? `${mainRight.type}` : "없음"}</li>
+                  <li>
+                    말소기준권리:{" "}
+                    {analysis?.malsoBaseRight
+                      ? analysis.malsoBaseRight.rightType
+                      : mainRight
+                      ? mainRight.type
+                      : "없음"}
+                  </li>
+                  <li>
+                    말소권리: {analysis?.extinguishedRights?.length || 0}건, 인수권리:{" "}
+                    {analysis?.assumedRights?.length || 0}건
+                  </li>
+                  {analysis?.assumedRights &&
+                    analysis.assumedRights.length === 0 && (
+                      <li className="text-green-700">
+                        ✅ 인수 위험 없음 (모든 권리 말소 예상)
+                      </li>
+                    )}
+                </ul>
+              </div>
+              {/* 경고 기반 정보 */}
+              {analysis &&
+                (analysis.assumedRights?.length > 0 ||
+                  (analysis.tenantRisk && analysis.tenantRisk.riskScore >= 50)) && (
+                  <div className="p-3 bg-orange-50 border border-orange-200 rounded">
+                    <div className="font-semibold text-orange-900 mb-2">
+                      ⚠️ 주의사항
+                    </div>
+                    <ul className="list-disc pl-5 text-orange-800 space-y-1">
+                      {analysis.assumedRights && analysis.assumedRights.length > 0 && (
+                        <li>
+                          인수권리 {analysis.assumedRights.length}건이 있어 입찰가 계산에 반드시 반영해야 합니다.
+                        </li>
+                      )}
+                      {analysis.tenantRisk && analysis.tenantRisk.riskScore >= 50 && (
+                        <li>
+                          점유 리스크가 {analysis.tenantRisk.riskLabel} 수준입니다. 명도비용{" "}
+                          {analysis.tenantRisk.evictionCostMin.toLocaleString()}원 ~{" "}
+                          {analysis.tenantRisk.evictionCostMax.toLocaleString()}원을 추가로 고려하세요.
+                        </li>
+                      )}
+                      {notExtinguished.length > 0 && (
+                        <li>
+                          미소멸권리 {notExtinguished.length}건이 있어 입찰가 산정에 반드시 반영하세요.
+                        </li>
+                      )}
+                    </ul>
+                  </div>
+                )}
+              {/* 교육적 해석 */}
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded">
+                <div className="font-semibold text-blue-900 mb-2">
+                  💡 투자 판단 가이드
+                </div>
+                <ul className="list-disc pl-5 text-blue-800 space-y-1">
+                  <li>
+                    최선순위권리 확인 후 말소기준권리 판단이 우선입니다. 이 권리가 모든 권리 소멸/인수의 기준이 됩니다.
+                  </li>
+                  <li>
+                    미소멸권리 유무에 따른 인수/소멸 여부를 확정한 후, 인수액을 기반으로 입찰 가능 최고가를 역산합니다.
+                  </li>
+                  <li>
+                    {analysis?.assumedRights && analysis.assumedRights.length > 0
+                      ? `인수권리 ${analysis.assumedRights.length}건과 점유 리스크를 모두 고려하여 총인수금액(A)을 산출한 후, FMV와 비교하여 안전마진을 확인하세요.`
+                      : "인수 위험이 없으므로 입찰가 결정이 비교적 단순합니다. 다만 점유 상태는 별도로 확인이 필요합니다."}
+                  </li>
+                </ul>
+              </div>
+            </div>
           </section>
 
           {/* 닫기 */}

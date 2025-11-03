@@ -213,13 +213,25 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
     ];
 
     // ✅ 과열 점수 계산
-    console.log("🔥 [경쟁자 생성] 과열 점수 계산 시작");
+    console.log("🔥 [경쟁자 생성] 과열 점수 계산 시작", {
+      userBid: userBid.toLocaleString(),
+      fmv: fmv.toLocaleString(),
+      appraisal: appraisalValue.toLocaleString(),
+    });
     const overheat = computeOverheatScore(userBid, fmv, appraisalValue);
     console.log(`🔥 [경쟁자 생성] 과열 점수: ${(overheat * 100).toFixed(1)}%`);
 
-    // 경쟁자 수 결정 (4-9명)
-    const competitorCount = Math.floor(Math.random() * 6) + 4;
-    console.log(`👥 [경쟁자 생성] 경쟁자 수: ${competitorCount}명`);
+    // ✅ 경쟁자 수 결정: 과열도에 따라 동적으로 증가
+    // 기본 경쟁자 수: 4명
+    // 과열도 1.0일 때 최대 +40% 증가 = 4 * 1.4 = 5.6명 (반올림하여 6명)
+    const baseCompetitorCount = 4;
+    const overheatMultiplier = 1 + 0.4 * overheat; // 과열도 1.0일 때 1.4배
+    const competitorCount = Math.max(
+      4,
+      Math.min(12, Math.round(baseCompetitorCount * overheatMultiplier))
+    );
+    const competitorIncrease = ((overheatMultiplier - 1) * 100).toFixed(0);
+    console.log(`👥 [경쟁자 생성] 경쟁자 수: ${competitorCount}명 (기본 ${baseCompetitorCount}명 + ${competitorIncrease}% 증가)`);
 
     // ✅ generateCompetitorBids 사용
     const competitorBids = generateCompetitorBids({

@@ -3,6 +3,12 @@ import React from "react";
 import { useSimulationStore } from "@/store/simulation-store";
 import type { PropertyDetail, RightRow } from "@/types/property";
 import SafetyMarginComparison from "@/components/report/SafetyMarginComparison";
+import FMVDisplay from "@/components/common/FMVDisplay";
+import {
+  getTerminologyExplanation,
+  getRightTypeExplanation,
+} from "@/lib/rights-terminology";
+import InfoTip from "@/components/common/InfoTip";
 
 interface SaleSpecificationModalProps {
   isOpen: boolean;
@@ -16,6 +22,41 @@ interface SaleSpecificationModalProps {
       minSafetyMargin: number;
       assumedAmount: number;
       trace: string[];
+    };
+    // ✅ 권리 소멸/인수 정보 추가
+    extinguishedRights?: Array<{
+      rightType: string;
+      order?: string;
+      holder?: string;
+      registrationDate?: string;
+      claim?: number;
+      willBeExtinguished: boolean;
+      isMalsoBaseRight?: boolean;
+    }>;
+    assumedRights?: Array<{
+      rightType: string;
+      order?: string;
+      holder?: string;
+      registrationDate?: string;
+      claim?: number;
+      willBeAssumed: boolean;
+      isMalsoBaseRight?: boolean;
+    }>;
+    malsoBaseRight?: {
+      rightType: string;
+      order?: string;
+      holder?: string;
+      registrationDate?: string;
+      claim?: number;
+    } | null;
+    // ✅ 점유 리스크 정보 추가
+    tenantRisk?: {
+      riskScore: number;
+      riskLabel: "낮음" | "중간" | "높음";
+      evictionCostMin: number;
+      evictionCostMax: number;
+      hasDividendRequest: boolean;
+      assumedTenants: number;
     };
   };
 }
@@ -221,6 +262,19 @@ export function SaleSpecificationModal({
                 </div>
               </div>
             )}
+            {/* ✅ FMV 표시 추가 */}
+            {(data as any)?.analysisV12?.fmv?.fairMarketValue && (
+              <div className="mt-3 pt-3 border-t border-yellow-300">
+                <FMVDisplay
+                  fairMarketValue={(data as any).analysisV12.fmv.fairMarketValue}
+                  min={(data as any).analysisV12.fmv.fairMarketValue * 0.95}
+                  max={(data as any).analysisV12.fmv.fairMarketValue * 1.05}
+                  auctionCenter={(data as any).analysisV12.fmv.auctionCenter}
+                  showRange={true}
+                  compact={true}
+                />
+              </div>
+            )}
           </section>
 
           {/* ✅ 안전마진 비교 섹션 추가 (v1.2) */}
@@ -316,6 +370,107 @@ export function SaleSpecificationModal({
               </tbody>
             </table>
           </section>
+          {/* ✅ 권리 소멸/인수 분석 테이블 */}
+          {analysis &&
+            (analysis.extinguishedRights?.length > 0 ||
+              analysis.assumedRights?.length > 0) && (
+              <section className="px-6 py-4 bg-gray-50">
+                <h3 className="font-semibold mb-3 text-sm text-gray-900">
+                  ②-1. 권리 소멸/인수 분석
+                </h3>
+                <div className="mb-3 grid grid-cols-3 gap-3 text-xs">
+                  <div className="p-2 bg-blue-50 border border-blue-200 rounded">
+                    <div className="text-blue-700">말소기준권리</div>
+                    <div className="font-semibold text-blue-900">
+                      {analysis.malsoBaseRight?.rightType || "-"}
+                    </div>
+                  </div>
+                  <div className="p-2 bg-green-50 border border-green-200 rounded">
+                    <div className="text-green-700">말소권리</div>
+                    <div className="font-semibold text-green-900">
+                      {analysis.extinguishedRights?.length || 0}건
+                    </div>
+                  </div>
+                  <div className="p-2 bg-orange-50 border border-orange-200 rounded">
+                    <div className="text-orange-700">인수권리</div>
+                    <div className="font-semibold text-orange-900">
+                      {analysis.assumedRights?.length || 0}건
+                    </div>
+                    {analysis.assumedRights?.length === 0 && (
+                      <div className="text-[10px] text-orange-600 mt-1">
+                        (인수 위험 없음)
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <table className="w-full border border-gray-200 text-xs bg-white">
+                  <thead>
+                    <tr className="bg-gray-100 text-gray-900">
+                      <th className="px-2 py-1 border-r border-gray-300 text-left">
+                        권리
+                      </th>
+                      <th className="px-2 py-1 border-r border-gray-300 text-left">
+                        순위
+                      </th>
+                      <th className="px-2 py-1 border-r border-gray-300 text-center">
+                        소멸
+                      </th>
+                      <th className="px-2 py-1 text-center">인수</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rights.map((r, idx) => {
+                      const analyzedRight =
+                        analysis.extinguishedRights?.find(
+                          (ar) => ar.rightType === r.type
+                        ) ||
+                        analysis.assumedRights?.find(
+                          (ar) => ar.rightType === r.type
+                        );
+                      const isMalso =
+                        analysis.malsoBaseRight?.rightType === r.type;
+                      const willBeExtinguished =
+                        analyzedRight?.willBeExtinguished || false;
+                      const willBeAssumed = analyzedRight?.willBeAssumed || false;
+
+                      return (
+                        <tr key={idx} className="border-b border-gray-200">
+                          <td className="px-2 py-1 border-r border-gray-300">
+                            {r.type}
+                            {isMalso && (
+                              <span className="ml-1 text-[10px] text-blue-600 font-semibold">
+                                (말소기준)
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-2 py-1 border-r border-gray-300">
+                            {r.order || "-"}
+                          </td>
+                          <td className="px-2 py-1 border-r border-gray-300 text-center">
+                            {willBeExtinguished ? (
+                              <span className="text-green-600 font-semibold">
+                                ✅
+                              </span>
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )}
+                          </td>
+                          <td className="px-2 py-1 text-center">
+                            {willBeAssumed ? (
+                              <span className="text-orange-600 font-semibold">
+                                ⚠️
+                              </span>
+                            ) : (
+                              <span className="text-gray-400">X</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </section>
+            )}
           {/* 02. 권리관계(최선순위, 소멸X, 기타) */}
           <section className="px-6 py-4 bg-white">
             <h3 className="font-semibold mb-2 mt-1 text-sm text-gray-700">
@@ -419,10 +574,49 @@ export function SaleSpecificationModal({
                 "red"
               )}
           </section>
+          {/* ✅ 점유 및 명도 리스크 섹션 */}
+          {analysis?.tenantRisk && (
+            <section className="px-6 py-4 bg-orange-50 border-t border-orange-200">
+              <h3 className="font-semibold mb-3 text-sm text-orange-900">
+                ③-1. 점유 및 명도 리스크 분석
+              </h3>
+              <div className="grid gap-3 grid-cols-1 md:grid-cols-2 text-xs mb-3">
+                <div className="p-2 bg-white border border-orange-300 rounded">
+                  <div className="text-orange-700 mb-1">AI 예측 점유 위험도</div>
+                  <div className="font-semibold text-orange-900 text-sm">
+                    {analysis.tenantRisk.riskScore}% ({analysis.tenantRisk.riskLabel})
+                  </div>
+                </div>
+                <div className="p-2 bg-white border border-orange-300 rounded">
+                  <div className="text-orange-700 mb-1">예상 명도 비용</div>
+                  <div className="font-semibold text-orange-900 text-sm">
+                    {analysis.tenantRisk.evictionCostMin.toLocaleString()}원 ~{" "}
+                    {analysis.tenantRisk.evictionCostMax.toLocaleString()}원
+                  </div>
+                </div>
+              </div>
+              <div className="p-2 bg-yellow-50 border border-yellow-300 rounded text-xs">
+                <div className="mb-1">
+                  <strong>배당요구:</strong>{" "}
+                  {analysis.tenantRisk.hasDividendRequest
+                    ? "있음"
+                    : "없음 (보증금 인수 가능성 있음)"}
+                </div>
+                <div className="text-red-700 font-medium mt-1">
+                  ⚠️ 실제 점유 상태 확인 필요 (명도 소송 가능성 있음)
+                </div>
+                {analysis.tenantRisk.assumedTenants > 0 && (
+                  <div className="mt-1 text-gray-700">
+                    인수 대상 임차인: {analysis.tenantRisk.assumedTenants}명
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
           {/* 03. 점유·임차현황·배당 */}
           <section className="px-6 py-4 bg-gray-50">
             <h3 className="font-semibold mb-2 mt-1 text-sm text-gray-700">
-              ③ 점유/임차인 현황 및 배당
+              {analysis?.tenantRisk ? "③ 점유/임차인 현황 및 배당" : "③ 점유/임차인 현황 및 배당"}
             </h3>
             <table className="w-full border border-gray-200 bg-white text-xs">
               <tbody>

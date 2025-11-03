@@ -31,6 +31,10 @@ import {
   type RiskLevel,
   type DifficultyLevel,
 } from "@/lib/property/safety-calc";
+import {
+  calculateTenantRiskScore,
+  type TenantRiskInput,
+} from "@/lib/tenant-risk-calculator";
 import type { RightRow } from "@/types/property";
 
 // ============================================
@@ -896,6 +900,25 @@ export function analyzeRights(
     minSafetyMargin: advancedAssumptionResult.minSafetyMargin,
   });
 
+  // 9. 점유 리스크 계산
+  console.log("⚠️ [권리분석 엔진] 점유 리스크 계산 시작");
+  const tenantRiskInput: TenantRiskInput = {
+    tenants: analyzedTenants,
+    malsoBaseRight,
+    dividendDeadline: schedule.dividendDeadline,
+    bidFailCount: 0, // TODO: 유찰 횟수를 시나리오에서 가져와야 함
+    propertyArea:
+      propertyDetails?.buildingAreaPyeong || propertyDetails?.landAreaPyeong,
+    totalDeposit: totalTenantDeposit,
+    expectedDividend: 0, // TODO: 배당 정보에서 가져와야 함
+  };
+  const tenantRiskResult = calculateTenantRiskScore(tenantRiskInput);
+  console.log("⚠️ [권리분석 엔진] 점유 리스크 계산 완료", {
+    riskScore: tenantRiskResult.riskScore,
+    riskLabel: tenantRiskResult.riskLabel,
+    evictionCostRange: `${tenantRiskResult.evictionCostMin.toLocaleString()}원 ~ ${tenantRiskResult.evictionCostMax.toLocaleString()}원`,
+  });
+
   console.log("✅ [권리분석 엔진] 전체 권리분석 완료");
   console.log(`  - 말소기준권리: ${malsoBaseRight?.rightType || "없음"}`);
   console.log(`  - 인수권리 개수: ${assumedRights.length}개`);
@@ -938,6 +961,8 @@ export function analyzeRights(
       assumedAmount: advancedAssumptionResult.assumedAmount,
       trace: advancedAssumptionResult.trace,
     },
+    // 점유 리스크 분석 결과
+    tenantRisk: tenantRiskResult,
   };
 }
 

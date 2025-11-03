@@ -256,6 +256,22 @@ export interface RightsAnalysisResult {
     assumedAmount: number; // 고도화 인수금액 (유형 가중치 적용)
     trace: string[]; // 산출 근거 (trace 정보)
   };
+  // 점유 리스크 분석 결과 (v1.0)
+  tenantRisk?: {
+    riskScore: number; // 0~100 점수
+    riskLabel: "낮음" | "중간" | "높음";
+    evictionCostMin: number; // 명도비용 최저 (원)
+    evictionCostMax: number; // 명도비용 최고 (원)
+    hasDividendRequest: boolean; // 배당요구 여부
+    assumedTenants: number; // 인수 대상 임차인 수
+    details: {
+      confirmationScore: number; // 확정일자 점수 (0~25)
+      moveInScore: number; // 전입일시 점수 (0~25)
+      dividendScore: number; // 배당요구 점수 (0~20)
+      precedentScore: number; // 판례 리스크 점수 (0~15)
+      persistenceScore: number; // 점유 지속 가능성 점수 (0~15)
+    };
+  };
 }
 
 // ============================================
