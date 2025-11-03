@@ -19,9 +19,17 @@ import {
   type TaxInput,
 } from "@/lib/auction-cost";
 import { mapSimulationToPropertyDetail } from "@/lib/property/formatters";
+import { mapSimulationToPropertyDetailV2 } from "@/lib/property/formatters_v2";
+import { calculateRightsAmount } from "@/lib/auction-cost";
+import { evaluateAuction, type AuctionEvalInput } from "@/lib/auction-engine";
 import { SaleSpecificationModal } from "./property/CourtDocumentModal";
 import RightsAnalysisReportModal from "./property/RightsAnalysisReportModal";
-import { estimateMarketPrice, estimateAIMarketPrice, mapPropertyTypeToAIMarketPriceType, type AIMarketPriceParams } from "@/lib/property/market-price";
+import {
+  estimateMarketPrice,
+  estimateAIMarketPrice,
+  mapPropertyTypeToAIMarketPriceType,
+  type AIMarketPriceParams,
+} from "@/lib/property/market-price";
 import AuctionAnalysisReportModal from "./property/AuctionAnalysisReportModal";
 import {
   formatNumber,
@@ -358,8 +366,11 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
       // 매물 정보 추출
       const aiMarketPriceParams: AIMarketPriceParams = {
         appraised: property.basicInfo.appraisalValue,
-        area: property.propertyDetails?.buildingArea || property.propertyDetails?.landArea,
-        regionCode: property.regionalAnalysis?.regionCode || property.basicInfo.location,
+        area:
+          property.propertyDetails?.buildingArea ||
+          property.propertyDetails?.landArea,
+        regionCode:
+          property.regionalAnalysis?.regionCode || property.basicInfo.location,
         propertyType: mapPropertyTypeToAIMarketPriceType(
           property.basicInfo.propertyType
         ),
@@ -369,7 +380,9 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
       // AI 시세 범위 예측
       const aiMarketPriceResult = estimateAIMarketPrice(aiMarketPriceParams);
       console.log(
-        `🤖 [AI 시세 연동] AI 시세 예측 적용 → 범위: ${aiMarketPriceResult.min.toLocaleString()}원 ~ ${aiMarketPriceResult.max.toLocaleString()}원 (신뢰도: ${(aiMarketPriceResult.confidence * 100).toFixed(1)}%)`
+        `🤖 [AI 시세 연동] AI 시세 예측 적용 → 범위: ${aiMarketPriceResult.min.toLocaleString()}원 ~ ${aiMarketPriceResult.max.toLocaleString()}원 (신뢰도: ${(
+          aiMarketPriceResult.confidence * 100
+        ).toFixed(1)}%)`
       );
 
       // AI 시세 중립값 계산 (ROI 계산용 - 경매가 가이드)
@@ -379,10 +392,18 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
       const marketValue = aiMarketValueNeutral; // ROI 계산용 (입찰가 가이드)
 
       console.log("💰 [입찰결과] 시세 확인");
-      console.log(`  - AI 시세 범위: ${aiMarketPriceResult.min.toLocaleString()}원 ~ ${aiMarketPriceResult.max.toLocaleString()}원`);
-      console.log(`  - AI 시세 중립값 (ROI 계산용): ${marketValue.toLocaleString()}원`);
-      console.log(`  - FMV(공정시세, MoS용): ${aiMarketPriceResult.fairCenter.toLocaleString()}원`);
-      console.log(`  - 경매가 가이드 중심값: ${aiMarketPriceResult.auctionCenter.toLocaleString()}원`);
+      console.log(
+        `  - AI 시세 범위: ${aiMarketPriceResult.min.toLocaleString()}원 ~ ${aiMarketPriceResult.max.toLocaleString()}원`
+      );
+      console.log(
+        `  - AI 시세 중립값 (ROI 계산용): ${marketValue.toLocaleString()}원`
+      );
+      console.log(
+        `  - FMV(공정시세, MoS용): ${aiMarketPriceResult.fairCenter.toLocaleString()}원`
+      );
+      console.log(
+        `  - 경매가 가이드 중심값: ${aiMarketPriceResult.auctionCenter.toLocaleString()}원`
+      );
 
       const acquisitionResult = calcAcquisitionAndMoS({
         bidPrice: winningBid,
@@ -758,11 +779,11 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
   const generateDynamicBiddingDate = (): string => {
     const today = new Date();
     const currentDay = today.getDay(); // 0(일요일) ~ 6(토요일)
-    
+
     // 경매 입찰일은 보통 화요일(2) 또는 목요일(4)에 열림
     // 현재 날짜 기준으로 다음 화요일 또는 목요일을 계산
     let daysToAdd = 0;
-    
+
     if (currentDay === 0 || currentDay === 1) {
       // 일요일 또는 월요일이면 다음 화요일 (1~2일 후)
       daysToAdd = currentDay === 0 ? 2 : 1;
@@ -771,33 +792,33 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
       daysToAdd = Math.random() > 0.5 ? 7 : 2; // 랜덤하게 선택
     } else if (currentDay === 3 || currentDay === 4) {
       // 수요일 또는 목요일이면 다음 목요일 또는 다음 화요일
-      daysToAdd = currentDay === 3 ? 1 : (Math.random() > 0.5 ? 6 : 1);
+      daysToAdd = currentDay === 3 ? 1 : Math.random() > 0.5 ? 6 : 1;
     } else {
       // 금요일 또는 토요일이면 다음 화요일 (4~5일 후)
       daysToAdd = currentDay === 5 ? 4 : 3;
     }
-    
+
     // 최소 3일, 최대 21일 후로 제한 (실제 경매 일정 반영)
     const minDays = 3;
     const maxDays = 21;
     daysToAdd = Math.max(minDays, Math.min(maxDays, daysToAdd));
-    
+
     const biddingDate = new Date(today);
     biddingDate.setDate(today.getDate() + daysToAdd);
-    
+
     // YYYY-MM-DD 형식으로 변환
     const year = biddingDate.getFullYear();
-    const month = String(biddingDate.getMonth() + 1).padStart(2, '0');
-    const day = String(biddingDate.getDate()).padStart(2, '0');
-    
+    const month = String(biddingDate.getMonth() + 1).padStart(2, "0");
+    const day = String(biddingDate.getDate()).padStart(2, "0");
+
     const formattedDate = `${year}-${month}-${day}`;
-    
+
     console.log("📅 [입찰기일] 동적 입찰기일 생성:", {
-      오늘: today.toISOString().split('T')[0],
+      오늘: today.toISOString().split("T")[0],
       생성일: formattedDate,
       일수차이: daysToAdd,
     });
-    
+
     return formattedDate;
   };
 
@@ -908,7 +929,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto md:flex md:items-center md:justify-center md:p-4 md:overflow-hidden">
       {/* 배경 오버레이 */}
-      <div 
+      <div
         className="fixed inset-0 bg-black/20 pointer-events-none md:pointer-events-auto"
         onClick={handleClose}
       />
@@ -1197,7 +1218,11 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                           {formatCurrency(biddingResult.aiMarketPrice.max)}
                         </div>
                         <div className="text-[10px] text-[#6B7280]">
-                          신뢰도: {(biddingResult.aiMarketPrice.confidence * 100).toFixed(0)}%
+                          신뢰도:{" "}
+                          {(
+                            biddingResult.aiMarketPrice.confidence * 100
+                          ).toFixed(0)}
+                          %
                         </div>
                       </div>
                     ) : (
@@ -1332,9 +1357,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                         : ""
                     }`}
                   >
-                    <h3 className="text-xs font-semibold mb-1">
-                      {tab.label}
-                    </h3>
+                    <h3 className="text-xs font-semibold mb-1">{tab.label}</h3>
                     <p className="text-xs opacity-80">
                       {tab.key === "right" &&
                         "등기부와 임차인 정보를 기반으로 인수권리와 말소기준권리를 분석합니다."}
@@ -1775,7 +1798,10 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
 
                       <div className="mt-4 p-3 bg-orange-50 rounded border border-orange-200">
                         <p className="text-xs text-orange-800 mb-3">
-                          <strong>분석 요약:</strong> 권리유형 13가지를 종합 분석하여 총인수금액, 안전마진, ROI를 계산해 예상 수익률을 제시합니다. 실제 투자 전 반드시 전문가 자문을 받으시기 바랍니다.
+                          <strong>분석 요약:</strong> 권리유형 13가지를 종합
+                          분석하여 총인수금액, 안전마진, ROI를 계산해 예상
+                          수익률을 제시합니다. 실제 투자 전 반드시 전문가 자문을
+                          받으시기 바랍니다.
                         </p>
                         <button
                           onClick={() => {
@@ -1855,15 +1881,70 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
         property &&
         (() => {
           const rightsAnalysis = analyzeRights(property);
+          // v1.2 매핑을 위해 evaluateAuction 실행
+          const propertyType = property.basicInfo.propertyType || "기타";
+          const appraisalValue = property.basicInfo.appraisalValue || 0;
+          const minimumBidPrice =
+            property.basicInfo.minimumBidPrice ||
+            Math.floor(appraisalValue * 0.7);
+          const baseMapped = mapSimulationToPropertyDetail(property);
+          const assumedAmount = calculateRightsAmount(
+            baseMapped.rights || [],
+            appraisalValue,
+            propertyType,
+            baseMapped.payout?.rows
+          );
+          const propertyUse = mapPropertyTypeToUse(propertyType);
+          const auctionEvalInput: AuctionEvalInput = {
+            cost: {
+              bidPrice: minimumBidPrice,
+              rights: assumedAmount,
+              capex: 5_000_000,
+              eviction: 2_000_000,
+              carrying: 0,
+              contingency: 1_000_000,
+              taxInput: { use: propertyUse, price: minimumBidPrice },
+            },
+            market: {
+              appraised: appraisalValue,
+              area:
+                property.propertyDetails?.buildingArea ||
+                property.propertyDetails?.landArea,
+              regionCode:
+                (property.regionalAnalysis as any)?.regionCode ||
+                property.basicInfo.location,
+              propertyType: mapPropertyTypeToAIMarketPriceType(propertyType),
+              yearBuilt: (property.propertyDetails as any)?.yearBuilt,
+              minimumBidPrice,
+            },
+            exit: {
+              holdingMonths: 6,
+              annualAppreciation: 0.04,
+              rehabUplift: 5_000_000,
+              sellCostRate: 0.015,
+            },
+            debug: false,
+          };
+          const auctionEvalResult = evaluateAuction(auctionEvalInput);
+          console.log("💰 [입찰 모달] v1.2 매핑을 위한 evaluateAuction 완료");
+          const mapped = mapSimulationToPropertyDetailV2(
+            property,
+            auctionEvalResult,
+            6
+          );
+          // baseMapped의 rights 정보를 유지
+          mapped.rights = baseMapped.rights;
+          mapped.payout = baseMapped.payout;
           return (
             <AuctionAnalysisReportModal
               isOpen={showAuctionReportModal}
               onClose={() => setShowAuctionReportModal(false)}
-              data={mapSimulationToPropertyDetail(property)}
+              data={mapped}
               analysis={{
                 safetyMargin: rightsAnalysis.safetyMargin,
                 totalAssumedAmount: rightsAnalysis.totalAssumedAmount,
                 marketValue: rightsAnalysis.marketValue,
+                advancedSafetyMargin: rightsAnalysis.advancedSafetyMargin,
               }}
             />
           );

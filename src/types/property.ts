@@ -4,6 +4,38 @@
  */
 
 // ============================================
+// 0. 안전마진 계산 타입 (auction-engine 사용)
+// ============================================
+
+export interface AcquisitionBreakdown {
+  bidPrice: number;
+  rights: number;
+  taxes: number;
+  costs: number;
+  financing: number;
+  penalty: number;
+  misc: number;
+  total: number; // A
+}
+
+export interface SafetyMargin {
+  label: "FMV" | "EXIT" | "USER";
+  amount: number;         // 원 단위
+  pct: number;            // 0.294 -> 29.4%
+  referencePrice: number; // 시세값
+}
+
+export interface CalcResult {
+  acquisition: AcquisitionBreakdown;
+  prices: { fmv: number; exit: number };
+  margins: {
+    fmv: SafetyMargin;
+    exit: SafetyMargin;
+    user: SafetyMargin;
+  };
+}
+
+// ============================================
 // 1. 기본 타입 정의
 // ============================================
 
@@ -283,3 +315,4 @@ export interface SidebarSummaryProps {
   roi: number;                   // 예상 수익률 (%)
   tip?: string;                  // 추천 팁
 }
+

@@ -250,6 +250,12 @@ export interface RightsAnalysisResult {
     riskFactors: string[]; // 리스크 요인들
     recommendations: string[]; // 권장사항들
   };
+  // 고도화 안전마진 계산 결과 (v1.2)
+  advancedSafetyMargin?: {
+    minSafetyMargin: number; // 최소 안전마진 (유형/위험도/난이도 반영)
+    assumedAmount: number; // 고도화 인수금액 (유형 가중치 적용)
+    trace: string[]; // 산출 근거 (trace 정보)
+  };
 }
 
 // ============================================

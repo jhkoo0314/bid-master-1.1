@@ -55,56 +55,77 @@ bid-master-ai/
 │   │   │   ├── test-read/route.ts       # 데이터 읽기 테스트
 │   │   │   ├── test-sheets/route.ts     # 구글 시트 연결 테스트
 │   │   │   ├── test-simple/route.ts     # 로컬 파일 저장 테스트
+│   │   │   ├── test-gmail/route.ts      # Gmail 테스트
 │   │   │   └── test-waitlist/route.ts   # 사전 알림 테스트
 │   │   ├── calculator/         # 수익 계산기 페이지
 │   │   ├── contact/           # 문의 페이지
 │   │   ├── guide/             # 실전 가이드 페이지
 │   │   ├── property/[id]/      # 매물 상세 페이지
+│   │   ├── simulation/[id]/   # 시뮬레이션 상세 페이지
 │   │   ├── privacy-policy/    # 개인정보처리방침
 │   │   ├── terms-of-service/  # 이용약관
 │   │   ├── legacy/            # 레거시 페이지
+│   │   │   └── property/[caseId]/       # 레거시 매물 상세 페이지
 │   │   ├── test-sheets/       # 구글 시트 테스트 페이지
 │   │   ├── test-simple/       # 간단한 테스트 페이지
 │   │   ├── test-images/       # 이미지 테스트 페이지
 │   │   ├── test-gmail/        # Gmail 테스트 페이지
 │   │   ├── test-graphs/       # 그래프 테스트 페이지
 │   │   ├── layout.tsx          # 루트 레이아웃
-│   │   └── page.tsx            # 메인 페이지
+│   │   ├── page.tsx            # 메인 페이지
+│   │   ├── globals.css         # 글로벌 스타일
+│   │   └── favicon.ico         # 파비콘
 │   ├── components/             # UI 컴포넌트
-│   │   ├── common/            # 공통 컴포넌트 (EmptyState, ErrorState, InfoTip, SkeletonCard)
-│   │   ├── filters/           # 필터 컴포넌트 (FilterBar, ActiveChips)
-│   │   ├── list/              # 리스트 컴포넌트 (PropertyCard, PropertyGrid, MobileCarousel)
+│   │   ├── common/            # 공통 컴포넌트
+│   │   │   ├── EmptyState.tsx         # 빈 상태 컴포넌트
+│   │   │   ├── ErrorState.tsx         # 에러 상태 컴포넌트
+│   │   │   ├── InfoTip.tsx            # 정보 툴팁
+│   │   │   └── SkeletonCard.tsx       # 스켈레톤 로딩
+│   │   ├── filters/           # 필터 컴포넌트
+│   │   │   ├── FilterBar.tsx          # 필터 바
+│   │   │   └── ActiveChips.tsx         # 활성 필터 칩
+│   │   ├── list/              # 리스트 컴포넌트
+│   │   │   ├── PropertyCard.tsx       # 매물 카드
+│   │   │   ├── PropertyGrid.tsx       # 매물 그리드
+│   │   │   └── MobileCarousel.tsx      # 모바일 캐러셀
 │   │   ├── property/          # 매물 상세 컴포넌트
-│   │   │   ├── SummaryHeader.tsx
-│   │   │   ├── StickyBar.tsx
-│   │   │   ├── DecisionPanel.tsx
-│   │   │   ├── ScheduleTable.tsx
-│   │   │   ├── RightsTable.tsx
-│   │   │   ├── PayoutTable.tsx
-│   │   │   ├── RegionPanel.tsx
-│   │   │   ├── LearnBlock.tsx
-│   │   │   ├── SectionCard.tsx
-│   │   │   ├── RightsAnalysisReportModal.tsx
-│   │   │   ├── AuctionAnalysisReportModal.tsx
-│   │   │   └── CourtDocumentModal.tsx
-│   │   ├── hero/              # 히어로 섹션 (MainHero)
-│   │   ├── learn/             # 학습 컴포넌트 (QuickGuides)
-│   │   ├── layout/            # 레이아웃 컴포넌트 (TopHeader)
-│   │   ├── metrics/           # 메트릭 컴포넌트 (ActivityStrip)
-│   │   ├── AuctionAnalysisModal.tsx
-│   │   ├── AuctionTermsModal.tsx
-│   │   ├── BiddingModal.tsx
-│   │   ├── CircularProgressChart.tsx
-│   │   ├── DashboardHeader.tsx
-│   │   ├── DevModeToggle.tsx
-│   │   ├── FeedbackFAB.tsx
-│   │   ├── Footer.tsx
-│   │   ├── HeroBelow.tsx
-│   │   ├── MobileBottomNav.tsx
-│   │   ├── ProfitCalculator.tsx
-│   │   ├── PropertyCard.tsx
-│   │   ├── PropertyFilter.tsx
-│   │   └── WaitlistModal.tsx
+│   │   │   ├── SummaryHeader.tsx       # 요약 헤더
+│   │   │   ├── StickyBar.tsx           # 고정 바
+│   │   │   ├── DecisionPanel.tsx       # 의사결정 패널
+│   │   │   ├── ScheduleTable.tsx        # 일정 테이블
+│   │   │   ├── RightsTable.tsx          # 권리 테이블
+│   │   │   ├── PayoutTable.tsx          # 배당 테이블
+│   │   │   ├── RegionPanel.tsx         # 지역 패널
+│   │   │   ├── LearnBlock.tsx          # 학습 블록
+│   │   │   ├── SectionCard.tsx         # 섹션 카드
+│   │   │   ├── ActionButtons.tsx       # 액션 버튼
+│   │   │   ├── SidebarSummary.tsx      # 사이드바 요약
+│   │   │   ├── SimilarCases.tsx        # 유사 케이스
+│   │   │   ├── RightsAnalysisReportModal.tsx  # 권리분석 리포트 모달
+│   │   │   ├── AuctionAnalysisReportModal.tsx # 경매분석 리포트 모달
+│   │   │   └── CourtDocumentModal.tsx         # 법원 문서 모달
+│   │   ├── hero/              # 히어로 섹션
+│   │   │   └── MainHero.tsx            # 메인 히어로
+│   │   ├── learn/             # 학습 컴포넌트
+│   │   │   └── QuickGuides.tsx         # 빠른 가이드
+│   │   ├── layout/            # 레이아웃 컴포넌트
+│   │   │   └── TopHeader.tsx           # 상단 헤더
+│   │   ├── metrics/           # 메트릭 컴포넌트
+│   │   │   └── ActivityStrip.tsx       # 활동 스트립
+│   │   ├── AuctionAnalysisModal.tsx    # 경매분석 모달
+│   │   ├── AuctionTermsModal.tsx      # 경매 용어 모달
+│   │   ├── BiddingModal.tsx           # 입찰 모달
+│   │   ├── CircularProgressChart.tsx  # 원형 진행 차트
+│   │   ├── DashboardHeader.tsx        # 대시보드 헤더
+│   │   ├── DevModeToggle.tsx          # 개발자 모드 토글
+│   │   ├── FeedbackFAB.tsx            # 피드백 플로팅 버튼
+│   │   ├── Footer.tsx                 # 푸터
+│   │   ├── HeroBelow.tsx              # 히어로 하단
+│   │   ├── MobileBottomNav.tsx        # 모바일 하단 네비게이션
+│   │   ├── ProfitCalculator.tsx       # 수익 계산기
+│   │   ├── PropertyCard.tsx           # 매물 카드 (레거시)
+│   │   ├── PropertyFilter.tsx         # 매물 필터
+│   │   └── WaitlistModal.tsx          # 사전 알림 모달
 │   ├── lib/                    # 핵심 로직
 │   │   ├── auction-cost.ts    # 경매 비용 계산
 │   │   ├── auction-engine.ts   # 경매 엔진
@@ -116,12 +137,14 @@ bid-master-ai/
 │   │   ├── point-calculator.ts # 포인트 계산
 │   │   ├── profit-calculator.ts # 수익 계산
 │   │   ├── property/          # 매물 관련 유틸리티
-│   │   │   ├── fetchers.ts
-│   │   │   ├── formatters.ts
-│   │   │   ├── market-price.ts
-│   │   │   └── safety-calc.ts
+│   │   │   ├── fetchers.ts            # 데이터 페처
+│   │   │   ├── formatters.ts          # 포맷터
+│   │   │   ├── generateSimilarCases.ts # 유사 케이스 생성
+│   │   │   ├── market-price.ts        # 시세 계산
+│   │   │   └── safety-calc.ts         # 안전성 계산
 │   │   ├── regional-analysis.ts # 지역분석
 │   │   ├── rights-analysis-engine.ts # 권리분석 엔진
+│   │   ├── rights-engine.ts    # 권리 엔진
 │   │   └── unsplash-client.ts  # Unsplash 이미지 API
 │   ├── store/                  # 상태 관리
 │   │   └── simulation-store.ts # 시뮬레이션 상태 (Zustand)
@@ -131,13 +154,46 @@ bid-master-ai/
 │       └── list.ts             # 리스트 타입
 ├── docs/                       # 문서
 │   ├── PRD.md                  # 제품 요구사항 문서
-│   ├── pointplan_v1.2.md      # 포인트 시스템 계획
+│   ├── pointplan_v1.1.md      # 포인트 시스템 계획 v1.1
+│   ├── pointplan_v1.2.md      # 포인트 시스템 계획 v1.2
 │   ├── game-guide.md          # 게임 가이드
-│   ├── future-supabase-schema.md
-│   └── future-clerk-integration.md
+│   ├── bidmaster_v_1.2.md     # Bid Master v1.2 문서
+│   ├── ai-market-price-test-checklist.md  # AI 시세 테스트 체크리스트
+│   ├── future-supabase-schema.md          # Supabase 스키마 계획
+│   ├── future-clerk-integration.md        # Clerk 통합 계획
+│   ├── bid.md                  # 입찰 관련 문서
+│   ├── bid2.md                 # 입찰 관련 문서 2
+│   ├── listview.md             # 리스트 뷰 문서
+│   ├── manual-template.md      # 매뉴얼 템플릿
+│   ├── plancal.md              # 계획 계산 문서
+│   ├── plancal2.md             # 계획 계산 문서 2
+│   ├── premium-style.md        # 프리미엄 스타일 문서
+│   ├── rebuildplan.md          # 재구축 계획
+│   ├── sidebar.md              # 사이드바 문서
+│   └── taxlogic.md             # 세금 로직 문서
+├── mcp/                        # MCP (Model Context Protocol) 서버
+│   └── google-sheets-server.ts # 구글 시트 MCP 서버
 ├── public/                     # 정적 파일
+│   ├── mock/                   # 목업 데이터
+│   │   ├── list-empty.json
+│   │   ├── list-error.json
+│   │   ├── list-normal.json
+│   │   ├── property-case004.json
+│   │   ├── property-insufficient.json
+│   │   ├── property-normal.json
+│   │   └── property-pending.json
+│   └── [이미지 파일들]
 ├── bid-master-v1-sheet-mcp.json # 구글 서비스 계정 키 (MCP 설정)
-└── README.md
+├── env.example                  # 환경 변수 예시
+├── package.json                 # 패키지 의존성
+├── pnpm-lock.yaml               # pnpm 잠금 파일
+├── tsconfig.json                # TypeScript 설정
+├── tailwind.config.ts           # Tailwind CSS 설정
+├── next.config.ts               # Next.js 설정
+├── postcss.config.mjs           # PostCSS 설정
+├── eslint.config.mjs            # ESLint 설정
+├── agent.md                     # 프로젝트 정리 문서 (현재 파일)
+└── README.md                    # README
 ```
 
 ## 🎮 주요 기능
@@ -478,7 +534,15 @@ console.log("🧪 [테스트] 테스트 완료 - 응답시간: 2.3초");
 
 ### 2025.01.29
 
-- PRD 및 agent.md 문서 업데이트
+- 프로젝트 구조 문서 업데이트 (agent.md)
+  - 시뮬레이션 상세 페이지 추가 반영
+  - property 컴포넌트 구조 상세화 (ActionButtons, SidebarSummary, SimilarCases)
+  - lib/property 하위 파일 추가 (generateSimilarCases.ts)
+  - lib/rights-engine.ts 추가 반영
+  - mcp 디렉토리 추가
+  - docs 디렉토리 전체 문서 목록 업데이트
+  - public/mock 목업 데이터 구조 반영
+  - 설정 파일들 추가 (tsconfig, tailwind, next.config 등)
 - 개발자 모드 기능 확장 (상세 리포트 접근)
 - 컴포넌트 구조 정리 및 문서화
 - 페이지 구조 최신화 반영

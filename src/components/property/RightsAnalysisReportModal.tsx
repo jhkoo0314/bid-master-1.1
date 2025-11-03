@@ -12,6 +12,11 @@ interface RightsAnalysisReportModalProps {
     safetyMargin: number;
     totalAssumedAmount: number;
     trace?: string[];
+    advancedSafetyMargin?: {
+      minSafetyMargin: number;
+      assumedAmount: number;
+      trace: string[];
+    };
   };
 }
 export default function RightsAnalysisReportModal({
@@ -190,6 +195,41 @@ export default function RightsAnalysisReportModal({
                 </div>
               </div>
             </div>
+            {/* 고도화 안전마진 정보 추가 */}
+            {analysis?.advancedSafetyMargin && (
+              <div className="mt-4 grid gap-4 grid-cols-2 md:grid-cols-3 text-[13px]">
+                <div className="p-3 bg-blue-50 border border-blue-300">
+                  <div className="text-[11px] text-gray-600 flex items-center">
+                    고도화 인수금액
+                    <InfoTip
+                      title="고도화 인수금액"
+                      description={
+                        "유형 가중치를 적용한 인수금액. 매물 유형별 리스크를 반영합니다."
+                      }
+                    />
+                  </div>
+                  <div className="font-semibold text-blue-900">
+                    {analysis.advancedSafetyMargin.assumedAmount.toLocaleString()}
+                    원
+                  </div>
+                </div>
+                <div className="p-3 bg-green-50 border border-green-300">
+                  <div className="text-[11px] text-gray-600 flex items-center">
+                    최소 안전마진 (고도화)
+                    <InfoTip
+                      title="최소 안전마진 (고도화)"
+                      description={
+                        "매물 유형, 위험도, 난이도를 반영한 최소 안전마진. 유형별 바닥노출과 가중치를 적용합니다."
+                      }
+                    />
+                  </div>
+                  <div className="font-semibold text-green-900">
+                    {analysis.advancedSafetyMargin.minSafetyMargin.toLocaleString()}
+                    원
+                  </div>
+                </div>
+              </div>
+            )}
           </section>
 
           {/* 2. 최선순위 / 미소멸권리 */}
@@ -235,7 +275,9 @@ export default function RightsAnalysisReportModal({
           </section>
 
           {/* 2-1. 근거 보기 (산출 트레이스) */}
-          {analysis?.trace && analysis.trace.length > 0 && (
+          {(analysis?.trace && analysis.trace.length > 0) ||
+          (analysis?.advancedSafetyMargin?.trace &&
+            analysis.advancedSafetyMargin.trace.length > 0) ? (
             <section className="px-8 py-4 bg-gray-50">
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold text-sm text-gray-900">
@@ -255,14 +297,38 @@ export default function RightsAnalysisReportModal({
                 </button>
               </div>
               {showTrace && (
-                <ul className="mt-2 text-xs text-gray-700 list-disc pl-5 space-y-1">
-                  {analysis.trace.map((t, i) => (
-                    <li key={i}>{t}</li>
-                  ))}
-                </ul>
+                <div className="mt-2 space-y-3">
+                  {/* 고도화 안전마진 계산 근거 */}
+                  {analysis?.advancedSafetyMargin?.trace &&
+                    analysis.advancedSafetyMargin.trace.length > 0 && (
+                      <div>
+                        <h4 className="text-xs font-semibold text-gray-800 mb-2">
+                          고도화 안전마진 계산 근거
+                        </h4>
+                        <ul className="text-xs text-gray-700 list-disc pl-5 space-y-1">
+                          {analysis.advancedSafetyMargin.trace.map((t, i) => (
+                            <li key={i}>{t}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  {/* 기본 trace (기존) */}
+                  {analysis?.trace && analysis.trace.length > 0 && (
+                    <div>
+                      <h4 className="text-xs font-semibold text-gray-800 mb-2">
+                        기본 계산 근거
+                      </h4>
+                      <ul className="text-xs text-gray-700 list-disc pl-5 space-y-1">
+                        {analysis.trace.map((t, i) => (
+                          <li key={i}>{t}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
               )}
             </section>
-          )}
+          ) : null}
 
           {/* 3. 등기 권리 목록 (법원양식 표 스타일) */}
           <section className="px-8 py-5 bg-gray-50">
@@ -346,9 +412,7 @@ export default function RightsAnalysisReportModal({
             <ul className="list-disc pl-5 text-xs text-gray-700 space-y-1">
               <li>최선순위권리 확인 후 말소기준권리 판단이 우선입니다.</li>
               <li>미소멸권리 유무에 따른 인수/소멸 여부를 확정하세요.</li>
-              <li>
-                인수액을 기반으로 입찰 가능 최고가를 역산합니다.
-              </li>
+              <li>인수액을 기반으로 입찰 가능 최고가를 역산합니다.</li>
             </ul>
           </section>
 

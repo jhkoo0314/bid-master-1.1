@@ -11,6 +11,11 @@ interface SaleSpecificationModalProps {
     safetyMargin: number;
     totalAssumedAmount: number;
     trace?: string[];
+    advancedSafetyMargin?: {
+      minSafetyMargin: number;
+      assumedAmount: number;
+      trace: string[];
+    };
   };
 }
 
@@ -201,6 +206,23 @@ export function SaleSpecificationModal({
                   : "-"}
               </div>
             </div>
+            {/* 고도화 안전마진 정보 추가 */}
+            {analysis?.advancedSafetyMargin && (
+              <div className="mt-3 pt-3 border-t border-yellow-300 grid grid-cols-2 gap-4 text-sm">
+                <div className="text-blue-800">
+                  고도화 인수금액:{" "}
+                  <span className="font-semibold">
+                    {analysis.advancedSafetyMargin.assumedAmount.toLocaleString()}원
+                  </span>
+                </div>
+                <div className="text-green-800">
+                  최소 안전마진 (고도화):{" "}
+                  <span className="font-semibold">
+                    {analysis.advancedSafetyMargin.minSafetyMargin.toLocaleString()}원
+                  </span>
+                </div>
+              </div>
+            )}
           </section>
           {/* 01. 사건/매물 기본정보 */}
           <section className="px-6 py-4">
@@ -453,16 +475,42 @@ export function SaleSpecificationModal({
           </section>
 
           {/* 05. 근거 보기 (산출 트레이스) */}
-          {analysis?.trace && analysis.trace.length > 0 && (
+          {(analysis?.trace && analysis.trace.length > 0) ||
+          (analysis?.advancedSafetyMargin?.trace &&
+            analysis.advancedSafetyMargin.trace.length > 0) ? (
             <section className="px-6 py-4 bg-gray-50">
               <h3 className="font-semibold mb-2 text-sm text-gray-700">근거 보기</h3>
-              <ul className="text-xs text-gray-700 list-disc pl-5 space-y-1">
-                {analysis.trace.map((t, i) => (
-                  <li key={i}>{t}</li>
-                ))}
-              </ul>
+              <div className="space-y-3">
+                {/* 고도화 안전마진 계산 근거 */}
+                {analysis?.advancedSafetyMargin?.trace &&
+                  analysis.advancedSafetyMargin.trace.length > 0 && (
+                    <div>
+                      <h4 className="text-xs font-semibold text-gray-800 mb-2">
+                        고도화 안전마진 계산 근거
+                      </h4>
+                      <ul className="text-xs text-gray-700 list-disc pl-5 space-y-1">
+                        {analysis.advancedSafetyMargin.trace.map((t, i) => (
+                          <li key={i}>{t}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                {/* 기본 trace (기존) */}
+                {analysis?.trace && analysis.trace.length > 0 && (
+                  <div>
+                    <h4 className="text-xs font-semibold text-gray-800 mb-2">
+                      기본 계산 근거
+                    </h4>
+                    <ul className="text-xs text-gray-700 list-disc pl-5 space-y-1">
+                      {analysis.trace.map((t, i) => (
+                        <li key={i}>{t}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
             </section>
-          )}
+          ) : null}
           {/* 닫기 버튼 */}
           <div className="px-6 py-4 border-t flex justify-end bg-white">
             <button

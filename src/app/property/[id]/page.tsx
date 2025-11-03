@@ -24,6 +24,7 @@ import { PropertyDetail } from "@/types/property";
 import { SimulationScenario } from "@/types/simulation";
 import { useSimulationStore } from "@/store/simulation-store";
 import { mapSimulationToPropertyDetail } from "@/lib/property/formatters";
+import { mapSimulationToPropertyDetailV2 } from "@/lib/property/formatters_v2";
 import { analyzeRights } from "@/lib/rights-analysis-engine";
 import {
   calculateRightsAmount,
@@ -34,6 +35,7 @@ import {
 } from "@/lib/auction-cost";
 import { generateSimilarCases } from "@/lib/property/generateSimilarCases";
 import { estimateMarketPrice, estimateAIMarketPrice, mapPropertyTypeToAIMarketPriceType, type AIMarketPriceParams } from "@/lib/property/market-price";
+import { evaluateAuction, type AuctionEvalInput } from "@/lib/auction-engine";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -127,6 +129,43 @@ export default function PropertyPage({ params }: PageProps) {
         taxInput,
       });
 
+      // auction-engine.ts v1.2 통합 계산 엔진 호출
+      console.log("💰 [프로퍼티 페이지] evaluateAuction 호출 시작");
+      const auctionEvalInput: AuctionEvalInput = {
+        cost: {
+          bidPrice: minimumBidPrice,
+          rights: assumedAmount,
+          capex,
+          eviction,
+          carrying,
+          contingency,
+          taxInput,
+        },
+        market: {
+          appraised: appraisalValue,
+          area: scenario?.propertyDetails?.buildingArea || scenario?.propertyDetails?.landArea,
+          regionCode: scenario?.regionalAnalysis?.regionCode || scenario?.basicInfo?.location,
+          propertyType: mapPropertyTypeToAIMarketPriceType(propertyType),
+          yearBuilt: scenario?.propertyDetails?.yearBuilt,
+          minimumBidPrice,
+        },
+        exit: {
+          holdingMonths: 6,
+          annualAppreciation: 0.04, // 연 4% 상승률 가정
+          rehabUplift: capex, // 수리비를 리노베 가산으로 사용
+          sellCostRate: 0.015, // 매도비용 1.5%
+        },
+        debug: false,
+      };
+
+      const auctionEvalResult = evaluateAuction(auctionEvalInput);
+      console.log("💰 [프로퍼티 페이지] evaluateAuction 완료", {
+        mos_fmv: auctionEvalResult.margin.mos_fmv,
+        mos_exit: auctionEvalResult.margin.mos_exit,
+        exitPrice: auctionEvalResult.margin.exitPrice,
+        roi_exit: auctionEvalResult.margin.roi_exit,
+      });
+
       return {
         safetyMargin: acquisitionResult.marginAmount,
         totalAssumedAmount: assumedAmount,
@@ -135,6 +174,14 @@ export default function PropertyPage({ params }: PageProps) {
           fairMarketValue: aiMarketPriceResult.fairCenter,
           auctionCenter: aiMarketPriceResult.auctionCenter,
           center: aiMarketPriceResult.center,
+        },
+        auctionEval: {
+          mos_fmv: auctionEvalResult.margin.mos_fmv,
+          mos_exit: auctionEvalResult.margin.mos_exit,
+          exitPrice: auctionEvalResult.margin.exitPrice,
+          roi_exit: auctionEvalResult.margin.roi_exit,
+          strategy: auctionEvalResult.strategy,
+          costBreakdown: auctionEvalResult.costBreakdown,
         },
       };
     } catch (e) {
@@ -317,7 +364,51 @@ export default function PropertyPage({ params }: PageProps) {
         const cachedScenario = getPropertyFromCache(caseId);
         if (cachedScenario) {
           console.log(`💾 [캐시] 매물 데이터 조회 성공: ${caseId}`);
-          const mapped = mapSimulationToPropertyDetail(cachedScenario);
+          // 먼저 기본 매핑으로 rights 정보 포함
+          const baseMapped = mapSimulationToPropertyDetail(cachedScenario);
+          // v1.2 매핑을 위해 evaluateAuction 실행
+          const propertyType = cachedScenario.basicInfo.propertyType || "기타";
+          const appraisalValue = cachedScenario.basicInfo.appraisalValue || 0;
+          const minimumBidPrice = cachedScenario.basicInfo.minimumBidPrice || Math.floor(appraisalValue * 0.7);
+          const assumedAmount = calculateRightsAmount(
+            baseMapped.rights || [],
+            appraisalValue,
+            propertyType,
+            baseMapped.payout?.rows
+          );
+          const propertyUse = mapPropertyTypeToUse(propertyType);
+          const auctionEvalInput: AuctionEvalInput = {
+            cost: {
+              bidPrice: minimumBidPrice,
+              rights: assumedAmount,
+              capex: 5_000_000,
+              eviction: 2_000_000,
+              carrying: 0,
+              contingency: 1_000_000,
+              taxInput: { use: propertyUse, price: minimumBidPrice },
+            },
+            market: {
+              appraised: appraisalValue,
+              area: cachedScenario.propertyDetails?.buildingArea || cachedScenario.propertyDetails?.landArea,
+              regionCode: cachedScenario.regionalAnalysis?.regionCode || cachedScenario.basicInfo.location,
+              propertyType: mapPropertyTypeToAIMarketPriceType(propertyType),
+              yearBuilt: cachedScenario.propertyDetails?.yearBuilt,
+              minimumBidPrice,
+            },
+            exit: {
+              holdingMonths: 6,
+              annualAppreciation: 0.04,
+              rehabUplift: 5_000_000,
+              sellCostRate: 0.015,
+            },
+            debug: false,
+          };
+          const auctionEvalResult = evaluateAuction(auctionEvalInput);
+          console.log("💰 [프로퍼티 페이지] v1.2 매핑을 위한 evaluateAuction 완료");
+          const mapped = mapSimulationToPropertyDetailV2(cachedScenario, auctionEvalResult, 6);
+          // baseMapped의 rights 정보를 유지
+          mapped.rights = baseMapped.rights;
+          mapped.payout = baseMapped.payout;
           setData(mapped);
           setScenario(cachedScenario); // 👈 원본 시나리오 저장
           setIsLoading(false);
@@ -330,7 +421,51 @@ export default function PropertyPage({ params }: PageProps) {
         );
         if (foundScenario) {
           console.log(`📚 [교육용] 매물 데이터 조회 성공: ${caseId}`);
-          const mapped = mapSimulationToPropertyDetail(foundScenario);
+          // 먼저 기본 매핑으로 rights 정보 포함
+          const baseMapped = mapSimulationToPropertyDetail(foundScenario);
+          // v1.2 매핑을 위해 evaluateAuction 실행
+          const propertyType = foundScenario.basicInfo.propertyType || "기타";
+          const appraisalValue = foundScenario.basicInfo.appraisalValue || 0;
+          const minimumBidPrice = foundScenario.basicInfo.minimumBidPrice || Math.floor(appraisalValue * 0.7);
+          const assumedAmount = calculateRightsAmount(
+            baseMapped.rights || [],
+            appraisalValue,
+            propertyType,
+            baseMapped.payout?.rows
+          );
+          const propertyUse = mapPropertyTypeToUse(propertyType);
+          const auctionEvalInput: AuctionEvalInput = {
+            cost: {
+              bidPrice: minimumBidPrice,
+              rights: assumedAmount,
+              capex: 5_000_000,
+              eviction: 2_000_000,
+              carrying: 0,
+              contingency: 1_000_000,
+              taxInput: { use: propertyUse, price: minimumBidPrice },
+            },
+            market: {
+              appraised: appraisalValue,
+              area: foundScenario.propertyDetails?.buildingArea || foundScenario.propertyDetails?.landArea,
+              regionCode: foundScenario.regionalAnalysis?.regionCode || foundScenario.basicInfo.location,
+              propertyType: mapPropertyTypeToAIMarketPriceType(propertyType),
+              yearBuilt: foundScenario.propertyDetails?.yearBuilt,
+              minimumBidPrice,
+            },
+            exit: {
+              holdingMonths: 6,
+              annualAppreciation: 0.04,
+              rehabUplift: 5_000_000,
+              sellCostRate: 0.015,
+            },
+            debug: false,
+          };
+          const auctionEvalResult = evaluateAuction(auctionEvalInput);
+          console.log("💰 [프로퍼티 페이지] v1.2 매핑을 위한 evaluateAuction 완료");
+          const mapped = mapSimulationToPropertyDetailV2(foundScenario, auctionEvalResult, 6);
+          // baseMapped의 rights 정보를 유지
+          mapped.rights = baseMapped.rights;
+          mapped.payout = baseMapped.payout;
           setData(mapped);
           setScenario(foundScenario); // 👈 원본 시나리오 저장
           setIsLoading(false);
@@ -791,7 +926,7 @@ export default function PropertyPage({ params }: PageProps) {
         </div>
       ) : null}
       {/* 법원문서 모달 */}
-      {devMode?.isDevMode && courtModalOpen && data && data.meta && (
+      {devMode?.isDevMode && courtModalOpen && data && data.meta && scenario && (
         <SaleSpecificationModal
           isOpen={courtModalOpen}
           onClose={() => {
@@ -799,11 +934,18 @@ export default function PropertyPage({ params }: PageProps) {
             setCourtModalOpen(false);
           }}
           data={data}
-          analysis={analysis}
+          analysis={(() => {
+            const rightsAnalysis = analyzeRights(scenario);
+            return {
+              safetyMargin: rightsAnalysis.safetyMargin,
+              totalAssumedAmount: rightsAnalysis.totalAssumedAmount,
+              advancedSafetyMargin: rightsAnalysis.advancedSafetyMargin,
+            };
+          })()}
         />
       )}
       {/* 권리분석 리포트 모달 */}
-      {devMode?.isDevMode && rightsReportOpen && data && (
+      {devMode?.isDevMode && rightsReportOpen && data && scenario && (
         <RightsAnalysisReportModal
           isOpen={rightsReportOpen}
           onClose={() => {
@@ -811,11 +953,11 @@ export default function PropertyPage({ params }: PageProps) {
             setRightsReportOpen(false);
           }}
           data={data}
-          analysis={analysis}
+          analysis={analyzeRights(scenario)}
         />
       )}
       {/* 경매분석 리포트 모달 */}
-      {devMode?.isDevMode && auctionReportOpen && data && (
+      {devMode?.isDevMode && auctionReportOpen && data && scenario && (
         <AuctionAnalysisReportModal
           isOpen={auctionReportOpen}
           onClose={() => {
@@ -823,7 +965,15 @@ export default function PropertyPage({ params }: PageProps) {
             setAuctionReportOpen(false);
           }}
           data={data}
-          analysis={analysis}
+          analysis={(() => {
+            const rightsAnalysis = analyzeRights(scenario);
+            return {
+              safetyMargin: rightsAnalysis.safetyMargin,
+              totalAssumedAmount: rightsAnalysis.totalAssumedAmount,
+              marketValue: rightsAnalysis.marketValue,
+              advancedSafetyMargin: rightsAnalysis.advancedSafetyMargin,
+            };
+          })()}
         />
       )}
       {/* 사전 알림 신청 모달 (일반 모드 CTA) */}

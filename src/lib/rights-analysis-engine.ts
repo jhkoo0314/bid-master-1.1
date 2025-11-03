@@ -19,7 +19,19 @@ import {
   parseMoneyValue,
   type TaxInput,
 } from "@/lib/auction-cost";
-import { estimateMarketPrice, estimateAIMarketPrice, mapPropertyTypeToAIMarketPriceType, type AIMarketPriceParams } from "@/lib/property/market-price";
+import {
+  estimateMarketPrice,
+  estimateAIMarketPrice,
+  mapPropertyTypeToAIMarketPriceType,
+  type AIMarketPriceParams,
+} from "@/lib/property/market-price";
+import {
+  calculateAdvancedAssumption,
+  type AdvancedAssumptionResult,
+  type RiskLevel,
+  type DifficultyLevel,
+} from "@/lib/property/safety-calc";
+import type { RightRow } from "@/types/property";
 
 // ============================================
 // 1. 권리 우선순위 및 특성 정의
@@ -651,12 +663,12 @@ export function analyzeRights(
 
   // 🤖 AI 시세 예측 적용
   console.log("🤖 [AI 시세 연동] AI 시세 예측 시작");
-  
+
   // 매물 정보 추출
   const aiMarketPriceParams: AIMarketPriceParams = {
     appraised: basicInfo.appraisalValue,
     area: propertyDetails?.buildingArea || propertyDetails?.landArea,
-    regionCode: scenario.regionalAnalysis?.regionCode || scenario.basicInfo.location,
+    regionCode: scenario.basicInfo.location, // regionalAnalysis에 regionCode가 없으므로 location 사용
     propertyType: mapPropertyTypeToAIMarketPriceType(basicInfo.propertyType),
     minimumBidPrice: basicInfo.minimumBidPrice,
     // yearBuilt는 propertyDetails에 없을 수 있으므로 optional로 처리
@@ -665,17 +677,27 @@ export function analyzeRights(
   // AI 시세 범위 예측
   const aiMarketPriceResult = estimateAIMarketPrice(aiMarketPriceParams);
   console.log(
-    `🤖 [AI 시세 연동] AI 시세 예측 적용 → 범위: ${aiMarketPriceResult.min.toLocaleString()}원 ~ ${aiMarketPriceResult.max.toLocaleString()}원 (신뢰도: ${(aiMarketPriceResult.confidence * 100).toFixed(1)}%)`
+    `🤖 [AI 시세 연동] AI 시세 예측 적용 → 범위: ${aiMarketPriceResult.min.toLocaleString()}원 ~ ${aiMarketPriceResult.max.toLocaleString()}원 (신뢰도: ${(
+      aiMarketPriceResult.confidence * 100
+    ).toFixed(1)}%)`
   );
 
   // ✅ FMV(공정시세) 사용: MoS 계산에는 fairCenter 사용
   let marketValue = aiMarketPriceResult.fairCenter;
 
   console.log("💰 [권리분석 엔진] 시세(V) 계산");
-  console.log(`  - AI 시세 범위: ${aiMarketPriceResult.min.toLocaleString()}원 ~ ${aiMarketPriceResult.max.toLocaleString()}원`);
-  console.log(`  - center(모델): ${aiMarketPriceResult.center.toLocaleString()}원`);
-  console.log(`  - fairCenter(FMV, MoS용): ${aiMarketPriceResult.fairCenter.toLocaleString()}원`);
-  console.log(`  - auctionCenter(입찰가 가이드용): ${aiMarketPriceResult.auctionCenter.toLocaleString()}원`);
+  console.log(
+    `  - AI 시세 범위: ${aiMarketPriceResult.min.toLocaleString()}원 ~ ${aiMarketPriceResult.max.toLocaleString()}원`
+  );
+  console.log(
+    `  - center(모델): ${aiMarketPriceResult.center.toLocaleString()}원`
+  );
+  console.log(
+    `  - fairCenter(FMV, MoS용): ${aiMarketPriceResult.fairCenter.toLocaleString()}원`
+  );
+  console.log(
+    `  - auctionCenter(입찰가 가이드용): ${aiMarketPriceResult.auctionCenter.toLocaleString()}원`
+  );
   console.log(`  - 감정가: ${basicInfo.appraisalValue.toLocaleString()}원`);
   console.log(`  - 최저가: ${basicInfo.minimumBidPrice.toLocaleString()}원`);
   console.log(`  - 최종 시세(V, FMV): ${marketValue.toLocaleString()}원`);
@@ -715,19 +737,23 @@ export function analyzeRights(
   // 먼저 예상 총인수금액을 계산해서 시세와 비교
   // 예상 총인수금액 = 최저가 기준으로 계산
   const tempTax = calcTaxes(taxInput, undefined);
-  const estimatedTotalAcquisition = 
-    estimatedBidPrice + 
-    rightsAmount + 
-    tempTax.totalTaxesAndFees + 
-    capex + 
-    eviction + 
-    carrying + 
+  const estimatedTotalAcquisition =
+    estimatedBidPrice +
+    rightsAmount +
+    tempTax.totalTaxesAndFees +
+    capex +
+    eviction +
+    carrying +
     contingency;
 
   console.log("⚖️ [시세 보정 검증] 예상 총인수금액과 시세 비교:");
-  console.log(`  - 예상 총인수금액: ${estimatedTotalAcquisition.toLocaleString()}원`);
+  console.log(
+    `  - 예상 총인수금액: ${estimatedTotalAcquisition.toLocaleString()}원`
+  );
   console.log(`  - 현재 시세: ${marketValue.toLocaleString()}원`);
-  console.log(`  - 차이: ${(marketValue - estimatedTotalAcquisition).toLocaleString()}원`);
+  console.log(
+    `  - 차이: ${(marketValue - estimatedTotalAcquisition).toLocaleString()}원`
+  );
 
   // ⚠️ 핵심 수정: 시세가 예상 총인수금액보다 작으면 보정
   // 안전마진이 플러스가 되려면 시세 >= 총인수금액이어야 합니다
@@ -741,9 +767,15 @@ export function analyzeRights(
     );
     console.warn("⚠️ [시세 보정] 시세가 총인수금액보다 작아 보정합니다:");
     console.warn(`  - 원본 시세: ${originalMarketValue.toLocaleString()}원`);
-    console.warn(`  - 예상 총인수금액: ${estimatedTotalAcquisition.toLocaleString()}원`);
+    console.warn(
+      `  - 예상 총인수금액: ${estimatedTotalAcquisition.toLocaleString()}원`
+    );
     console.warn(`  - 보정 후 시세: ${marketValue.toLocaleString()}원`);
-    console.warn(`  - 안전마진 보정: ${(marketValue - estimatedTotalAcquisition).toLocaleString()}원`);
+    console.warn(
+      `  - 안전마진 보정: ${(
+        marketValue - estimatedTotalAcquisition
+      ).toLocaleString()}원`
+    );
   }
 
   const acquisitionResult = calcAcquisitionAndMoS({
@@ -811,6 +843,59 @@ export function analyzeRights(
   // 7. 리스크 분석
   const riskAnalysis = analyzeRightsRisk(analyzedRights, propertyType);
 
+  // 8. 고도화 안전마진 계산
+  console.log("⚖️ [권리분석 엔진] 고도화 안전마진 계산 시작");
+
+  // 위험도 매핑: "high" | "medium" | "low" → "high" | "mid" | "low"
+  const riskLevelMapping: Record<string, RiskLevel> = {
+    high: "high",
+    medium: "mid",
+    low: "low",
+  };
+  const mappedRiskLevel: RiskLevel =
+    riskLevelMapping[riskAnalysis.overallRiskLevel] || "low";
+
+  // 난이도 매핑: 시나리오의 educationalContent에서 가져오거나 기본값 사용
+  // "초급" | "중급" | "고급" → "beginner" | "intermediate" | "advanced"
+  const difficultyMapping: Record<string, DifficultyLevel> = {
+    초급: "beginner",
+    중급: "intermediate",
+    고급: "advanced",
+  };
+  const scenarioDifficulty = scenario.educationalContent?.difficulty || "중급";
+  const mappedDifficulty: DifficultyLevel =
+    difficultyMapping[scenarioDifficulty] || "intermediate";
+
+  console.log("⚖️ [권리분석 엔진] 고도화 계산 파라미터:", {
+    propertyType,
+    lowestPrice: basicInfo.minimumBidPrice,
+    riskLevel: mappedRiskLevel,
+    difficulty: mappedDifficulty,
+  });
+
+  // RightRecord[]를 RightRow[]로 변환
+  const rightsAsRightRow: RightRow[] = assumedRights.map((r, index) => ({
+    order: index + 1,
+    type: r.rightType,
+    holder: r.rightHolder,
+    date: r.registrationDate,
+    claim: r.claimAmount,
+    note: r.notes, // RightRecord는 notes 속성 사용
+  }));
+
+  const advancedAssumptionResult = calculateAdvancedAssumption({
+    rights: rightsAsRightRow,
+    propertyType,
+    lowestPrice: basicInfo.minimumBidPrice,
+    riskLevel: mappedRiskLevel,
+    difficulty: mappedDifficulty,
+  });
+
+  console.log("⚖️ [권리분석 엔진] 고도화 안전마진 계산 완료", {
+    assumedAmount: advancedAssumptionResult.assumedAmount,
+    minSafetyMargin: advancedAssumptionResult.minSafetyMargin,
+  });
+
   console.log("✅ [권리분석 엔진] 전체 권리분석 완료");
   console.log(`  - 말소기준권리: ${malsoBaseRight?.rightType || "없음"}`);
   console.log(`  - 인수권리 개수: ${assumedRights.length}개`);
@@ -847,6 +932,12 @@ export function analyzeRights(
     },
     recommendedBidRange,
     riskAnalysis,
+    // 고도화 안전마진 계산 결과
+    advancedSafetyMargin: {
+      minSafetyMargin: advancedAssumptionResult.minSafetyMargin,
+      assumedAmount: advancedAssumptionResult.assumedAmount,
+      trace: advancedAssumptionResult.trace,
+    },
   };
 }
 

@@ -257,7 +257,7 @@ export function estimateAIMarketPrice(
   const confidence = 0.55;
 
   // 11. FMV(공정시세) 클램프: MoS 비교 기준. 지나치게 낮게 떨어지는 것 방지
-  const lowerClampFromAppraisal = appraised * 0.90; // 감정가의 90%는 보장
+  const lowerClampFromAppraisal = appraised * 0.9; // 감정가의 90%는 보장
   const lowerClampFromMinBid =
     typeof params.minimumBidPrice === "number"
       ? params.minimumBidPrice * 1.07 // 최저가 +7% 하한
@@ -278,7 +278,9 @@ export function estimateAIMarketPrice(
   console.log(`  - 모델: v0.1-ai-simulation`);
   console.log(`  - center(모델): ${center.toLocaleString()}`);
   console.log(`  - fairCenter(FMV, MoS용): ${fairCenter.toLocaleString()}`);
-  console.log(`  - auctionCenter(입찰가 가이드용): ${auctionCenter.toLocaleString()}`);
+  console.log(
+    `  - auctionCenter(입찰가 가이드용): ${auctionCenter.toLocaleString()}`
+  );
 
   return {
     min,

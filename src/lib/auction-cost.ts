@@ -4,7 +4,11 @@
  */
 
 import type { RightRow, PayoutRow } from "@/types/property";
-import { computeAssumableCost, type BaseRight, type RightType } from "./rights-engine";
+import {
+  computeAssumableCost,
+  type BaseRight,
+  type RightType,
+} from "./rights-engine";
 
 /** 용도 구분 */
 export type PropertyUse = "RESIDENTIAL" | "COMMERCIAL" | "LAND";
@@ -122,14 +126,16 @@ export function parseMoneyValue(
 
   // 문자열인 경우 파싱
   const strValue = String(value).trim();
-  
+
   // 숫자, 점(.), 마이너스(-)만 남기고 나머지 모두 제거
   // 콤마, 공백, '원' 문자 등 모든 비숫자 문자를 처리
   const parsed = toKRWNumber(strValue);
 
   // NaN 검증
   if (isNaN(parsed)) {
-    console.error(`❌ [파싱] 숫자 변환 실패 - NaN: 원본="${strValue}", 파싱 결과=${parsed}`);
+    console.error(
+      `❌ [파싱] 숫자 변환 실패 - NaN: 원본="${strValue}", 파싱 결과=${parsed}`
+    );
     return 0;
   }
 
@@ -253,19 +259,30 @@ export const ASSUMABLE_RIGHT_TYPES = [
  */
 function normalizeRightType(type: string | undefined | null): RightType {
   if (!type) return "기타";
-  
+
   const validTypes: RightType[] = [
-    "근저당권", "저당권", "압류", "가압류", "담보가등기", "소유권이전청구권가등기", "가처분",
-    "전세권", "주택임차권", "상가임차권",
-    "유치권", "법정지상권", "지상권", "분묘기지권",
+    "근저당권",
+    "저당권",
+    "압류",
+    "가압류",
+    "담보가등기",
+    "소유권이전청구권가등기",
+    "가처분",
+    "전세권",
+    "주택임차권",
+    "상가임차권",
+    "유치권",
+    "법정지상권",
+    "지상권",
+    "분묘기지권",
     "기타",
   ];
-  
+
   // 정확히 일치하는 경우
   if (validTypes.includes(type as RightType)) {
     return type as RightType;
   }
-  
+
   // 부분 일치 검사
   if (type.includes("근저당")) return "근저당권";
   if (type.includes("저당")) return "저당권";
@@ -281,7 +298,7 @@ function normalizeRightType(type: string | undefined | null): RightType {
   if (type.includes("법정지상")) return "법정지상권";
   if (type.includes("지상권")) return "지상권";
   if (type.includes("분묘기지")) return "분묘기지권";
-  
+
   return "기타";
 }
 
@@ -302,14 +319,16 @@ function mapRightRowToBaseRight(
 ): BaseRight {
   const type = normalizeRightType(right.type);
   const amount = right.claim || 0;
-  
+
   // 배당 정보가 있으면 사용, 없으면 0
   const distributed = payoutMap
-    ? payoutMap.get(`${right.holder}-${right.type}`) || payoutMap.get(right.holder) || 0
+    ? payoutMap.get(`${right.holder}-${right.type}`) ||
+      payoutMap.get(right.holder) ||
+      0
     : 0;
-  
+
   const hasDahang = extractHasDahang(right.note);
-  
+
   return {
     type,
     amount,
@@ -324,18 +343,18 @@ function mapRightRowToBaseRight(
  */
 function createPayoutMap(payouts: PayoutRow[]): Map<string, number> {
   const map = new Map<string, number>();
-  
+
   for (const payout of payouts) {
     const key = `${payout.holder}-${payout.type}`;
     const existing = map.get(key) || 0;
     map.set(key, existing + (payout.expected || 0));
-    
+
     // holder만으로도 조회 가능하도록 설정 (임시)
     if (!map.has(payout.holder)) {
       map.set(payout.holder, payout.expected || 0);
     }
   }
-  
+
   return map;
 }
 
@@ -349,18 +368,17 @@ function calcRightsAssumableTotal(
   console.log(`  - 배당 정보 개수: ${payouts?.length || 0}개`);
 
   // 배당 정보가 있으면 Map 생성
-  const payoutMap = payouts && payouts.length > 0 
-    ? createPayoutMap(payouts)
-    : undefined;
+  const payoutMap =
+    payouts && payouts.length > 0 ? createPayoutMap(payouts) : undefined;
 
   // RightRow를 BaseRight로 매핑
-  const mapped: BaseRight[] = (rights ?? []).map((r: RightRow) => 
+  const mapped: BaseRight[] = (rights ?? []).map((r: RightRow) =>
     mapRightRowToBaseRight(r, payoutMap)
   );
 
   // 매핑 결과 로그
   if (payoutMap) {
-    const withDistribution = mapped.filter(r => (r.distributed || 0) > 0);
+    const withDistribution = mapped.filter((r) => (r.distributed || 0) > 0);
     if (withDistribution.length > 0) {
       console.log(`  - 배당 정보 적용된 권리: ${withDistribution.length}개`);
     }
@@ -369,20 +387,31 @@ function calcRightsAssumableTotal(
   const out = computeAssumableCost({
     rights: mapped,
     tenantResidualFactor: 1.0,
-    defaultLikelihood: { 유치권: 0.6, 법정지상권: 0.7, 분묘기지권: 1.0, 지상권: 1.0 },
+    defaultLikelihood: {
+      유치권: 0.6,
+      법정지상권: 0.7,
+      분묘기지권: 1.0,
+      지상권: 1.0,
+    },
     debug: false,
   });
 
-  console.log(`  ✅ rights-engine 계산 완료: ${out.assumableTotal.toLocaleString()}원`);
-  console.log(`  - 말소 권리 제외: ${out.extinguishedTotal.toLocaleString()}원`);
+  console.log(
+    `  ✅ rights-engine 계산 완료: ${out.assumableTotal.toLocaleString()}원`
+  );
+  console.log(
+    `  - 말소 권리 제외: ${out.extinguishedTotal.toLocaleString()}원`
+  );
   if (out.disputedWeightedTotal > 0) {
-    console.log(`  - 확률가중 권리: ${out.disputedWeightedTotal.toLocaleString()}원`);
+    console.log(
+      `  - 확률가중 권리: ${out.disputedWeightedTotal.toLocaleString()}원`
+    );
   }
 
   return out.assumableTotal;
 }
 
-/** 
+/**
  * 권리유형별 인수금액 계산 (하위 호환성 유지 - 새 엔진 사용)
  * @param rights 권리 목록
  * @param propertyValue 감정가 (사용하지 않으나 하위 호환성을 위해 유지)
@@ -403,9 +432,7 @@ export function calculateRightsAmount(
   // 새 엔진을 사용하여 정밀 계산 (배당 정보 포함)
   const totalAmount = calcRightsAssumableTotal(rights, payouts);
 
-  console.log(
-    `  ✅ 총 인수권리 금액: ${totalAmount.toLocaleString()}원`
-  );
+  console.log(`  ✅ 총 인수권리 금액: ${totalAmount.toLocaleString()}원`);
 
   return totalAmount;
 }
@@ -560,35 +587,53 @@ export function calcAcquisitionAndMoS(
 
   // 입력값 검증 로그
   console.log("⚖️ [calcAcquisitionAndMoS] 입력값 검증:");
-  console.log(`  - bidPrice (B): ${B} (타입: ${typeof B}) → ${safeB.toLocaleString()}원`);
+  console.log(
+    `  - bidPrice (B): ${B} (타입: ${typeof B}) → ${safeB.toLocaleString()}원`
+  );
   if (isNaN(safeB) || safeB < 0) {
     console.warn(`  ⚠️ bidPrice가 유효하지 않습니다: ${B}`);
   }
 
-  console.log(`  - rights (R): ${R} (타입: ${typeof R}) → ${safeR.toLocaleString()}원`);
+  console.log(
+    `  - rights (R): ${R} (타입: ${typeof R}) → ${safeR.toLocaleString()}원`
+  );
   if (isNaN(safeR)) {
     console.warn(`  ⚠️ rights가 유효하지 않습니다: ${R}`);
   }
 
-  console.log(`  - capex (C): ${C} (타입: ${typeof C}) → ${safeC.toLocaleString()}원`);
-  console.log(`  - eviction (E): ${E} (타입: ${typeof E}) → ${safeE.toLocaleString()}원`);
-  console.log(`  - carrying (K): ${K} (타입: ${typeof K}) → ${safeK.toLocaleString()}원`);
-  console.log(`  - contingency (U): ${U} (타입: ${typeof U}) → ${safeU.toLocaleString()}원`);
+  console.log(
+    `  - capex (C): ${C} (타입: ${typeof C}) → ${safeC.toLocaleString()}원`
+  );
+  console.log(
+    `  - eviction (E): ${E} (타입: ${typeof E}) → ${safeE.toLocaleString()}원`
+  );
+  console.log(
+    `  - carrying (K): ${K} (타입: ${typeof K}) → ${safeK.toLocaleString()}원`
+  );
+  console.log(
+    `  - contingency (U): ${U} (타입: ${typeof U}) → ${safeU.toLocaleString()}원`
+  );
 
   // 2️⃣ 시세(V) 결정: MoS 계산에는 fairMarketValue(FMV) 사용, 없으면 하위 호환성 고려
   let safeV: number;
   let usedScenario: string | undefined;
-  
+
   if (typeof input.fairMarketValue === "number" && input.fairMarketValue > 0) {
     // ✅ FMV(공정시세)가 제공된 경우: MoS 계산에 사용
     safeV = input.fairMarketValue;
-    console.log(`💰 [총인수금액] FMV(공정시세) 적용: ${safeV.toLocaleString()}원 (MoS 계산 기준)`);
+    console.log(
+      `💰 [총인수금액] FMV(공정시세) 적용: ${safeV.toLocaleString()}원 (MoS 계산 기준)`
+    );
     usedScenario = "fmv";
   } else if (marketPriceRange) {
     // AI 시세 범위가 제공된 경우: 입찰가 가이드용 (MoS에는 사용하지 않음, 하위 호환성 유지)
-    console.log(`💰 [총인수금액] AI 시세 범위 적용 (입찰가 가이드용): ${marketPriceRange.min.toLocaleString()}원 ~ ${marketPriceRange.max.toLocaleString()}원`);
-    console.warn(`  ⚠️ [경고] marketPriceRange는 MoS 계산에 사용되지 않습니다. fairMarketValue를 제공해주세요.`);
-    
+    console.log(
+      `💰 [총인수금액] AI 시세 범위 적용 (입찰가 가이드용): ${marketPriceRange.min.toLocaleString()}원 ~ ${marketPriceRange.max.toLocaleString()}원`
+    );
+    console.warn(
+      `  ⚠️ [경고] marketPriceRange는 MoS 계산에 사용되지 않습니다. fairMarketValue를 제공해주세요.`
+    );
+
     // 하위 호환성: 중립값으로 사용 (하지만 로그로 경고)
     switch (marketPriceScenario) {
       case "conservative":
@@ -605,25 +650,31 @@ export function calcAcquisitionAndMoS(
         usedScenario = "neutral";
         break;
     }
-    
-    console.log(`💰 [총인수금액] 시나리오별 시세 적용: ${usedScenario} → ${safeV.toLocaleString()}원`);
+
+    console.log(
+      `💰 [총인수금액] 시나리오별 시세 적용: ${usedScenario} → ${safeV.toLocaleString()}원`
+    );
   } else {
     // 기존 방식: marketValue 파싱 (하위 호환성)
     console.log(`⚖️ [calcAcquisitionAndMoS] marketValue 파싱:`);
     console.log(`  - marketValue 원본: ${V} (타입: ${typeof V})`);
-    
+
     const parsedV = parseMoneyValue(V);
-    console.log(`  - parseMoneyValue 결과: ${parsedV} (타입: ${typeof parsedV})`);
-    
+    console.log(
+      `  - parseMoneyValue 결과: ${parsedV} (타입: ${typeof parsedV})`
+    );
+
     // NaN 또는 0 체크
     if (isNaN(parsedV)) {
       console.error(`  ❌ [에러] marketValue 파싱 실패 - NaN: ${V}`);
     }
-    
+
     safeV = isNaN(parsedV) || parsedV <= 0 ? 0 : parsedV;
-    
+
     if (!safeV) {
-      console.warn(`  ⚠️ [총인수금액] 시세(V)가 없거나 0입니다. 원본: ${V}, 파싱 결과: ${parsedV}`);
+      console.warn(
+        `  ⚠️ [총인수금액] 시세(V)가 없거나 0입니다. 원본: ${V}, 파싱 결과: ${parsedV}`
+      );
     } else {
       console.log(`  ✅ marketValue 파싱 성공: ${safeV.toLocaleString()}원`);
     }
@@ -642,11 +693,13 @@ export function calcAcquisitionAndMoS(
   // 4️⃣ 총인수금액 계산: A = B + R + T + C + E + K + U
   // ⚠️ 주의: bidPrice(B)는 한 번만 더해집니다. 외부에서 이미 포함되어 있다면 이중 합산 문제가 발생할 수 있습니다.
   const totalAcquisition = safeB + safeR + T + safeC + safeE + safeK + safeU;
-  
+
   // 계산 검증
   if (isNaN(totalAcquisition)) {
     console.error(`  ❌ [에러] 총인수금액 계산 결과가 NaN입니다!`);
-    console.error(`    - B: ${safeB}, R: ${safeR}, T: ${T}, C: ${safeC}, E: ${safeE}, K: ${safeK}, U: ${safeU}`);
+    console.error(
+      `    - B: ${safeB}, R: ${safeR}, T: ${T}, C: ${safeC}, E: ${safeE}, K: ${safeK}, U: ${safeU}`
+    );
   }
 
   // 5️⃣ 안전마진 계산: marginAmount = V - A
@@ -656,7 +709,9 @@ export function calcAcquisitionAndMoS(
   // 안전마진 검증
   if (isNaN(marginAmount)) {
     console.error(`  ❌ [에러] 안전마진 계산 결과가 NaN입니다!`);
-    console.error(`    - safeV: ${safeV}, totalAcquisition: ${totalAcquisition}`);
+    console.error(
+      `    - safeV: ${safeV}, totalAcquisition: ${totalAcquisition}`
+    );
   }
 
   // MoS 디버그 로그 (FMV 기반)
@@ -668,7 +723,9 @@ export function calcAcquisitionAndMoS(
     marginOfSafety: MoS,
   });
   if (usedScenario === "fmv") {
-    console.log(`  ✅ MoS 계산 기준: FMV(공정시세) = ${safeV.toLocaleString()}원`);
+    console.log(
+      `  ✅ MoS 계산 기준: FMV(공정시세) = ${safeV.toLocaleString()}원`
+    );
   }
 
   // MoS < 0일 때 추천 최대 입찰가 계산
@@ -679,7 +736,7 @@ export function calcAcquisitionAndMoS(
     const limitByMarket = Math.floor(safeV * 0.95);
     const limitByMinBid = Math.floor(minimumBidPrice * 1.05);
     recommendedMaxBidPrice = Math.min(limitByMarket, limitByMinBid);
-    
+
     console.warn(
       `[⚠️ 안전마진 음수] 총인수금액이 시세보다 높음 → 입찰가 제한: ${recommendedMaxBidPrice.toLocaleString()}원`
     );
@@ -694,17 +751,31 @@ export function calcAcquisitionAndMoS(
   console.log(`  📊 eviction (E): ${safeE.toLocaleString()}원`);
   console.log(`  📊 carrying (K): ${safeK.toLocaleString()}원`);
   console.log(`  📊 contingency (U): ${safeU.toLocaleString()}원`);
-  console.log(`  ✅ totalAcquisition (A = B+R+T+C+E+K+U): ${totalAcquisition.toLocaleString()}원`);
-  console.log(`  📊 marketValue (V): ${safeV.toLocaleString()}원${typeof V === "string" ? " (문자열에서 파싱됨)" : ""}`);
-  console.log(`  ✅ marginAmount (V-A): ${marginAmount.toLocaleString()}원 (${(marginRate * 100).toFixed(2)}%)`);
+  console.log(
+    `  ✅ totalAcquisition (A = B+R+T+C+E+K+U): ${totalAcquisition.toLocaleString()}원`
+  );
+  console.log(
+    `  📊 marketValue (V): ${safeV.toLocaleString()}원${
+      typeof V === "string" ? " (문자열에서 파싱됨)" : ""
+    }`
+  );
+  console.log(
+    `  ✅ marginAmount (V-A): ${marginAmount.toLocaleString()}원 (${(
+      marginRate * 100
+    ).toFixed(2)}%)`
+  );
 
   // 7️⃣ 계산식 검증 로그
   console.log("⚖️ [calcAcquisitionAndMoS] 계산식 검증:");
   console.log(`  - A = B + R + T + C + E + K + U`);
-  console.log(`  - A = ${safeB.toLocaleString()} + ${safeR.toLocaleString()} + ${T.toLocaleString()} + ${safeC.toLocaleString()} + ${safeE.toLocaleString()} + ${safeK.toLocaleString()} + ${safeU.toLocaleString()}`);
+  console.log(
+    `  - A = ${safeB.toLocaleString()} + ${safeR.toLocaleString()} + ${T.toLocaleString()} + ${safeC.toLocaleString()} + ${safeE.toLocaleString()} + ${safeK.toLocaleString()} + ${safeU.toLocaleString()}`
+  );
   console.log(`  - A = ${totalAcquisition.toLocaleString()}원`);
   console.log(`  - marginAmount = V - A`);
-  console.log(`  - marginAmount = ${safeV.toLocaleString()} - ${totalAcquisition.toLocaleString()}`);
+  console.log(
+    `  - marginAmount = ${safeV.toLocaleString()} - ${totalAcquisition.toLocaleString()}`
+  );
   console.log(`  - marginAmount = ${marginAmount.toLocaleString()}원`);
 
   return {
