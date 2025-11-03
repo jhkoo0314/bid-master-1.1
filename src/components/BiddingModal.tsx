@@ -37,6 +37,8 @@ import {
   formatCurrency,
   parseFormattedNumber,
 } from "@/lib/format-utils";
+import { generateCompetitorBids } from "@/lib/auction/competitor-bids";
+import { computeOverheatScore } from "@/lib/auction/overheat";
 
 interface BiddingModalProps {
   property: SimulationScenario;
@@ -104,6 +106,7 @@ interface BiddingResult {
       investmentRecommendation: "strong_buy" | "buy" | "hold" | "avoid";
     };
   };
+  fmvPrice: number; // ✅ FMV 기준가 저장 (과열 판단용)
 }
 
 export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
@@ -188,7 +191,9 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
   const generateVirtualBidders = (
     userBid: number,
     minBid: number,
-    appraisalValue: number
+    appraisalValue: number,
+    fmv: number,
+    difficulty: "easy" | "normal" | "hard" = "normal"
   ): Array<{
     name: string;
     bidPrice: number;
@@ -207,41 +212,46 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
       "조경매",
     ];
 
-    const totalBidders = Math.floor(Math.random() * 6) + 4; // 4-9명
-    const bidders = [];
+    // ✅ 과열 점수 계산
+    console.log("🔥 [경쟁자 생성] 과열 점수 계산 시작");
+    const overheat = computeOverheatScore(userBid, fmv, appraisalValue);
+    console.log(`🔥 [경쟁자 생성] 과열 점수: ${(overheat * 100).toFixed(1)}%`);
 
-    // 사용자 입찰가를 기준으로 경쟁자들 생성
-    for (let i = 0; i < totalBidders; i++) {
-      const randomName = names[Math.floor(Math.random() * names.length)];
+    // 경쟁자 수 결정 (4-9명)
+    const competitorCount = Math.floor(Math.random() * 6) + 4;
+    console.log(`👥 [경쟁자 생성] 경쟁자 수: ${competitorCount}명`);
 
-      // 더 현실적인 입찰가 분포 생성
-      let randomBid;
-      const userBidRatio = userBid / appraisalValue;
+    // ✅ generateCompetitorBids 사용
+    const competitorBids = generateCompetitorBids({
+      n: competitorCount,
+      fmv,
+      appraisal: appraisalValue,
+      lowestBid: minBid,
+      userBid,
+      difficulty,
+      overheatScore: overheat,
+      tick: 10000,
+    });
 
-      if (userBidRatio < 0.7) {
-        // 사용자 입찰가가 낮으면 경쟁자들도 낮은 가격대
-        randomBid =
-          minBid + Math.floor(Math.random() * (userBid * 1.1 - minBid));
-      } else if (userBidRatio < 0.9) {
-        // 중간 가격대
-        randomBid = userBid * 0.8 + Math.floor(Math.random() * (userBid * 0.4));
-      } else {
-        // 높은 가격대
-        randomBid = userBid * 0.9 + Math.floor(Math.random() * (userBid * 0.2));
-      }
+    console.log("💰 [경쟁자 생성] 경쟁자 입찰가 생성 완료:", {
+      과열점수: `${(overheat * 100).toFixed(1)}%`,
+      경쟁자수: competitorCount,
+      입찰가범위: `${Math.min(
+        ...competitorBids
+      ).toLocaleString()}원 ~ ${Math.max(
+        ...competitorBids
+      ).toLocaleString()}원`,
+    });
 
-      // 최저가보다는 높게 설정
-      randomBid = Math.max(
-        randomBid,
-        minBid + Math.floor(Math.random() * 1000000)
-      );
-
-      bidders.push({
+    // 경쟁자 입찰가에 이름 부여
+    const bidders = competitorBids.map((bidPrice, index) => {
+      const randomName = names[index % names.length];
+      return {
         name: randomName,
-        bidPrice: randomBid,
+        bidPrice,
         isWinner: false,
-      });
-    }
+      };
+    });
 
     // 사용자 입찰가 추가
     bidders.push({
@@ -265,11 +275,12 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
       bidders[0].isWinner = true;
     }
 
-    console.log("경쟁자 생성 완료:", {
+    console.log("✅ [경쟁자 생성] 경쟁자 생성 완료:", {
       총참여자: bidders.length,
       사용자순위: userRank + 1,
       사용자낙찰: isUserWinner,
       최고가: bidders[0].bidPrice,
+      과열점수: `${(overheat * 100).toFixed(1)}%`,
     });
 
     return bidders;
@@ -295,11 +306,45 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
       // 2초 대기 (로딩 효과)
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      // 가상 경쟁자 생성
+      // 🤖 AI 시세 예측 적용 (FMV 계산을 먼저 수행)
+      console.log("🤖 [AI 시세 연동] 입찰 결과 계산에 AI 시세 예측 적용");
+
+      // 매물 정보 추출
+      const aiMarketPriceParams: AIMarketPriceParams = {
+        appraised: property.basicInfo.appraisalValue,
+        area:
+          property.propertyDetails?.buildingArea ||
+          property.propertyDetails?.landArea,
+        regionCode:
+          property.regionalAnalysis?.court?.code || property.basicInfo.location,
+        propertyType: mapPropertyTypeToAIMarketPriceType(
+          property.basicInfo.propertyType
+        ),
+        minimumBidPrice: property.basicInfo.minimumBidPrice,
+      };
+
+      // AI 시세 범위 예측
+      const aiMarketPriceResult = estimateAIMarketPrice(aiMarketPriceParams);
+
+      // FMV 추출 (경쟁자 생성에 사용)
+      const fmv = aiMarketPriceResult.fairCenter;
+
+      // 난이도 추출 (시뮬레이션 시나리오에서)
+      const difficulty = property.educationalContent?.difficulty || "중급";
+      const difficultyLevel: "easy" | "normal" | "hard" =
+        difficulty === "초급"
+          ? "easy"
+          : difficulty === "고급"
+          ? "hard"
+          : "normal";
+
+      // ✅ 가상 경쟁자 생성 (FMV와 난이도 포함)
       const virtualBidders = generateVirtualBidders(
         formData.bidPrice,
         property.basicInfo.minimumBidPrice,
-        property.basicInfo.appraisalValue
+        property.basicInfo.appraisalValue,
+        fmv,
+        difficultyLevel
       );
 
       // 낙찰자 찾기
@@ -360,26 +405,6 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
       const eviction = 2000000; // 명도비 (예시: 200만원)
       const carrying = 0; // 보유비 (보유 기간 없음)
       const contingency = 1000000; // 예비비 (예시: 100만원)
-
-      // 🤖 AI 시세 예측 적용
-      console.log("🤖 [AI 시세 연동] 입찰 결과 계산에 AI 시세 예측 적용");
-
-      // 매물 정보 추출
-      const aiMarketPriceParams: AIMarketPriceParams = {
-        appraised: property.basicInfo.appraisalValue,
-        area:
-          property.propertyDetails?.buildingArea ||
-          property.propertyDetails?.landArea,
-        regionCode:
-          property.regionalAnalysis?.regionCode || property.basicInfo.location,
-        propertyType: mapPropertyTypeToAIMarketPriceType(
-          property.basicInfo.propertyType
-        ),
-        minimumBidPrice: property.basicInfo.minimumBidPrice,
-      };
-
-      // AI 시세 범위 예측
-      const aiMarketPriceResult = estimateAIMarketPrice(aiMarketPriceParams);
       console.log(
         `🤖 [AI 시세 연동] AI 시세 예측 적용 → 범위: ${aiMarketPriceResult.min.toLocaleString()}원 ~ ${aiMarketPriceResult.max.toLocaleString()}원 (신뢰도: ${(
           aiMarketPriceResult.confidence * 100
@@ -425,27 +450,29 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
 
       // 💰 [수익 계산기] 업데이트된 calculateProfit 함수 사용
       console.log("💰 [입찰결과] 수익 계산기로 ROI 계산 시작");
-      
+
       // 수익 계산기 입력값 준비
       const bankLoanRatio = 0.7; // 기본 은행대출 비율 70%
       const loanInterestRate = 4.0; // 기본 대출 이자율 4%
       const holdingPeriod = 4; // 기본 보유 기간 4개월
-      
+
       // 은행대출 금액 계산
       const bankLoanAmount = Math.round(winningBid * bankLoanRatio);
-      
+
       // 월별 현금흐름 계산 (간단 추정)
       // 대출 이자 = 대출금액 × 월 이자율
-      const monthlyInterest = Math.round(bankLoanAmount * (loanInterestRate / 100 / 12));
+      const monthlyInterest = Math.round(
+        bankLoanAmount * (loanInterestRate / 100 / 12)
+      );
       // 월별 지출 = 대출 이자 + 관리비 등 (기본값)
       const monthlyExpenses = monthlyInterest + 200000; // 이자 + 관리비 20만원
       // 월별 수입 (임대수입이 있는 경우)
       const monthlyIncome = 500000; // 기본 월세 50만원 (실제로는 매물 정보에서 추출 가능)
-      
+
       // 법무비 및 중개수수료 (간단 추정)
       const legalFees = Math.round(winningBid * 0.001); // 낙찰가의 0.1%
       const brokerageFees = Math.round(marketValue * 0.009); // 매도가의 0.9% (중개수수료)
-      
+
       const profitInput: ProfitInput = {
         appraisalValue: property.basicInfo.appraisalValue,
         minimumBidPrice: property.basicInfo.minimumBidPrice,
@@ -470,7 +497,9 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
       const tempRoi = profitResult.roi;
 
       console.log("💰 [입찰결과] 총인수금액 계산 완료:");
-      console.log(`  - 총인수금액: ${acquisitionResult.totalAcquisition.toLocaleString()}원`);
+      console.log(
+        `  - 총인수금액: ${acquisitionResult.totalAcquisition.toLocaleString()}원`
+      );
       console.log(
         `  - 세금 및 수수료: ${acquisitionResult.tax.totalTaxesAndFees.toLocaleString()}원`
       );
@@ -480,12 +509,18 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
         ).toFixed(2)}%)`
       );
       console.log("💰 [입찰결과] 업데이트된 수익 계산 결과:");
-      console.log(`  - 실제 투자금액: ${profitResult.actualInvestment.toLocaleString()}원`);
-      console.log(`  - 매도 전까지 투입 금액: ${profitResult.totalInvestmentBeforeSale.toLocaleString()}원`);
+      console.log(
+        `  - 실제 투자금액: ${profitResult.actualInvestment.toLocaleString()}원`
+      );
+      console.log(
+        `  - 매도 전까지 투입 금액: ${profitResult.totalInvestmentBeforeSale.toLocaleString()}원`
+      );
       console.log(`  - 차익: ${profitResult.netProfit.toLocaleString()}원`);
       console.log(`  - ROI: ${profitResult.roi.toFixed(2)}%`);
       console.log(`  - 연환산 ROI: ${profitResult.annualizedRoi.toFixed(2)}%`);
-      console.log(`  - 손익분기점: ${profitResult.breakEvenPrice.toLocaleString()}원`);
+      console.log(
+        `  - 손익분기점: ${profitResult.breakEvenPrice.toLocaleString()}원`
+      );
 
       // 포인트 계산
       console.log("⭐ [입찰결과] 포인트 계산 시작");
@@ -579,7 +614,9 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
         marketValue > 0 ? (netProfit / marketValue) * 100 : 0; // 수익률 (%)
 
       console.log("💰 [입찰결과] 수익모델 분석 (업데이트된 계산기 사용):");
-      console.log(`  - 총 투자금액 (매도 전까지): ${totalInvestment.toLocaleString()}원`);
+      console.log(
+        `  - 총 투자금액 (매도 전까지): ${totalInvestment.toLocaleString()}원`
+      );
       console.log(`  - 순수익: ${netProfit.toLocaleString()}원`);
       console.log(`  - ROI: ${roi.toFixed(2)}%`);
       console.log(`  - 수익률: ${profitMargin.toFixed(2)}%`);
@@ -647,6 +684,8 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
           confidence: aiMarketPriceResult.confidence,
           neutral: aiMarketValueNeutral,
         },
+        // ✅ ✅ ✅ 추가되는 부분
+        fmvPrice: aiMarketPriceResult.fairCenter,
         auctionAnalysis: {
           averageBidPrice,
           highestBidPrice,
@@ -690,6 +729,23 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
         "💰 [입찰결과] 감정가 표시:",
         formatCurrency(property.basicInfo.appraisalValue)
       );
+
+      // ⚠️ [과열 입찰 판단] FMV 기준가 비교 로그
+      if (result.userBidPrice > result.fmvPrice) {
+        console.warn(
+          `⚠️ [과열 입찰] 입찰가가 FMV를 초과: 입찰가 ${formatCurrency(
+            result.userBidPrice
+          )} > FMV ${formatCurrency(result.fmvPrice)} (초과액: ${formatCurrency(
+            result.userBidPrice - result.fmvPrice
+          )})`
+        );
+      } else {
+        console.log(
+          `✅ [입찰가 확인] 입찰가가 FMV 이하: 입찰가 ${formatCurrency(
+            result.userBidPrice
+          )} ≤ FMV ${formatCurrency(result.fmvPrice)}`
+        );
+      }
     } catch (error) {
       console.error("❌ [입찰 에러] 입찰 처리 중 오류 발생:", error);
       setIsSubmitting(false);
@@ -1252,6 +1308,12 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                     <div className="font-semibold text-[#0B1220]">
                       {formatCurrency(biddingResult.userBidPrice)}
                     </div>
+                    {biddingResult.userBidPrice > biddingResult.fmvPrice && (
+                      <p className="mt-2 text-[11px] text-red-600 font-medium">
+                        * FMV 초과 입찰은 수익성 저하 및 과열 경쟁 가능성이
+                        높습니다.
+                      </p>
+                    )}
                   </div>
                   <div className="p-3 bg-[#FAFAFA] rounded-xl border border-neutral-100">
                     <div className="text-[#6B7280]">감정가</div>
@@ -1368,7 +1430,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                         )}
                       </div>
                       <span className="text-xs font-semibold text-[#0B1220]">
-                        {formatCurrency(bidder.bidPrice)}
+                        {formatCurrency(Math.round(bidder.bidPrice))}
                       </span>
                     </div>
                   ))}

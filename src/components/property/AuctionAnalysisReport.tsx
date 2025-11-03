@@ -37,6 +37,11 @@ export function AuctionAnalysisReport({
   const A = a.acquisition.total;
   const Vfmv = a.fmv.fairMarketValue;
   const Vexit = a.exit.exitPrice;
+  const userBidPrice = a.acquisition.parts.bidPrice; // 사용자 입찰가
+
+  // ✅ 사용자 입찰가 기준 안전마진 계산: FMV - 입찰가
+  const userMosAmount = Vfmv - userBidPrice;
+  const userMosRate = Vfmv > 0 ? userMosAmount / Vfmv : 0;
 
   const barMax = Math.max(A, Vfmv, Vexit);
   const pA = pctBar(A, barMax);
@@ -59,9 +64,10 @@ export function AuctionAnalysisReport({
             referencePrice: Vexit,
           }}
           user={{
-            amount: a.fmv.mosAmount, // 사용자 입찰가 기준은 FMV와 동일
-            pct: a.fmv.mosRate ?? 0,
-            referencePrice: Vfmv,
+            amount: userMosAmount, // ✅ 실제 사용자 입찰가 기준 안전마진
+            pct: userMosRate,
+            referencePrice: Vfmv, // FMV를 참조가격으로 사용
+            bidPrice: userBidPrice, // ✅ 입찰가 전달 (FMV 초과 판단용)
           }}
         />
       </div>

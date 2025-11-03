@@ -3,6 +3,7 @@ import React from "react";
 import type { PropertyDetail, RightRow } from "@/types/property";
 import { useSimulationStore } from "@/store/simulation-store";
 import InfoTip from "@/components/common/InfoTip";
+import SafetyMarginComparison from "@/components/report/SafetyMarginComparison";
 
 interface RightsAnalysisReportModalProps {
   isOpen: boolean;
@@ -215,6 +216,37 @@ export default function RightsAnalysisReportModal({
               </div>
             )}
           </section>
+
+          {/* ✅ 안전마진 비교 섹션 추가 (v1.2) */}
+          {(data as any)?.analysisV12 && (
+            <section className="px-8 py-5 bg-white">
+              <SafetyMarginComparison
+                fmv={{
+                  amount: (data as any).analysisV12.fmv.mosAmount,
+                  pct: (data as any).analysisV12.fmv.mosRate ?? 0,
+                  referencePrice: (data as any).analysisV12.fmv.fairMarketValue,
+                }}
+                exit={{
+                  amount: (data as any).analysisV12.exit.mosAmount,
+                  pct: (data as any).analysisV12.exit.mosRate ?? 0,
+                  referencePrice: (data as any).analysisV12.exit.exitPrice,
+                }}
+                user={{
+                  amount:
+                    (data as any).analysisV12.fmv.fairMarketValue -
+                    (data as any).analysisV12.acquisition.parts.bidPrice,
+                  pct:
+                    (data as any).analysisV12.fmv.fairMarketValue > 0
+                      ? ((data as any).analysisV12.fmv.fairMarketValue -
+                          (data as any).analysisV12.acquisition.parts.bidPrice) /
+                        (data as any).analysisV12.fmv.fairMarketValue
+                      : 0,
+                  referencePrice: (data as any).analysisV12.fmv.fairMarketValue,
+                  bidPrice: (data as any).analysisV12.acquisition.parts.bidPrice,
+                }}
+              />
+            </section>
+          )}
 
           {/* 2. 최선순위 / 미소멸권리 */}
           <section className="px-8 py-5 bg-white">

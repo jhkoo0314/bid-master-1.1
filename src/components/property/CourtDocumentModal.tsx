@@ -2,6 +2,7 @@
 import React from "react";
 import { useSimulationStore } from "@/store/simulation-store";
 import type { PropertyDetail, RightRow } from "@/types/property";
+import SafetyMarginComparison from "@/components/report/SafetyMarginComparison";
 
 interface SaleSpecificationModalProps {
   isOpen: boolean;
@@ -221,6 +222,38 @@ export function SaleSpecificationModal({
               </div>
             )}
           </section>
+
+          {/* ✅ 안전마진 비교 섹션 추가 (v1.2) */}
+          {(data as any)?.analysisV12 && (
+            <section className="px-6 py-4 bg-white border-b border-gray-200">
+              <SafetyMarginComparison
+                fmv={{
+                  amount: (data as any).analysisV12.fmv.mosAmount,
+                  pct: (data as any).analysisV12.fmv.mosRate ?? 0,
+                  referencePrice: (data as any).analysisV12.fmv.fairMarketValue,
+                }}
+                exit={{
+                  amount: (data as any).analysisV12.exit.mosAmount,
+                  pct: (data as any).analysisV12.exit.mosRate ?? 0,
+                  referencePrice: (data as any).analysisV12.exit.exitPrice,
+                }}
+                user={{
+                  amount:
+                    (data as any).analysisV12.fmv.fairMarketValue -
+                    (data as any).analysisV12.acquisition.parts.bidPrice,
+                  pct:
+                    (data as any).analysisV12.fmv.fairMarketValue > 0
+                      ? ((data as any).analysisV12.fmv.fairMarketValue -
+                          (data as any).analysisV12.acquisition.parts.bidPrice) /
+                        (data as any).analysisV12.fmv.fairMarketValue
+                      : 0,
+                  referencePrice: (data as any).analysisV12.fmv.fairMarketValue,
+                  bidPrice: (data as any).analysisV12.acquisition.parts.bidPrice,
+                }}
+              />
+            </section>
+          )}
+
           {/* 01. 사건/매물 기본정보 */}
           <section className="px-6 py-4">
             <h3 className="font-semibold mb-2 text-sm text-gray-700">
