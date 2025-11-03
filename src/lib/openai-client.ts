@@ -11,6 +11,8 @@ import {
   SimulationScenario,
   RightRecord,
   TenantRecord,
+  RightType,
+  PropertyType,
 } from "@/types/simulation";
 import { v4 as uuidv4 } from "uuid";
 import { generateRegionalAnalysis } from "@/lib/regional-analysis";
@@ -34,11 +36,11 @@ function isDevelopmentMode(): boolean {
 function generateDynamicAuctionDate(): string {
   const today = new Date();
   const currentDay = today.getDay(); // 0(일요일) ~ 6(토요일)
-  
+
   // 경매 입찰일은 보통 화요일(2) 또는 목요일(4)에 열림
   // 현재 날짜 기준으로 다음 화요일 또는 목요일을 계산
   let daysToAdd = 0;
-  
+
   if (currentDay === 0 || currentDay === 1) {
     // 일요일 또는 월요일이면 다음 화요일 (1~2일 후)
     daysToAdd = currentDay === 0 ? 2 : 1;
@@ -47,33 +49,33 @@ function generateDynamicAuctionDate(): string {
     daysToAdd = Math.random() > 0.5 ? 7 : 2; // 랜덤하게 선택
   } else if (currentDay === 3 || currentDay === 4) {
     // 수요일 또는 목요일이면 다음 목요일 또는 다음 화요일
-    daysToAdd = currentDay === 3 ? 1 : (Math.random() > 0.5 ? 6 : 1);
+    daysToAdd = currentDay === 3 ? 1 : Math.random() > 0.5 ? 6 : 1;
   } else {
     // 금요일 또는 토요일이면 다음 화요일 (4~5일 후)
     daysToAdd = currentDay === 5 ? 4 : 3;
   }
-  
+
   // 최소 3일, 최대 21일 후로 제한 (실제 경매 일정 반영)
   const minDays = 3;
   const maxDays = 21;
   daysToAdd = Math.max(minDays, Math.min(maxDays, daysToAdd));
-  
+
   const biddingDate = new Date(today);
   biddingDate.setDate(today.getDate() + daysToAdd);
-  
+
   // YYYY-MM-DD 형식으로 변환
   const year = biddingDate.getFullYear();
-  const month = String(biddingDate.getMonth() + 1).padStart(2, '0');
-  const day = String(biddingDate.getDate()).padStart(2, '0');
-  
+  const month = String(biddingDate.getMonth() + 1).padStart(2, "0");
+  const day = String(biddingDate.getDate()).padStart(2, "0");
+
   const formattedDate = `${year}-${month}-${day}`;
-  
+
   console.log("📅 [다음 입찰] 동적 입찰기일 생성:", {
-    오늘: today.toISOString().split('T')[0],
+    오늘: today.toISOString().split("T")[0],
     생성일: formattedDate,
     일수차이: daysToAdd,
   });
-  
+
   return formattedDate;
 }
 
@@ -452,11 +454,13 @@ export async function generateEducationalProperty(
       basicInfo: {
         caseNumber: data.caseNumber,
         court: data.court,
-        propertyType: data.propertyType,
+        propertyType: data.propertyType as PropertyType,
         location: data.location,
         locationShort: data.locationShort,
+        marketValue: data.marketValue || data.appraisalValue, // marketValue가 없으면 감정가 사용
         appraisalValue: data.appraisalValue,
         minimumBidPrice: data.minimumBidPrice,
+        startingBidPrice: data.startingBidPrice || data.minimumBidPrice, // startingBidPrice가 없으면 minimumBidPrice 사용
         bidDeposit: data.bidDeposit,
         claimAmount: data.claimAmount,
         debtor: data.debtor,
@@ -484,6 +488,10 @@ export async function generateEducationalProperty(
         willBeAssumed: false,
       })),
       similarSales: data.similarSales,
+      regionalAnalysis: (() => {
+        console.log("🗺️ [OpenAI] 지역분석 생성:", data.location);
+        return generateRegionalAnalysis(data.location);
+      })(),
       educationalContent: data.educationalContent,
       createdAt: new Date().toISOString(),
     };
@@ -854,7 +862,65 @@ function generateSimulationTenants(
 }
 
 // ============================================
-// 5. 시뮬레이션용 매물 생성
+// 5. 랜덤 비용 생성 함수
+// ============================================
+
+/**
+ * 권리금(임차보증금)을 랜덤하게 생성합니다.
+ * 감정가 × (0 ~ 35%) 범위에서 랜덤 생성
+ */
+function generateRandomRightsPayment(appraisalValue: number): number {
+  const ratio = Math.random() * 0.35; // 0 ~ 35%
+  const rightsPayment = Math.floor(appraisalValue * ratio);
+  console.log(
+    `💰 [권리금 생성] 감정가 ${appraisalValue.toLocaleString()}원 × ${(
+      ratio * 100
+    ).toFixed(1)}% = ${rightsPayment.toLocaleString()}원`
+  );
+  return rightsPayment;
+}
+
+/**
+ * 취득세를 랜덤하게 생성합니다.
+ * 입찰가 × (0.01 ~ 0.04) 범위에서 랜덤 생성 (1~4%)
+ */
+function generateRandomAcquisitionTax(bidPrice: number): number {
+  const ratio = 0.01 + Math.random() * 0.03; // 1% ~ 4%
+  const tax = Math.floor(bidPrice * ratio);
+  console.log(
+    `💰 [취득세 생성] 입찰가 ${bidPrice.toLocaleString()}원 × ${(
+      ratio * 100
+    ).toFixed(1)}% = ${tax.toLocaleString()}원`
+  );
+  return tax;
+}
+
+/**
+ * 명도비를 랜덤하게 생성합니다.
+ * 500만원 ~ 3,000만원 범위에서 랜덤 생성
+ */
+function generateRandomEvictionCost(): number {
+  const min = 5_000_000;
+  const max = 30_000_000;
+  const evictionCost = Math.floor(min + Math.random() * (max - min));
+  console.log(`💰 [명도비 생성] ${evictionCost.toLocaleString()}원`);
+  return evictionCost;
+}
+
+/**
+ * 수리비를 랜덤하게 생성합니다.
+ * 300만원 ~ 10,000만원 범위에서 랜덤 생성
+ */
+function generateRandomRepairCost(): number {
+  const min = 3_000_000;
+  const max = 100_000_000;
+  const repairCost = Math.floor(min + Math.random() * (max - min));
+  console.log(`💰 [수리비 생성] ${repairCost.toLocaleString()}원`);
+  return repairCost;
+}
+
+// ============================================
+// 6. 시뮬레이션용 매물 생성
 // ============================================
 
 /**
@@ -960,8 +1026,12 @@ function generateSimulationPriceRanges(propertyType: string, region: string) {
   };
 
   const regionCategory = getRegionCategory(region);
-  const priceRange = baseRanges[propertyType]?.[regionCategory] ||
-    baseRanges[propertyType]?.["기타"] || { min: 1, max: 5 };
+  const priceRange = (
+    baseRanges as Record<string, Record<string, { min: number; max: number }>>
+  )[propertyType]?.[regionCategory] ||
+    (
+      baseRanges as Record<string, Record<string, { min: number; max: number }>>
+    )[propertyType]?.["기타"] || { min: 1, max: 5 };
 
   // 5개의 다양한 가격 생성
   const priceRanges = [];
@@ -1013,8 +1083,35 @@ export async function generateSimulationProperty(): Promise<SimulationScenario> 
           { full: "서울특별시 송파구 잠실동 789-12", short: "서울 송파구" },
           { full: "서울특별시 마포구 상암동 101-23", short: "서울 마포구" },
           { full: "경기도 성남시 분당구 정자동 202-34", short: "경기 성남시" },
+          { full: "경기도 수원시 영통구 광교동 303-45", short: "경기 수원시" },
+          { full: "부산광역시 해운대구 우동 404-56", short: "부산 해운대구" },
+          { full: "대구광역시 수성구 범어동 505-67", short: "대구 수성구" },
+          { full: "인천광역시 연수구 송도동 606-78", short: "인천 연수구" },
+          { full: "광주광역시 서구 치평동 707-89", short: "광주 서구" },
+          { full: "대전광역시 유성구 봉명동 808-90", short: "대전 유성구" },
+          { full: "울산광역시 남구 삼산동 909-01", short: "울산 남구" },
+          { full: "세종특별자치시 조치원읍 번암리 010-12", short: "세종시" },
+          { full: "강원도 춘천시 옥천동 111-23", short: "강원 춘천시" },
+          {
+            full: "충청북도 청주시 상당구 용암동 212-34",
+            short: "충북 청주시",
+          },
+          {
+            full: "충청남도 천안시 동남구 원성동 313-45",
+            short: "충남 천안시",
+          },
+          {
+            full: "전라북도 전주시 덕진구 금암동 414-56",
+            short: "전북 전주시",
+          },
+          { full: "전라남도 광주시 송정동 515-67", short: "전남 광주시" },
+          { full: "경상북도 포항시 남구 대잠동 616-78", short: "경북 포항시" },
+          {
+            full: "경상남도 창원시 의창구 팔용동 717-89",
+            short: "경남 창원시",
+          },
+          { full: "제주특별자치도 제주시 노형동 818-90", short: "제주 제주시" },
         ],
-        priceRanges: generateSimulationPriceRanges("아파트", "서울 강남"),
         propertyDetails: [
           {
             landArea: 99.2,
@@ -1079,8 +1176,35 @@ export async function generateSimulationProperty(): Promise<SimulationScenario> 
             short: "서울 영등포구",
           },
           { full: "경기도 수원시 영통구 광교동 202-34", short: "경기 수원시" },
+          { full: "경기도 성남시 분당구 정자동 303-45", short: "경기 성남시" },
+          { full: "부산광역시 해운대구 우동 404-56", short: "부산 해운대구" },
+          { full: "대구광역시 수성구 범어동 505-67", short: "대구 수성구" },
+          { full: "인천광역시 연수구 송도동 606-78", short: "인천 연수구" },
+          { full: "광주광역시 서구 치평동 707-89", short: "광주 서구" },
+          { full: "대전광역시 유성구 봉명동 808-90", short: "대전 유성구" },
+          { full: "울산광역시 남구 삼산동 909-01", short: "울산 남구" },
+          { full: "세종특별자치시 조치원읍 번암리 010-12", short: "세종시" },
+          { full: "강원도 춘천시 옥천동 111-23", short: "강원 춘천시" },
+          {
+            full: "충청북도 청주시 상당구 용암동 212-34",
+            short: "충북 청주시",
+          },
+          {
+            full: "충청남도 천안시 동남구 원성동 313-45",
+            short: "충남 천안시",
+          },
+          {
+            full: "전라북도 전주시 덕진구 금암동 414-56",
+            short: "전북 전주시",
+          },
+          { full: "전라남도 광주시 송정동 515-67", short: "전남 광주시" },
+          { full: "경상북도 포항시 남구 대잠동 616-78", short: "경북 포항시" },
+          {
+            full: "경상남도 창원시 의창구 팔용동 717-89",
+            short: "경남 창원시",
+          },
+          { full: "제주특별자치도 제주시 노형동 818-90", short: "제주 제주시" },
         ],
-        priceRanges: generateSimulationPriceRanges("오피스텔", "서울 강남"),
         propertyDetails: [
           {
             landArea: 49.6,
@@ -1142,8 +1266,35 @@ export async function generateSimulationProperty(): Promise<SimulationScenario> 
           { full: "서울특별시 송파구 잠실동 789-12", short: "서울 송파구" },
           { full: "서울특별시 마포구 상암동 101-23", short: "서울 마포구" },
           { full: "경기도 성남시 분당구 정자동 202-34", short: "경기 성남시" },
+          { full: "경기도 수원시 영통구 광교동 303-45", short: "경기 수원시" },
+          { full: "부산광역시 해운대구 우동 404-56", short: "부산 해운대구" },
+          { full: "대구광역시 수성구 범어동 505-67", short: "대구 수성구" },
+          { full: "인천광역시 연수구 송도동 606-78", short: "인천 연수구" },
+          { full: "광주광역시 서구 치평동 707-89", short: "광주 서구" },
+          { full: "대전광역시 유성구 봉명동 808-90", short: "대전 유성구" },
+          { full: "울산광역시 남구 삼산동 909-01", short: "울산 남구" },
+          { full: "세종특별자치시 조치원읍 번암리 010-12", short: "세종시" },
+          { full: "강원도 춘천시 옥천동 111-23", short: "강원 춘천시" },
+          {
+            full: "충청북도 청주시 상당구 용암동 212-34",
+            short: "충북 청주시",
+          },
+          {
+            full: "충청남도 천안시 동남구 원성동 313-45",
+            short: "충남 천안시",
+          },
+          {
+            full: "전라북도 전주시 덕진구 금암동 414-56",
+            short: "전북 전주시",
+          },
+          { full: "전라남도 광주시 송정동 515-67", short: "전남 광주시" },
+          { full: "경상북도 포항시 남구 대잠동 616-78", short: "경북 포항시" },
+          {
+            full: "경상남도 창원시 의창구 팔용동 717-89",
+            short: "경남 창원시",
+          },
+          { full: "제주특별자치도 제주시 노형동 818-90", short: "제주 제주시" },
         ],
-        priceRanges: generateSimulationPriceRanges("단독주택", "서울 강남"),
         propertyDetails: [
           {
             landArea: 198.3,
@@ -1205,8 +1356,35 @@ export async function generateSimulationProperty(): Promise<SimulationScenario> 
           { full: "서울특별시 송파구 잠실동 789-12", short: "서울 송파구" },
           { full: "서울특별시 마포구 상암동 101-23", short: "서울 마포구" },
           { full: "경기도 성남시 분당구 정자동 202-34", short: "경기 성남시" },
+          { full: "경기도 수원시 영통구 광교동 303-45", short: "경기 수원시" },
+          { full: "부산광역시 해운대구 우동 404-56", short: "부산 해운대구" },
+          { full: "대구광역시 수성구 범어동 505-67", short: "대구 수성구" },
+          { full: "인천광역시 연수구 송도동 606-78", short: "인천 연수구" },
+          { full: "광주광역시 서구 치평동 707-89", short: "광주 서구" },
+          { full: "대전광역시 유성구 봉명동 808-90", short: "대전 유성구" },
+          { full: "울산광역시 남구 삼산동 909-01", short: "울산 남구" },
+          { full: "세종특별자치시 조치원읍 번암리 010-12", short: "세종시" },
+          { full: "강원도 춘천시 옥천동 111-23", short: "강원 춘천시" },
+          {
+            full: "충청북도 청주시 상당구 용암동 212-34",
+            short: "충북 청주시",
+          },
+          {
+            full: "충청남도 천안시 동남구 원성동 313-45",
+            short: "충남 천안시",
+          },
+          {
+            full: "전라북도 전주시 덕진구 금암동 414-56",
+            short: "전북 전주시",
+          },
+          { full: "전라남도 광주시 송정동 515-67", short: "전남 광주시" },
+          { full: "경상북도 포항시 남구 대잠동 616-78", short: "경북 포항시" },
+          {
+            full: "경상남도 창원시 의창구 팔용동 717-89",
+            short: "경남 창원시",
+          },
+          { full: "제주특별자치도 제주시 노형동 818-90", short: "제주 제주시" },
         ],
-        priceRanges: generateSimulationPriceRanges("빌라", "서울 강남"),
         propertyDetails: [
           {
             landArea: 66.1,
@@ -1268,8 +1446,35 @@ export async function generateSimulationProperty(): Promise<SimulationScenario> 
           { full: "서울특별시 송파구 잠실동 789-12", short: "서울 송파구" },
           { full: "서울특별시 마포구 상암동 101-23", short: "서울 마포구" },
           { full: "경기도 성남시 분당구 정자동 202-34", short: "경기 성남시" },
+          { full: "경기도 수원시 영통구 광교동 303-45", short: "경기 수원시" },
+          { full: "부산광역시 해운대구 우동 404-56", short: "부산 해운대구" },
+          { full: "대구광역시 수성구 범어동 505-67", short: "대구 수성구" },
+          { full: "인천광역시 연수구 송도동 606-78", short: "인천 연수구" },
+          { full: "광주광역시 서구 치평동 707-89", short: "광주 서구" },
+          { full: "대전광역시 유성구 봉명동 808-90", short: "대전 유성구" },
+          { full: "울산광역시 남구 삼산동 909-01", short: "울산 남구" },
+          { full: "세종특별자치시 조치원읍 번암리 010-12", short: "세종시" },
+          { full: "강원도 춘천시 옥천동 111-23", short: "강원 춘천시" },
+          {
+            full: "충청북도 청주시 상당구 용암동 212-34",
+            short: "충북 청주시",
+          },
+          {
+            full: "충청남도 천안시 동남구 원성동 313-45",
+            short: "충남 천안시",
+          },
+          {
+            full: "전라북도 전주시 덕진구 금암동 414-56",
+            short: "전북 전주시",
+          },
+          { full: "전라남도 광주시 송정동 515-67", short: "전남 광주시" },
+          { full: "경상북도 포항시 남구 대잠동 616-78", short: "경북 포항시" },
+          {
+            full: "경상남도 창원시 의창구 팔용동 717-89",
+            short: "경남 창원시",
+          },
+          { full: "제주특별자치도 제주시 노형동 818-90", short: "제주 제주시" },
         ],
-        priceRanges: generateSimulationPriceRanges("주택", "서울 강남"),
         propertyDetails: [
           {
             landArea: 165.3,
@@ -1311,8 +1516,35 @@ export async function generateSimulationProperty(): Promise<SimulationScenario> 
           { full: "서울특별시 송파구 잠실동 789-12", short: "서울 송파구" },
           { full: "서울특별시 마포구 상암동 101-23", short: "서울 마포구" },
           { full: "경기도 성남시 분당구 정자동 202-34", short: "경기 성남시" },
+          { full: "경기도 수원시 영통구 광교동 303-45", short: "경기 수원시" },
+          { full: "부산광역시 해운대구 우동 404-56", short: "부산 해운대구" },
+          { full: "대구광역시 수성구 범어동 505-67", short: "대구 수성구" },
+          { full: "인천광역시 연수구 송도동 606-78", short: "인천 연수구" },
+          { full: "광주광역시 서구 치평동 707-89", short: "광주 서구" },
+          { full: "대전광역시 유성구 봉명동 808-90", short: "대전 유성구" },
+          { full: "울산광역시 남구 삼산동 909-01", short: "울산 남구" },
+          { full: "세종특별자치시 조치원읍 번암리 010-12", short: "세종시" },
+          { full: "강원도 춘천시 옥천동 111-23", short: "강원 춘천시" },
+          {
+            full: "충청북도 청주시 상당구 용암동 212-34",
+            short: "충북 청주시",
+          },
+          {
+            full: "충청남도 천안시 동남구 원성동 313-45",
+            short: "충남 천안시",
+          },
+          {
+            full: "전라북도 전주시 덕진구 금암동 414-56",
+            short: "전북 전주시",
+          },
+          { full: "전라남도 광주시 송정동 515-67", short: "전남 광주시" },
+          { full: "경상북도 포항시 남구 대잠동 616-78", short: "경북 포항시" },
+          {
+            full: "경상남도 창원시 의창구 팔용동 717-89",
+            short: "경남 창원시",
+          },
+          { full: "제주특별자치도 제주시 노형동 818-90", short: "제주 제주시" },
         ],
-        priceRanges: generateSimulationPriceRanges("다가구주택", "서울 강남"),
         propertyDetails: [
           {
             landArea: 99.2,
@@ -1354,8 +1586,35 @@ export async function generateSimulationProperty(): Promise<SimulationScenario> 
           { full: "서울특별시 종로구 인사동 789-12", short: "서울 종로구" },
           { full: "서울특별시 송파구 잠실동 101-23", short: "서울 송파구" },
           { full: "경기도 부천시 원미구 상동 202-34", short: "경기 부천시" },
+          { full: "경기도 수원시 영통구 광교동 303-45", short: "경기 수원시" },
+          { full: "부산광역시 해운대구 우동 404-56", short: "부산 해운대구" },
+          { full: "대구광역시 수성구 범어동 505-67", short: "대구 수성구" },
+          { full: "인천광역시 연수구 송도동 606-78", short: "인천 연수구" },
+          { full: "광주광역시 서구 치평동 707-89", short: "광주 서구" },
+          { full: "대전광역시 유성구 봉명동 808-90", short: "대전 유성구" },
+          { full: "울산광역시 남구 삼산동 909-01", short: "울산 남구" },
+          { full: "세종특별자치시 조치원읍 번암리 010-12", short: "세종시" },
+          { full: "강원도 춘천시 옥천동 111-23", short: "강원 춘천시" },
+          {
+            full: "충청북도 청주시 상당구 용암동 212-34",
+            short: "충북 청주시",
+          },
+          {
+            full: "충청남도 천안시 동남구 원성동 313-45",
+            short: "충남 천안시",
+          },
+          {
+            full: "전라북도 전주시 덕진구 금암동 414-56",
+            short: "전북 전주시",
+          },
+          { full: "전라남도 광주시 송정동 515-67", short: "전남 광주시" },
+          { full: "경상북도 포항시 남구 대잠동 616-78", short: "경북 포항시" },
+          {
+            full: "경상남도 창원시 의창구 팔용동 717-89",
+            short: "경남 창원시",
+          },
+          { full: "제주특별자치도 제주시 노형동 818-90", short: "제주 제주시" },
         ],
-        priceRanges: generateSimulationPriceRanges("근린주택", "서울 강남"),
         propertyDetails: [
           {
             landArea: 66.1,
@@ -1397,11 +1656,35 @@ export async function generateSimulationProperty(): Promise<SimulationScenario> 
           { full: "서울특별시 송파구 잠실동 789-12", short: "서울 송파구" },
           { full: "서울특별시 마포구 상암동 101-23", short: "서울 마포구" },
           { full: "경기도 성남시 분당구 정자동 202-34", short: "경기 성남시" },
+          { full: "경기도 수원시 영통구 광교동 303-45", short: "경기 수원시" },
+          { full: "부산광역시 해운대구 우동 404-56", short: "부산 해운대구" },
+          { full: "대구광역시 수성구 범어동 505-67", short: "대구 수성구" },
+          { full: "인천광역시 연수구 송도동 606-78", short: "인천 연수구" },
+          { full: "광주광역시 서구 치평동 707-89", short: "광주 서구" },
+          { full: "대전광역시 유성구 봉명동 808-90", short: "대전 유성구" },
+          { full: "울산광역시 남구 삼산동 909-01", short: "울산 남구" },
+          { full: "세종특별자치시 조치원읍 번암리 010-12", short: "세종시" },
+          { full: "강원도 춘천시 옥천동 111-23", short: "강원 춘천시" },
+          {
+            full: "충청북도 청주시 상당구 용암동 212-34",
+            short: "충북 청주시",
+          },
+          {
+            full: "충청남도 천안시 동남구 원성동 313-45",
+            short: "충남 천안시",
+          },
+          {
+            full: "전라북도 전주시 덕진구 금암동 414-56",
+            short: "전북 전주시",
+          },
+          { full: "전라남도 광주시 송정동 515-67", short: "전남 광주시" },
+          { full: "경상북도 포항시 남구 대잠동 616-78", short: "경북 포항시" },
+          {
+            full: "경상남도 창원시 의창구 팔용동 717-89",
+            short: "경남 창원시",
+          },
+          { full: "제주특별자치도 제주시 노형동 818-90", short: "제주 제주시" },
         ],
-        priceRanges: generateSimulationPriceRanges(
-          "도시형생활주택",
-          "서울 강남"
-        ),
         propertyDetails: [
           {
             landArea: 19.8,
@@ -1443,8 +1726,35 @@ export async function generateSimulationProperty(): Promise<SimulationScenario> 
           { full: "서울특별시 송파구 잠실동 789-12", short: "서울 송파구" },
           { full: "서울특별시 마포구 상암동 101-23", short: "서울 마포구" },
           { full: "경기도 성남시 분당구 정자동 202-34", short: "경기 성남시" },
+          { full: "경기도 수원시 영통구 광교동 303-45", short: "경기 수원시" },
+          { full: "부산광역시 해운대구 우동 404-56", short: "부산 해운대구" },
+          { full: "대구광역시 수성구 범어동 505-67", short: "대구 수성구" },
+          { full: "인천광역시 연수구 송도동 606-78", short: "인천 연수구" },
+          { full: "광주광역시 서구 치평동 707-89", short: "광주 서구" },
+          { full: "대전광역시 유성구 봉명동 808-90", short: "대전 유성구" },
+          { full: "울산광역시 남구 삼산동 909-01", short: "울산 남구" },
+          { full: "세종특별자치시 조치원읍 번암리 010-12", short: "세종시" },
+          { full: "강원도 춘천시 옥천동 111-23", short: "강원 춘천시" },
+          {
+            full: "충청북도 청주시 상당구 용암동 212-34",
+            short: "충북 청주시",
+          },
+          {
+            full: "충청남도 천안시 동남구 원성동 313-45",
+            short: "충남 천안시",
+          },
+          {
+            full: "전라북도 전주시 덕진구 금암동 414-56",
+            short: "전북 전주시",
+          },
+          { full: "전라남도 광주시 송정동 515-67", short: "전남 광주시" },
+          { full: "경상북도 포항시 남구 대잠동 616-78", short: "경북 포항시" },
+          {
+            full: "경상남도 창원시 의창구 팔용동 717-89",
+            short: "경남 창원시",
+          },
+          { full: "제주특별자치도 제주시 노형동 818-90", short: "제주 제주시" },
         ],
-        priceRanges: generateSimulationPriceRanges("원룸", "서울 강남"),
         propertyDetails: [
           {
             landArea: 16.5,
@@ -1509,20 +1819,34 @@ export async function generateSimulationProperty(): Promise<SimulationScenario> 
       selectedTemplate.locations[
         Math.floor(Math.random() * selectedTemplate.locations.length)
       ];
+
+    // 🏠 [매물 생성] 선택된 위치에 맞는 가격 범위 동적 생성
+    console.log(
+      `🏠 [매물 생성] 위치 기반 가격 범위 생성: ${selectedLocation.short}`
+    );
+    const priceRanges = generateSimulationPriceRanges(
+      selectedTemplate.propertyType,
+      selectedLocation.short
+    );
     const selectedPriceRange =
-      selectedTemplate.priceRanges[
-        Math.floor(Math.random() * selectedTemplate.priceRanges.length)
-      ];
+      priceRanges[Math.floor(Math.random() * priceRanges.length)];
+
     const selectedPropertyDetails =
       selectedTemplate.propertyDetails[
         Math.floor(Math.random() * selectedTemplate.propertyDetails.length)
       ];
 
-    // 가격 계산 (감정가 기준으로 최저가, 입찰시작가 계산)
-    const minimumBidPrice = Math.floor(selectedPriceRange.appraisalValue * 0.7); // 감정가의 70% (시뮬레이션은 더 낮게)
-    const startingBidPrice = Math.floor(
-      selectedPriceRange.appraisalValue * 0.75
-    ); // 감정가의 75%
+    // 🛠️ [PATCH] 현실+랜덤 분포 적용
+    // 1. 감정가 기반 FMV(시장가) 생성: 감정가 × (0.9 ~ 1.2)
+    const fmvRatio = 0.9 + Math.random() * 0.3; // 0.9 ~ 1.2
+    const fairMarketValue = Math.floor(
+      selectedPriceRange.appraisalValue * fmvRatio
+    );
+
+    // 2. FMV 기반 입찰가(B) 생성: FMV × (0.6 ~ 0.95)
+    const bidRatio = 0.6 + Math.random() * 0.35; // 0.6 ~ 0.95
+    const minimumBidPrice = Math.floor(fairMarketValue * bidRatio);
+    const startingBidPrice = Math.floor(fairMarketValue * (bidRatio + 0.05)); // 입찰가보다 약간 높게
     const bidDeposit = Math.floor(minimumBidPrice * 0.1); // 최저가의 10%
 
     console.log(
@@ -1532,10 +1856,17 @@ export async function generateSimulationProperty(): Promise<SimulationScenario> 
       `📍 [시뮬레이션 매물 생성] 선택된 위치: ${selectedLocation.short}`
     );
     console.log(
-      `💰 [시뮬레이션 매물 생성] 시장가: ${selectedPriceRange.marketValue.toLocaleString()}원`
+      `💰 [시뮬레이션 매물 생성] 감정가: ${selectedPriceRange.appraisalValue.toLocaleString()}원`
     );
     console.log(
-      `💰 [시뮬레이션 매물 생성] 감정가: ${selectedPriceRange.appraisalValue.toLocaleString()}원`
+      `💰 [시뮬레이션 매물 생성] FMV(시장가): ${fairMarketValue.toLocaleString()}원 (감정가 × ${(
+        fmvRatio * 100
+      ).toFixed(1)}%)`
+    );
+    console.log(
+      `💰 [시뮬레이션 매물 생성] 입찰가(B): ${minimumBidPrice.toLocaleString()}원 (FMV × ${(
+        bidRatio * 100
+      ).toFixed(1)}%)`
     );
 
     const dummyData = {
@@ -1544,7 +1875,7 @@ export async function generateSimulationProperty(): Promise<SimulationScenario> 
       propertyType: selectedTemplate.propertyType,
       location: selectedLocation.full,
       locationShort: selectedLocation.short,
-      marketValue: selectedPriceRange.marketValue,
+      marketValue: fairMarketValue, // FMV 사용
       appraisalValue: selectedPriceRange.appraisalValue,
       minimumBidPrice: minimumBidPrice,
       startingBidPrice: startingBidPrice,
@@ -1571,24 +1902,37 @@ export async function generateSimulationProperty(): Promise<SimulationScenario> 
           auctionDate: "2025-08-10",
           minimumPrice: 800000000,
           priceRatio: 100,
-          result: "유찰",
+          result: "유찰" as const,
         },
         {
           round: 2,
           auctionDate: "2025-09-10",
           minimumPrice: 640000000,
           priceRatio: 80,
-          result: "유찰",
+          result: "유찰" as const,
         },
       ],
       rights: generateSimulationRights(
         selectedTemplate.propertyType,
         selectedPriceRange.claimAmount
       ),
-      tenants: generateSimulationTenants(
-        selectedTemplate.propertyType,
-        selectedLocation.short
-      ),
+      tenants: (() => {
+        const generatedTenants = generateSimulationTenants(
+          selectedTemplate.propertyType,
+          selectedLocation.short
+        );
+        // 🛠️ [PATCH] 권리금 랜덤 생성: 감정가 × 0~35%
+        const rightsPayment = generateRandomRightsPayment(
+          selectedPriceRange.appraisalValue
+        );
+        if (generatedTenants.length > 0) {
+          generatedTenants[0].deposit = rightsPayment;
+          console.log(
+            `💰 [권리금 적용] 임차인 보증금: ${rightsPayment.toLocaleString()}원`
+          );
+        }
+        return generatedTenants;
+      })(),
       similarSales: [
         {
           saleDate: "2025-07-20",
@@ -1615,11 +1959,13 @@ export async function generateSimulationProperty(): Promise<SimulationScenario> 
       basicInfo: {
         caseNumber: dummyData.caseNumber,
         court: dummyData.court,
-        propertyType: dummyData.propertyType,
+        propertyType: dummyData.propertyType as PropertyType,
         location: dummyData.location,
         locationShort: dummyData.locationShort,
+        marketValue: dummyData.marketValue,
         appraisalValue: dummyData.appraisalValue,
         minimumBidPrice: dummyData.minimumBidPrice,
+        startingBidPrice: dummyData.startingBidPrice,
         bidDeposit: dummyData.bidDeposit,
         claimAmount: dummyData.claimAmount,
         debtor: dummyData.debtor,
@@ -1683,11 +2029,13 @@ export async function generateSimulationProperty(): Promise<SimulationScenario> 
       basicInfo: {
         caseNumber: data.caseNumber,
         court: data.court,
-        propertyType: data.propertyType,
+        propertyType: data.propertyType as PropertyType,
         location: data.location,
         locationShort: data.locationShort,
+        marketValue: data.marketValue || data.appraisalValue, // marketValue가 없으면 감정가 사용
         appraisalValue: data.appraisalValue,
         minimumBidPrice: data.minimumBidPrice,
+        startingBidPrice: data.startingBidPrice || data.minimumBidPrice, // startingBidPrice가 없으면 minimumBidPrice 사용
         bidDeposit: data.bidDeposit,
         claimAmount: data.claimAmount,
         debtor: data.debtor,

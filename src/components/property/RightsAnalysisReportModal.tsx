@@ -61,9 +61,6 @@ export default function RightsAnalysisReportModal({
     0
   );
 
-  const safetyMarginLabel = analysis
-    ? `${analysis.safetyMargin.toLocaleString()}원`
-    : "-";
   const totalAssumedLabel = analysis
     ? analysis.totalAssumedAmount > 0
       ? `${analysis.totalAssumedAmount.toLocaleString()}원`
@@ -165,21 +162,7 @@ export default function RightsAnalysisReportModal({
         <div className="divide-y divide-gray-200">
           {/* 1. 요약 */}
           <section className="px-8 py-5 bg-gray-50">
-            <div className="grid gap-4 grid-cols-2 md:grid-cols-4 text-[13px]">
-              <div className="p-3 bg-white border border-gray-300">
-                <div className="text-[11px] text-gray-600 flex items-center">
-                  안전마진
-                  <InfoTip
-                    title="안전마진"
-                    description={
-                      "최소 필요자기자본.\nmax(인수금액, 유형별 바닥노출) × 위험도 × 난이도.\n1만원 단위 반올림."
-                    }
-                  />
-                </div>
-                <div className="font-semibold text-gray-900">
-                  {safetyMarginLabel}
-                </div>
-              </div>
+            <div className="grid gap-4 grid-cols-2 md:grid-cols-3 text-[13px]">
               <div className="p-3 bg-white border border-gray-300">
                 <div className="text-[11px] text-gray-600 flex items-center">
                   인수추정액
@@ -364,7 +347,7 @@ export default function RightsAnalysisReportModal({
               <li>최선순위권리 확인 후 말소기준권리 판단이 우선입니다.</li>
               <li>미소멸권리 유무에 따른 인수/소멸 여부를 확정하세요.</li>
               <li>
-                안전마진과 인수액을 기반으로 입찰 가능 최고가를 역산합니다.
+                인수액을 기반으로 입찰 가능 최고가를 역산합니다.
               </li>
             </ul>
           </section>

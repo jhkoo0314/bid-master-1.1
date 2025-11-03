@@ -12,6 +12,11 @@ interface AuctionAnalysisReportModalProps {
     safetyMargin: number;
     totalAssumedAmount: number;
     trace?: string[];
+    marketValue?: {
+      fairMarketValue: number; // ✅ FMV: 공정시세
+      auctionCenter: number; // 경매가 가이드 중심값
+      center: number; // 모델 중심값
+    };
   };
 }
 export default function AuctionAnalysisReportModal({
@@ -135,6 +140,23 @@ export default function AuctionAnalysisReportModal({
                 <div className="font-semibold text-gray-900">{safetyMarginLabel}</div>
               </div>
             </div>
+            {/* 시세 정보 추가 */}
+            {analysis?.marketValue && (
+              <div className="mt-4 grid gap-4 grid-cols-2 md:grid-cols-3 text-[13px]">
+                <div className="p-3 bg-white border border-gray-300">
+                  <div className="text-[11px] text-gray-600 flex items-center">공정시세(FMV)<InfoTip title="공정시세(FMV)" description={"안전마진 계산에 사용되는 공정시세. 감정가를 기준으로 지역/면적/연식/유형을 반영하여 산정."} /></div>
+                  <div className="font-semibold text-gray-900">{analysis.marketValue.fairMarketValue.toLocaleString()}원</div>
+                </div>
+                <div className="p-3 bg-white border border-gray-300">
+                  <div className="text-[11px] text-gray-600 flex items-center">경매가 가이드<InfoTip title="경매가 가이드" description={"입찰 전략 수립용 경매가 중심값. 공정시세 대비 평균 12% 할인 적용."} /></div>
+                  <div className="font-semibold text-gray-900">{analysis.marketValue.auctionCenter.toLocaleString()}원</div>
+                </div>
+                <div className="p-3 bg-white border border-gray-300">
+                  <div className="text-[11px] text-gray-600 flex items-center">모델 중심값<InfoTip title="모델 중심값" description={"AI 시세 모델이 산출한 원본 중심값. 계수 적용 전 내부 기준값."} /></div>
+                  <div className="font-semibold text-gray-900">{analysis.marketValue.center.toLocaleString()}원</div>
+                </div>
+              </div>
+            )}
           </section>
 
           {/* 2. 입찰가 가이드 */}

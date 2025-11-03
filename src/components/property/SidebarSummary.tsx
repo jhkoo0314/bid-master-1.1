@@ -183,6 +183,7 @@ export default function SidebarSummary({
   bidRange,
   roi,
   tip,
+  aiMarketPrice,
 }: SidebarSummaryProps) {
   console.log("📊 [사이드바 요약] 컴포넌트 렌더링", {
     rightsCount: rights.length,
@@ -227,6 +228,19 @@ export default function SidebarSummary({
             </p>
           )}
         </div>
+
+        {/* AI 예상 시세 */}
+        {aiMarketPrice && (
+          <div className="mb-4">
+            <p className="text-xs text-gray-600 mb-1">AI 예상 시세</p>
+            <p className="text-sm font-semibold text-gray-900">
+              {formatCurrency(aiMarketPrice.min)} ~ {formatCurrency(aiMarketPrice.max)}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              신뢰도: {(aiMarketPrice.confidence * 100).toFixed(0)}%
+            </p>
+          </div>
+        )}
 
         {/* 예상 수익률 */}
         <div className="mb-4">

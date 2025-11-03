@@ -19,7 +19,7 @@ import {
   parseMoneyValue,
   type TaxInput,
 } from "@/lib/auction-cost";
-import { estimateMarketPrice } from "@/lib/property/market-price";
+import { estimateMarketPrice, estimateAIMarketPrice, mapPropertyTypeToAIMarketPriceType, type AIMarketPriceParams } from "@/lib/property/market-price";
 
 // ============================================
 // 1. 권리 우선순위 및 특성 정의
@@ -649,52 +649,36 @@ export function analyzeRights(
   // A = B + R + T + C + E + K + U
   const estimatedBidPrice = basicInfo.minimumBidPrice;
 
-  // 시세(V) 계산: marketValue가 있으면 사용, 없으면 감정가와 최저가 기반으로 추정
-  // marketValue가 문자열('522,550,000원') 형태일 수 있으므로 파싱 필요
-  // Note: estimateMarketPrice는 레거시 함수이며, 향후 estimateMarketPriceRange 사용 고려
-  const rawMarketValue = basicInfo.marketValue ?? estimateMarketPrice(scenario);
-  let marketValue =
-    parseMoneyValue(rawMarketValue) || estimateMarketPrice(scenario);
+  // 🤖 AI 시세 예측 적용
+  console.log("🤖 [AI 시세 연동] AI 시세 예측 시작");
+  
+  // 매물 정보 추출
+  const aiMarketPriceParams: AIMarketPriceParams = {
+    appraised: basicInfo.appraisalValue,
+    area: propertyDetails?.buildingArea || propertyDetails?.landArea,
+    regionCode: scenario.regionalAnalysis?.regionCode || scenario.basicInfo.location,
+    propertyType: mapPropertyTypeToAIMarketPriceType(basicInfo.propertyType),
+    minimumBidPrice: basicInfo.minimumBidPrice,
+    // yearBuilt는 propertyDetails에 없을 수 있으므로 optional로 처리
+  };
+
+  // AI 시세 범위 예측
+  const aiMarketPriceResult = estimateAIMarketPrice(aiMarketPriceParams);
+  console.log(
+    `🤖 [AI 시세 연동] AI 시세 예측 적용 → 범위: ${aiMarketPriceResult.min.toLocaleString()}원 ~ ${aiMarketPriceResult.max.toLocaleString()}원 (신뢰도: ${(aiMarketPriceResult.confidence * 100).toFixed(1)}%)`
+  );
+
+  // ✅ FMV(공정시세) 사용: MoS 계산에는 fairCenter 사용
+  let marketValue = aiMarketPriceResult.fairCenter;
 
   console.log("💰 [권리분석 엔진] 시세(V) 계산");
-  console.log("marketValue type:", typeof marketValue, marketValue);
-  console.log(
-    `  - marketValue 원본: ${
-      basicInfo.marketValue
-        ? typeof basicInfo.marketValue === "string"
-          ? `"${basicInfo.marketValue}"`
-          : `${basicInfo.marketValue.toLocaleString()}원`
-        : "없음"
-    }`
-  );
-  console.log(`  - marketValue 파싱 후: ${marketValue.toLocaleString()}원`);
+  console.log(`  - AI 시세 범위: ${aiMarketPriceResult.min.toLocaleString()}원 ~ ${aiMarketPriceResult.max.toLocaleString()}원`);
+  console.log(`  - center(모델): ${aiMarketPriceResult.center.toLocaleString()}원`);
+  console.log(`  - fairCenter(FMV, MoS용): ${aiMarketPriceResult.fairCenter.toLocaleString()}원`);
+  console.log(`  - auctionCenter(입찰가 가이드용): ${aiMarketPriceResult.auctionCenter.toLocaleString()}원`);
   console.log(`  - 감정가: ${basicInfo.appraisalValue.toLocaleString()}원`);
   console.log(`  - 최저가: ${basicInfo.minimumBidPrice.toLocaleString()}원`);
-
-  // 1️⃣ 시세 보정 로직 강화: 시세가 최저가보다 너무 낮으면 보정
-  const minimumMarketValue = Math.max(
-    basicInfo.minimumBidPrice * 1.15, // 최저가 × 1.15
-    basicInfo.appraisalValue * 0.75 // 감정가 × 0.75
-  );
-
-  if (marketValue < minimumMarketValue) {
-    const originalMarketValue = marketValue;
-    marketValue = minimumMarketValue;
-    console.warn(
-      `⚠️ [시세 보정] 시세가 비정상적으로 낮아 보정합니다.`
-    );
-    console.warn(
-      `  - 원본 시세: ${originalMarketValue.toLocaleString()}원`
-    );
-    console.warn(
-      `  - 최소 시세 기준: max(최저가×1.15, 감정가×0.75) = ${minimumMarketValue.toLocaleString()}원`
-    );
-    console.warn(
-      `  - 보정 후 시세: ${marketValue.toLocaleString()}원`
-    );
-  }
-
-  console.log(`  - 최종 시세(V): ${marketValue.toLocaleString()}원`);
+  console.log(`  - 최종 시세(V, FMV): ${marketValue.toLocaleString()}원`);
 
   // 매물 유형에 따른 세금 용도 결정
   const propertyUse = mapPropertyTypeToUse(propertyType);
@@ -769,7 +753,13 @@ export function analyzeRights(
     eviction,
     carrying,
     contingency,
-    marketValue,
+    fairMarketValue: aiMarketPriceResult.fairCenter, // ✅ FMV: MoS 계산에 사용
+    marketPriceRange: {
+      min: aiMarketPriceResult.min,
+      max: aiMarketPriceResult.max,
+    }, // 입찰가 가이드용 (MoS에는 사용하지 않음)
+    marketPriceScenario: "neutral",
+    minimumBidPrice: basicInfo.minimumBidPrice,
     taxInput,
   });
 
@@ -850,6 +840,11 @@ export function analyzeRights(
     totalTenantDeposit,
     totalAcquisition,
     safetyMargin,
+    marketValue: {
+      fairMarketValue: aiMarketPriceResult.fairCenter,
+      auctionCenter: aiMarketPriceResult.auctionCenter,
+      center: aiMarketPriceResult.center,
+    },
     recommendedBidRange,
     riskAnalysis,
   };

@@ -33,7 +33,7 @@ import {
   type RiskLevel,
 } from "@/lib/auction-cost";
 import { generateSimilarCases } from "@/lib/property/generateSimilarCases";
-import { estimateMarketPrice } from "@/lib/property/market-price";
+import { estimateMarketPrice, estimateAIMarketPrice, mapPropertyTypeToAIMarketPriceType, type AIMarketPriceParams } from "@/lib/property/market-price";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -71,9 +71,23 @@ export default function PropertyPage({ params }: PageProps) {
       // taxlogic.md 기준: marginAmount = V - A
       const propertyType = data.meta?.type || "기타";
       const appraisalValue = data.price?.appraised || 0;
-      const marketValue = data.price?.market ?? appraisalValue;
       const minimumBidPrice =
         data.price?.lowest || Math.floor(appraisalValue * 0.7);
+
+      // 🤖 AI 시세 예측 적용
+      const aiMarketPriceParams: AIMarketPriceParams = {
+        appraised: appraisalValue,
+        area: scenario?.propertyDetails?.buildingArea || scenario?.propertyDetails?.landArea,
+        regionCode: scenario?.regionalAnalysis?.regionCode || scenario?.basicInfo?.location,
+        propertyType: mapPropertyTypeToAIMarketPriceType(propertyType),
+        minimumBidPrice,
+      };
+
+      const aiMarketPriceResult = estimateAIMarketPrice(aiMarketPriceParams);
+      console.log(
+        `🤖 [프로퍼티 페이지] AI 시세 예측 적용 → 범위: ${aiMarketPriceResult.min.toLocaleString()}원 ~ ${aiMarketPriceResult.max.toLocaleString()}원`
+      );
+      console.log(`  - fairCenter(FMV, MoS용): ${aiMarketPriceResult.fairCenter.toLocaleString()}원`);
 
       // 권리유형별 인수금액 계산 (배당 정보 포함 가능)
       // 배당 정보가 있으면 임차권 미배당 잔액 계산에 활용
@@ -96,18 +110,10 @@ export default function PropertyPage({ params }: PageProps) {
         price: minimumBidPrice,
       };
 
-      // calcAcquisitionAndMoS 함수 실행 직전 marketValue 확인
+      // calcAcquisitionAndMoS 함수 실행 (FMV 사용)
       console.log(
-        "💰 [프로퍼티 페이지] calcAcquisitionAndMoS 호출 직전 - marketValue 확인"
+        "💰 [프로퍼티 페이지] calcAcquisitionAndMoS 호출 (FMV 사용)"
       );
-      console.log(
-        "marketValue type:",
-        typeof marketValue,
-        "marketValue:",
-        marketValue
-      );
-      console.log("marketValue is NaN:", isNaN(Number(marketValue)));
-      console.log("marketValue is undefined:", marketValue === undefined);
 
       const acquisitionResult = calcAcquisitionAndMoS({
         bidPrice: minimumBidPrice,
@@ -116,7 +122,8 @@ export default function PropertyPage({ params }: PageProps) {
         eviction,
         carrying,
         contingency,
-        marketValue,
+        fairMarketValue: aiMarketPriceResult.fairCenter, // ✅ FMV: MoS 계산에 사용
+        minimumBidPrice,
         taxInput,
       });
 
@@ -124,6 +131,11 @@ export default function PropertyPage({ params }: PageProps) {
         safetyMargin: acquisitionResult.marginAmount,
         totalAssumedAmount: assumedAmount,
         trace: [],
+        marketValue: {
+          fairMarketValue: aiMarketPriceResult.fairCenter,
+          auctionCenter: aiMarketPriceResult.auctionCenter,
+          center: aiMarketPriceResult.center,
+        },
       };
     } catch (e) {
       console.error(
@@ -148,16 +160,38 @@ export default function PropertyPage({ params }: PageProps) {
     const appraisalValue = data.price?.appraised || 0;
     const minimumBidPrice = data.price?.lowest || Math.floor(appraisalValue * 0.7);
 
-    // 시세 추정
-    const marketValue = scenario ? estimateMarketPrice(scenario) : appraisalValue;
+    // 🤖 AI 시세 예측 적용
+    // AI 시세 예측
+    const aiMarketPriceParams: AIMarketPriceParams = {
+      appraised: appraisalValue,
+      area: scenario.propertyDetails?.buildingArea || scenario.propertyDetails?.landArea,
+      regionCode: scenario.regionalAnalysis?.regionCode || scenario.basicInfo.location,
+      propertyType: mapPropertyTypeToAIMarketPriceType(propertyType),
+      minimumBidPrice,
+    };
+
+    const aiMarketPriceResult = estimateAIMarketPrice(aiMarketPriceParams);
+    
+    // 경매가 가이드 중심값 사용 (입찰전략용)
+    const auctionGuideValue = aiMarketPriceResult.auctionCenter;
+    
+    // 시세값 정의 (fairCenter 사용)
+    const marketValue = aiMarketPriceResult.fairCenter;
+
+    console.log("🤖 [AI 시세 연동] 권장 입찰가 계산에 AI 시세 적용");
+    console.log(
+      `  - AI 시세 범위: ${aiMarketPriceResult.min.toLocaleString()}원 ~ ${aiMarketPriceResult.max.toLocaleString()}원`
+    );
+    console.log(`  - auctionCenter(입찰가 가이드용): ${auctionGuideValue.toLocaleString()}원`);
+    console.log(`  - fairCenter(FMV, MoS용): ${aiMarketPriceResult.fairCenter.toLocaleString()}원`);
 
     // 권장 입찰가 범위 계산 (간단한 로직)
     // 최소: 최저가의 95%
-    // 최대: 시세의 80% 또는 감정가의 80% 중 작은 값
+    // 최대: 경매가 가이드 중심값의 90% 또는 감정가의 80% 중 작은 값
     const min = Math.round(minimumBidPrice * 0.95);
-    const maxBasedOnMarket = marketValue > 0 ? Math.round(marketValue * 0.8) : Infinity;
+    const maxBasedOnAuctionGuide = auctionGuideValue > 0 ? Math.round(auctionGuideValue * 0.9) : Infinity;
     const maxBasedOnAppraisal = Math.round(appraisalValue * 0.8);
-    const max = Math.min(maxBasedOnMarket, maxBasedOnAppraisal);
+    const max = Math.min(maxBasedOnAuctionGuide, maxBasedOnAppraisal);
     const optimal = Math.round((min + Math.max(min, max)) / 2);
 
     console.log("📊 [권장 입찰가] 범위 계산", {
@@ -171,16 +205,50 @@ export default function PropertyPage({ params }: PageProps) {
     return { min, max: Math.max(min, max), optimal };
   }, [scenario, data, analysis]);
 
+  // AI 시세 정보 계산 (SidebarSummary 표시용)
+  const aiMarketPriceInfo = useMemo(() => {
+    if (!scenario || !data) return undefined;
+
+    const propertyType = data.meta?.type || "기타";
+    const appraisalValue = data.price?.appraised || 0;
+
+    const aiMarketPriceParams: AIMarketPriceParams = {
+      appraised: appraisalValue,
+      area: scenario.propertyDetails?.buildingArea || scenario.propertyDetails?.landArea,
+      regionCode: scenario.regionalAnalysis?.regionCode || scenario.basicInfo.location,
+      propertyType: mapPropertyTypeToAIMarketPriceType(propertyType),
+    };
+
+    const aiMarketPriceResult = estimateAIMarketPrice(aiMarketPriceParams);
+    
+    return {
+      min: aiMarketPriceResult.min,
+      max: aiMarketPriceResult.max,
+      confidence: aiMarketPriceResult.confidence,
+    };
+  }, [scenario, data]);
+
   // ROI 계산 (간단한 로직)
   const roi = useMemo(() => {
-    if (!data || !bidRange || !analysis) return 0;
+    if (!data || !bidRange || !analysis || !scenario) return 0;
 
     const optimalBid = bidRange.optimal;
-    // 시세 계산: scenario가 있으면 estimateMarketPrice 사용 (레거시)
-    // 향후 estimateMarketPriceRange 사용 고려 (범위 및 신뢰도 정보 포함)
-    const marketValue = scenario
-      ? estimateMarketPrice(scenario)
-      : data.price?.appraised || 0;
+
+    // 🤖 AI 시세 예측 적용
+    const appraisalValue = data.price?.appraised || 0;
+    const propertyType = data.meta?.type || "기타";
+
+    const aiMarketPriceParams: AIMarketPriceParams = {
+      appraised: appraisalValue,
+      area: scenario.propertyDetails?.buildingArea || scenario.propertyDetails?.landArea,
+      regionCode: scenario.regionalAnalysis?.regionCode || scenario.basicInfo.location,
+      propertyType: mapPropertyTypeToAIMarketPriceType(propertyType),
+    };
+
+    const aiMarketPriceResult = estimateAIMarketPrice(aiMarketPriceParams);
+    const marketValue = Math.floor(
+      (aiMarketPriceResult.min + aiMarketPriceResult.max) / 2
+    ); // 중립값 사용
 
     if (optimalBid <= 0 || marketValue <= 0) return 0;
 
@@ -633,6 +701,7 @@ export default function PropertyPage({ params }: PageProps) {
                 rights={data.rights || []}
                 bidRange={bidRange}
                 roi={roi}
+                aiMarketPrice={aiMarketPriceInfo}
                 tip={`권장: 1차 입찰가를 하단 범위 중심으로 설정하고, 경쟁률 4~6:1 가정.`}
               />
             ) : null}

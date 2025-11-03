@@ -74,7 +74,11 @@ export interface AcquisitionInput {
   eviction: number; // E: 명도비
   carrying: number; // K: 보유/이자/관리비(예상 보유기간 기준)
   contingency: number; // U: 예비비
-  marketValue: string | number; // V: 시세(보수적) - 문자열('522,550,000원') 또는 숫자
+  marketValue?: string | number; // V: 시세(보수적) - 문자열('522,550,000원') 또는 숫자 (marketPriceRange 사용 시 선택)
+  marketPriceRange?: { min: number; max: number }; // AI 시세 예측 범위 (입찰가 가이드용, MoS에는 사용하지 않음)
+  fairMarketValue?: number; // ✅ FMV: 공정시세 (MoS 계산에 사용. fairCenter 값)
+  marketPriceScenario?: "conservative" | "neutral" | "optimistic"; // 시나리오 선택 (기본값: neutral)
+  minimumBidPrice?: number; // 최저매각가격 (MoS < 0일 때 입찰가 제한 계산용)
   taxInput: TaxInput; // 세금 산출용
   taxOptions?: TaxOptions; // 세율/표/수수료 덮어쓰기
 }
@@ -85,6 +89,9 @@ export interface AcquisitionResult {
   totalAcquisition: number; // A = B + R + T + C + E + K + U
   marginAmount: number; // V - A
   marginRate: number; // (V - A) / V
+  marketPriceUsed?: number; // 실제 계산에 사용된 시세 값
+  marketPriceScenario?: string; // 적용된 시나리오
+  recommendedMaxBidPrice?: number; // MoS < 0일 때 추천 최대 입찰가 (시세 95% 또는 최저가 105% 중 작은 값)
 }
 
 /** 금액 반올림 도우미 */
@@ -537,6 +544,8 @@ export function calcAcquisitionAndMoS(
     carrying: K,
     contingency: U,
     marketValue: V,
+    marketPriceRange,
+    marketPriceScenario = "neutral",
     taxInput,
     taxOptions,
   } = input;
@@ -566,24 +575,59 @@ export function calcAcquisitionAndMoS(
   console.log(`  - carrying (K): ${K} (타입: ${typeof K}) → ${safeK.toLocaleString()}원`);
   console.log(`  - contingency (U): ${U} (타입: ${typeof U}) → ${safeU.toLocaleString()}원`);
 
-  // 2️⃣ marketValue 파싱 검증 강화
-  console.log(`⚖️ [calcAcquisitionAndMoS] marketValue 파싱:`);
-  console.log(`  - marketValue 원본: ${V} (타입: ${typeof V})`);
+  // 2️⃣ 시세(V) 결정: MoS 계산에는 fairMarketValue(FMV) 사용, 없으면 하위 호환성 고려
+  let safeV: number;
+  let usedScenario: string | undefined;
   
-  const parsedV = parseMoneyValue(V);
-  console.log(`  - parseMoneyValue 결과: ${parsedV} (타입: ${typeof parsedV})`);
-  
-  // NaN 또는 0 체크
-  if (isNaN(parsedV)) {
-    console.error(`  ❌ [에러] marketValue 파싱 실패 - NaN: ${V}`);
-  }
-  
-  const safeV = isNaN(parsedV) || parsedV <= 0 ? 0 : parsedV;
-  
-  if (!safeV) {
-    console.warn(`  ⚠️ [총인수금액] 시세(V)가 없거나 0입니다. 원본: ${V}, 파싱 결과: ${parsedV}`);
+  if (typeof input.fairMarketValue === "number" && input.fairMarketValue > 0) {
+    // ✅ FMV(공정시세)가 제공된 경우: MoS 계산에 사용
+    safeV = input.fairMarketValue;
+    console.log(`💰 [총인수금액] FMV(공정시세) 적용: ${safeV.toLocaleString()}원 (MoS 계산 기준)`);
+    usedScenario = "fmv";
+  } else if (marketPriceRange) {
+    // AI 시세 범위가 제공된 경우: 입찰가 가이드용 (MoS에는 사용하지 않음, 하위 호환성 유지)
+    console.log(`💰 [총인수금액] AI 시세 범위 적용 (입찰가 가이드용): ${marketPriceRange.min.toLocaleString()}원 ~ ${marketPriceRange.max.toLocaleString()}원`);
+    console.warn(`  ⚠️ [경고] marketPriceRange는 MoS 계산에 사용되지 않습니다. fairMarketValue를 제공해주세요.`);
+    
+    // 하위 호환성: 중립값으로 사용 (하지만 로그로 경고)
+    switch (marketPriceScenario) {
+      case "conservative":
+        safeV = marketPriceRange.min;
+        usedScenario = "conservative";
+        break;
+      case "optimistic":
+        safeV = marketPriceRange.max;
+        usedScenario = "optimistic";
+        break;
+      case "neutral":
+      default:
+        safeV = Math.floor((marketPriceRange.min + marketPriceRange.max) / 2);
+        usedScenario = "neutral";
+        break;
+    }
+    
+    console.log(`💰 [총인수금액] 시나리오별 시세 적용: ${usedScenario} → ${safeV.toLocaleString()}원`);
   } else {
-    console.log(`  ✅ marketValue 파싱 성공: ${safeV.toLocaleString()}원`);
+    // 기존 방식: marketValue 파싱 (하위 호환성)
+    console.log(`⚖️ [calcAcquisitionAndMoS] marketValue 파싱:`);
+    console.log(`  - marketValue 원본: ${V} (타입: ${typeof V})`);
+    
+    const parsedV = parseMoneyValue(V);
+    console.log(`  - parseMoneyValue 결과: ${parsedV} (타입: ${typeof parsedV})`);
+    
+    // NaN 또는 0 체크
+    if (isNaN(parsedV)) {
+      console.error(`  ❌ [에러] marketValue 파싱 실패 - NaN: ${V}`);
+    }
+    
+    safeV = isNaN(parsedV) || parsedV <= 0 ? 0 : parsedV;
+    
+    if (!safeV) {
+      console.warn(`  ⚠️ [총인수금액] 시세(V)가 없거나 0입니다. 원본: ${V}, 파싱 결과: ${parsedV}`);
+    } else {
+      console.log(`  ✅ marketValue 파싱 성공: ${safeV.toLocaleString()}원`);
+    }
+    usedScenario = "legacy";
   }
 
   // 3️⃣ 세금 계산 (낙찰가 B를 과세표준으로 사용)
@@ -606,13 +650,39 @@ export function calcAcquisitionAndMoS(
   }
 
   // 5️⃣ 안전마진 계산: marginAmount = V - A
-  const marginAmount = safeV - totalAcquisition;
+  const marginAmount = Math.round(safeV - totalAcquisition);
   const marginRate = safeV > 0 ? marginAmount / safeV : 0;
 
   // 안전마진 검증
   if (isNaN(marginAmount)) {
     console.error(`  ❌ [에러] 안전마진 계산 결과가 NaN입니다!`);
     console.error(`    - safeV: ${safeV}, totalAcquisition: ${totalAcquisition}`);
+  }
+
+  // MoS 디버그 로그 (FMV 기반)
+  const MoS = marginAmount;
+  console.log("[MoS DEBUG]", {
+    marketPriceUsed: safeV,
+    marketPriceSource: usedScenario === "fmv" ? "FMV(공정시세)" : usedScenario,
+    totalAcquisition,
+    marginOfSafety: MoS,
+  });
+  if (usedScenario === "fmv") {
+    console.log(`  ✅ MoS 계산 기준: FMV(공정시세) = ${safeV.toLocaleString()}원`);
+  }
+
+  // MoS < 0일 때 추천 최대 입찰가 계산
+  let recommendedMaxBidPrice: number | undefined;
+  if (MoS < 0) {
+    // ✅ 안전마진이 마이너스일 경우: 입찰가 상한 제한
+    const minimumBidPrice = input.minimumBidPrice || safeB; // 최저가가 없으면 현재 입찰가 사용
+    const limitByMarket = Math.floor(safeV * 0.95);
+    const limitByMinBid = Math.floor(minimumBidPrice * 1.05);
+    recommendedMaxBidPrice = Math.min(limitByMarket, limitByMinBid);
+    
+    console.warn(
+      `[⚠️ 안전마진 음수] 총인수금액이 시세보다 높음 → 입찰가 제한: ${recommendedMaxBidPrice.toLocaleString()}원`
+    );
   }
 
   // 6️⃣ 상세 로그 출력 (요청된 모든 항목)
@@ -642,6 +712,9 @@ export function calcAcquisitionAndMoS(
     totalAcquisition,
     marginAmount,
     marginRate,
+    marketPriceUsed: safeV,
+    marketPriceScenario: usedScenario,
+    recommendedMaxBidPrice,
   };
 }
 

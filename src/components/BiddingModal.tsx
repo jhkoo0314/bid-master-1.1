@@ -21,7 +21,7 @@ import {
 import { mapSimulationToPropertyDetail } from "@/lib/property/formatters";
 import { SaleSpecificationModal } from "./property/CourtDocumentModal";
 import RightsAnalysisReportModal from "./property/RightsAnalysisReportModal";
-import { estimateMarketPrice } from "@/lib/property/market-price";
+import { estimateMarketPrice, estimateAIMarketPrice, mapPropertyTypeToAIMarketPriceType, type AIMarketPriceParams } from "@/lib/property/market-price";
 import AuctionAnalysisReportModal from "./property/AuctionAnalysisReportModal";
 import {
   formatNumber,
@@ -68,6 +68,12 @@ interface BiddingResult {
       max: number;
       optimal: number;
     };
+  };
+  aiMarketPrice?: {
+    min: number;
+    max: number;
+    confidence: number;
+    neutral: number;
   };
   auctionAnalysis: {
     averageBidPrice: number;
@@ -346,30 +352,37 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
       const carrying = 0; // 보유비 (보유 기간 없음)
       const contingency = 1000000; // 예비비 (예시: 100만원)
 
-      // marketValue가 없는 경우 appraisalValue를 기본값으로 사용
-      const marketValue =
-        property.basicInfo.marketValue ??
-        property.basicInfo.appraisalValue ??
-        0;
-      console.log("marketValue type:", typeof marketValue, marketValue);
-      if (!property.basicInfo.marketValue) {
-        console.warn(
-          "⚠️ [입찰결과] marketValue가 없어 appraisalValue를 사용합니다."
-        );
-      }
+      // 🤖 AI 시세 예측 적용
+      console.log("🤖 [AI 시세 연동] 입찰 결과 계산에 AI 시세 예측 적용");
 
-      // calcAcquisitionAndMoS 함수 실행 직전 marketValue 확인
+      // 매물 정보 추출
+      const aiMarketPriceParams: AIMarketPriceParams = {
+        appraised: property.basicInfo.appraisalValue,
+        area: property.propertyDetails?.buildingArea || property.propertyDetails?.landArea,
+        regionCode: property.regionalAnalysis?.regionCode || property.basicInfo.location,
+        propertyType: mapPropertyTypeToAIMarketPriceType(
+          property.basicInfo.propertyType
+        ),
+        minimumBidPrice: property.basicInfo.minimumBidPrice,
+      };
+
+      // AI 시세 범위 예측
+      const aiMarketPriceResult = estimateAIMarketPrice(aiMarketPriceParams);
       console.log(
-        "💰 [입찰결과] calcAcquisitionAndMoS 호출 직전 - marketValue 확인"
+        `🤖 [AI 시세 연동] AI 시세 예측 적용 → 범위: ${aiMarketPriceResult.min.toLocaleString()}원 ~ ${aiMarketPriceResult.max.toLocaleString()}원 (신뢰도: ${(aiMarketPriceResult.confidence * 100).toFixed(1)}%)`
       );
-      console.log(
-        "marketValue type:",
-        typeof marketValue,
-        "marketValue:",
-        marketValue
+
+      // AI 시세 중립값 계산 (ROI 계산용 - 경매가 가이드)
+      const aiMarketValueNeutral = Math.floor(
+        (aiMarketPriceResult.min + aiMarketPriceResult.max) / 2
       );
-      console.log("marketValue is NaN:", isNaN(Number(marketValue)));
-      console.log("marketValue is undefined:", marketValue === undefined);
+      const marketValue = aiMarketValueNeutral; // ROI 계산용 (입찰가 가이드)
+
+      console.log("💰 [입찰결과] 시세 확인");
+      console.log(`  - AI 시세 범위: ${aiMarketPriceResult.min.toLocaleString()}원 ~ ${aiMarketPriceResult.max.toLocaleString()}원`);
+      console.log(`  - AI 시세 중립값 (ROI 계산용): ${marketValue.toLocaleString()}원`);
+      console.log(`  - FMV(공정시세, MoS용): ${aiMarketPriceResult.fairCenter.toLocaleString()}원`);
+      console.log(`  - 경매가 가이드 중심값: ${aiMarketPriceResult.auctionCenter.toLocaleString()}원`);
 
       const acquisitionResult = calcAcquisitionAndMoS({
         bidPrice: winningBid,
@@ -378,7 +391,13 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
         eviction,
         carrying,
         contingency,
-        marketValue,
+        fairMarketValue: aiMarketPriceResult.fairCenter, // ✅ FMV: MoS 계산에 사용
+        marketPriceRange: {
+          min: aiMarketPriceResult.min,
+          max: aiMarketPriceResult.max,
+        }, // 입찰가 가이드용 (MoS에는 사용하지 않음)
+        marketPriceScenario: "neutral",
+        minimumBidPrice: property.basicInfo.minimumBidPrice,
         taxInput,
       });
 
@@ -550,6 +569,12 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                 2
             ),
           },
+        },
+        aiMarketPrice: {
+          min: aiMarketPriceResult.min,
+          max: aiMarketPriceResult.max,
+          confidence: aiMarketPriceResult.confidence,
+          neutral: aiMarketValueNeutral,
         },
         auctionAnalysis: {
           averageBidPrice,
@@ -1164,11 +1189,23 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                     </div>
                   </div>
                   <div className="p-3 bg-[#FAFAFA] rounded-xl border border-neutral-100">
-                    <div className="text-[#6B7280]">예상 시장가</div>
-                    <div className="font-semibold text-[#0B1220]">
-                      {/* 시세: estimateMarketPrice 사용 (레거시) */}
-                      {formatCurrency(estimateMarketPrice(property))}
-                    </div>
+                    <div className="text-[#6B7280]">AI 예상 시세</div>
+                    {biddingResult.aiMarketPrice ? (
+                      <div className="space-y-1">
+                        <div className="font-semibold text-[#0B1220]">
+                          {formatCurrency(biddingResult.aiMarketPrice.min)} ~{" "}
+                          {formatCurrency(biddingResult.aiMarketPrice.max)}
+                        </div>
+                        <div className="text-[10px] text-[#6B7280]">
+                          신뢰도: {(biddingResult.aiMarketPrice.confidence * 100).toFixed(0)}%
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="font-semibold text-[#0B1220]">
+                        {/* Fallback: 레거시 함수 사용 */}
+                        {formatCurrency(estimateMarketPrice(property))}
+                      </div>
+                    )}
                   </div>
                   <div className="p-3 bg-[#FAFAFA] rounded-xl border border-neutral-100">
                     <div className="text-[#6B7280]">참여자 수</div>
@@ -1328,10 +1365,6 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                           biddingResult.rightsAnalysis.totalAcquisition ??
                             biddingResult.rightsAnalysis.totalAssumedAmount
                         )}
-                        원, <span className="font-semibold">안전마진</span>{" "}
-                        {formatNumber(
-                          biddingResult.rightsAnalysis.safetyMargin
-                        )}
                         원 기준으로 권장 범위는{" "}
                         {formatNumber(
                           biddingResult.rightsAnalysis.recommendedRange.min
@@ -1342,12 +1375,6 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                         )}
                         원.
                       </p>
-                      {biddingResult.rightsAnalysis.safetyMargin < 0 && (
-                        <p className="text-xs text-red-600 font-semibold mt-2">
-                          ⚠️ 경고: 안전마진이 마이너스입니다. 총인수금액이
-                          시세보다 큽니다.
-                        </p>
-                      )}
                       <p className="text-xs text-gray-600">
                         최적 입찰가{" "}
                         {formatNumber(
@@ -1836,6 +1863,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
               analysis={{
                 safetyMargin: rightsAnalysis.safetyMargin,
                 totalAssumedAmount: rightsAnalysis.totalAssumedAmount,
+                marketValue: rightsAnalysis.marketValue,
               }}
             />
           );

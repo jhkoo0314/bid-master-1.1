@@ -234,6 +234,11 @@ export interface RightsAnalysisResult {
   totalTenantDeposit: number; // 임차보증금 총액
   totalAcquisition: number; // 총인수금액(A) = B + R + T + C + E + K + U (taxlogic.md 기준)
   safetyMargin: number; // 안전마진(V-A) (taxlogic.md 기준)
+  marketValue?: {
+    fairMarketValue: number; // ✅ FMV: 공정시세 (MoS 계산 기준)
+    auctionCenter: number; // 경매가 가이드 중심값
+    center: number; // 모델 중심값
+  };
   recommendedBidRange: {
     min: number; // 최소 입찰가 (원)
     max: number; // 최대 입찰가 (원)

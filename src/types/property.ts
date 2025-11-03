@@ -273,6 +273,11 @@ export interface RecommendedBidRange {
  * 사이드바 요약 컴포넌트 Props
  */
 export interface SidebarSummaryProps {
+  aiMarketPrice?: {
+    min: number;
+    max: number;
+    confidence: number;
+  };
   rights: RightRow[];            // 권리 목록
   bidRange: RecommendedBidRange; // 권장 입찰가 범위
   roi: number;                   // 예상 수익률 (%)
