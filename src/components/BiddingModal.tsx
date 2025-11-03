@@ -11,6 +11,7 @@ import { CircularProgressChart } from "./CircularProgressChart";
 import { AuctionAnalysisModal } from "./AuctionAnalysisModal";
 import { calculatePoints, calculateAccuracy } from "@/lib/point-calculator";
 import { analyzeRights } from "@/lib/rights-analysis-engine";
+import { calculateProfit, type ProfitInput } from "@/lib/profit-calculator";
 import { useSimulationStore } from "@/store/simulation-store";
 import {
   calcAcquisitionAndMoS,
@@ -422,13 +423,54 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
         taxInput,
       });
 
-      const tempTotalInvestment = acquisitionResult.totalAcquisition;
-      const expectedProfit = marketValue - tempTotalInvestment;
-      const tempRoi =
-        marketValue > 0 ? (expectedProfit / tempTotalInvestment) * 100 : 0;
+      // 💰 [수익 계산기] 업데이트된 calculateProfit 함수 사용
+      console.log("💰 [입찰결과] 수익 계산기로 ROI 계산 시작");
+      
+      // 수익 계산기 입력값 준비
+      const bankLoanRatio = 0.7; // 기본 은행대출 비율 70%
+      const loanInterestRate = 4.0; // 기본 대출 이자율 4%
+      const holdingPeriod = 4; // 기본 보유 기간 4개월
+      
+      // 은행대출 금액 계산
+      const bankLoanAmount = Math.round(winningBid * bankLoanRatio);
+      
+      // 월별 현금흐름 계산 (간단 추정)
+      // 대출 이자 = 대출금액 × 월 이자율
+      const monthlyInterest = Math.round(bankLoanAmount * (loanInterestRate / 100 / 12));
+      // 월별 지출 = 대출 이자 + 관리비 등 (기본값)
+      const monthlyExpenses = monthlyInterest + 200000; // 이자 + 관리비 20만원
+      // 월별 수입 (임대수입이 있는 경우)
+      const monthlyIncome = 500000; // 기본 월세 50만원 (실제로는 매물 정보에서 추출 가능)
+      
+      // 법무비 및 중개수수료 (간단 추정)
+      const legalFees = Math.round(winningBid * 0.001); // 낙찰가의 0.1%
+      const brokerageFees = Math.round(marketValue * 0.009); // 매도가의 0.9% (중개수수료)
+      
+      const profitInput: ProfitInput = {
+        appraisalValue: property.basicInfo.appraisalValue,
+        minimumBidPrice: property.basicInfo.minimumBidPrice,
+        expectedBidPrice: winningBid,
+        bankLoanRatio,
+        bankLoanAmount,
+        loanInterestRate,
+        rightsToAssume: totalAssumedAmount, // 인수 권리 금액
+        evictionCost: eviction, // 명도비
+        remodelingCost: capex, // 수리비
+        legalFees, // 법무비
+        brokerageFees, // 중개수수료 (매도 시)
+        holdingPeriod,
+        monthlyExpenses,
+        monthlyIncome,
+        expectedSalePrice: marketValue, // AI 시세 중립값을 매도가로 사용
+        otherIncome: 0, // 기타수입
+      };
+
+      // 수익 계산 실행
+      const profitResult = calculateProfit(profitInput);
+      const tempRoi = profitResult.roi;
 
       console.log("💰 [입찰결과] 총인수금액 계산 완료:");
-      console.log(`  - 총인수금액: ${tempTotalInvestment.toLocaleString()}원`);
+      console.log(`  - 총인수금액: ${acquisitionResult.totalAcquisition.toLocaleString()}원`);
       console.log(
         `  - 세금 및 수수료: ${acquisitionResult.tax.totalTaxesAndFees.toLocaleString()}원`
       );
@@ -437,6 +479,13 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
           acquisitionResult.marginRate * 100
         ).toFixed(2)}%)`
       );
+      console.log("💰 [입찰결과] 업데이트된 수익 계산 결과:");
+      console.log(`  - 실제 투자금액: ${profitResult.actualInvestment.toLocaleString()}원`);
+      console.log(`  - 매도 전까지 투입 금액: ${profitResult.totalInvestmentBeforeSale.toLocaleString()}원`);
+      console.log(`  - 차익: ${profitResult.netProfit.toLocaleString()}원`);
+      console.log(`  - ROI: ${profitResult.roi.toFixed(2)}%`);
+      console.log(`  - 연환산 ROI: ${profitResult.annualizedRoi.toFixed(2)}%`);
+      console.log(`  - 손익분기점: ${profitResult.breakEvenPrice.toLocaleString()}원`);
 
       // 포인트 계산
       console.log("⭐ [입찰결과] 포인트 계산 시작");
@@ -520,20 +569,21 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
         )
       );
 
-      // 수익모델 분석 (권리유형 13가지 반영, 세금 포함)
-      // 이미 위에서 계산한 acquisitionResult 사용
-      const totalInvestment = acquisitionResult.totalAcquisition;
-      const netProfit = marketValue - totalInvestment;
-      const roi = marketValue > 0 ? (netProfit / totalInvestment) * 100 : 0;
-      const breakEvenPrice = totalInvestment;
+      // 수익모델 분석 (권리유형 13가지 반영, 업데이트된 수익 계산기 사용)
+      // 이미 위에서 계산한 profitResult 사용
+      const totalInvestment = profitResult.totalInvestmentBeforeSale; // 매도 전까지 투입 금액
+      const netProfit = profitResult.netProfit; // 차익 (최종 수익)
+      const roi = profitResult.roi; // ROI (%)
+      const breakEvenPrice = profitResult.breakEvenPrice; // 손익분기점
       const profitMargin =
-        marketValue > 0 ? (netProfit / marketValue) * 100 : 0;
+        marketValue > 0 ? (netProfit / marketValue) * 100 : 0; // 수익률 (%)
 
-      console.log("💰 [입찰결과] 수익모델 분석:");
-      console.log(`  - 총 투자금액: ${totalInvestment.toLocaleString()}원`);
+      console.log("💰 [입찰결과] 수익모델 분석 (업데이트된 계산기 사용):");
+      console.log(`  - 총 투자금액 (매도 전까지): ${totalInvestment.toLocaleString()}원`);
       console.log(`  - 순수익: ${netProfit.toLocaleString()}원`);
       console.log(`  - ROI: ${roi.toFixed(2)}%`);
       console.log(`  - 수익률: ${profitMargin.toFixed(2)}%`);
+      console.log(`  - 손익분기점: ${breakEvenPrice.toLocaleString()}원`);
 
       // 리스크 분석 (권리 분석 결과 반영)
       const riskLevel = rightsAnalysisResult.riskAnalysis.overallRiskLevel;

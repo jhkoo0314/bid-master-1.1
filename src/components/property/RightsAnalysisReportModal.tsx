@@ -80,7 +80,6 @@ export default function RightsAnalysisReportModal({
     label: totalAssumedLabel,
   });
 
-  const [showTrace, setShowTrace] = React.useState(false);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
@@ -198,21 +197,6 @@ export default function RightsAnalysisReportModal({
             {/* 고도화 안전마진 정보 추가 */}
             {analysis?.advancedSafetyMargin && (
               <div className="mt-4 grid gap-4 grid-cols-2 md:grid-cols-3 text-[13px]">
-                <div className="p-3 bg-blue-50 border border-blue-300">
-                  <div className="text-[11px] text-gray-600 flex items-center">
-                    고도화 인수금액
-                    <InfoTip
-                      title="고도화 인수금액"
-                      description={
-                        "유형 가중치를 적용한 인수금액. 매물 유형별 리스크를 반영합니다."
-                      }
-                    />
-                  </div>
-                  <div className="font-semibold text-blue-900">
-                    {analysis.advancedSafetyMargin.assumedAmount.toLocaleString()}
-                    원
-                  </div>
-                </div>
                 <div className="p-3 bg-green-50 border border-green-300">
                   <div className="text-[11px] text-gray-600 flex items-center">
                     최소 안전마진 (고도화)
@@ -279,54 +263,38 @@ export default function RightsAnalysisReportModal({
           (analysis?.advancedSafetyMargin?.trace &&
             analysis.advancedSafetyMargin.trace.length > 0) ? (
             <section className="px-8 py-4 bg-gray-50">
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-sm text-gray-900">
-                  근거 보기
-                </h3>
-                <button
-                  className="text-xs px-3 py-1 border border-gray-300 bg-white hover:bg-gray-50"
-                  onClick={() => {
-                    console.log(
-                      "👤 [사용자 액션] 권리분석 근거 보기 토글 (toggle)",
-                      { next: !showTrace }
-                    );
-                    setShowTrace((v) => !v);
-                  }}
-                >
-                  {showTrace ? "접기" : "펼치기"}
-                </button>
-              </div>
-              {showTrace && (
-                <div className="mt-2 space-y-3">
-                  {/* 고도화 안전마진 계산 근거 */}
-                  {analysis?.advancedSafetyMargin?.trace &&
-                    analysis.advancedSafetyMargin.trace.length > 0 && (
-                      <div>
-                        <h4 className="text-xs font-semibold text-gray-800 mb-2">
-                          고도화 안전마진 계산 근거
-                        </h4>
-                        <ul className="text-xs text-gray-700 list-disc pl-5 space-y-1">
-                          {analysis.advancedSafetyMargin.trace.map((t, i) => (
-                            <li key={i}>{t}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  {/* 기본 trace (기존) */}
-                  {analysis?.trace && analysis.trace.length > 0 && (
+              <h3 className="font-semibold text-sm text-gray-900 mb-2">
+                근거 보기
+              </h3>
+              <div className="space-y-3">
+                {/* 고도화 안전마진 계산 근거 */}
+                {analysis?.advancedSafetyMargin?.trace &&
+                  analysis.advancedSafetyMargin.trace.length > 0 && (
                     <div>
                       <h4 className="text-xs font-semibold text-gray-800 mb-2">
-                        기본 계산 근거
+                        고도화 안전마진 계산 근거
                       </h4>
                       <ul className="text-xs text-gray-700 list-disc pl-5 space-y-1">
-                        {analysis.trace.map((t, i) => (
+                        {analysis.advancedSafetyMargin.trace.map((t, i) => (
                           <li key={i}>{t}</li>
                         ))}
                       </ul>
                     </div>
                   )}
-                </div>
-              )}
+                {/* 기본 trace (기존) */}
+                {analysis?.trace && analysis.trace.length > 0 && (
+                  <div>
+                    <h4 className="text-xs font-semibold text-gray-800 mb-2">
+                      기본 계산 근거
+                    </h4>
+                    <ul className="text-xs text-gray-700 list-disc pl-5 space-y-1">
+                      {analysis.trace.map((t, i) => (
+                        <li key={i}>{t}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
             </section>
           ) : null}
 

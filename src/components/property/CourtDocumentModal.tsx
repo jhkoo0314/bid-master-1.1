@@ -211,13 +211,6 @@ export function SaleSpecificationModal({
             {/* 고도화 안전마진 정보 추가 */}
             {analysis?.advancedSafetyMargin && (
               <div className="mt-3 pt-3 border-t border-yellow-300 grid grid-cols-2 gap-4 text-sm">
-                <div className="text-blue-800">
-                  고도화 인수금액:{" "}
-                  <span className="font-semibold">
-                    {analysis.advancedSafetyMargin.assumedAmount.toLocaleString()}
-                    원
-                  </span>
-                </div>
                 <div className="text-green-800">
                   최소 안전마진 (고도화):{" "}
                   <span className="font-semibold">
