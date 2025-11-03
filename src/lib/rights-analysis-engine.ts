@@ -651,6 +651,7 @@ export function analyzeRights(
 
   // 시세(V) 계산: marketValue가 있으면 사용, 없으면 감정가와 최저가 기반으로 추정
   // marketValue가 문자열('522,550,000원') 형태일 수 있으므로 파싱 필요
+  // Note: estimateMarketPrice는 레거시 함수이며, 향후 estimateMarketPriceRange 사용 고려
   const rawMarketValue = basicInfo.marketValue ?? estimateMarketPrice(scenario);
   let marketValue =
     parseMoneyValue(rawMarketValue) || estimateMarketPrice(scenario);

@@ -75,11 +75,13 @@ export default function PropertyPage({ params }: PageProps) {
       const minimumBidPrice =
         data.price?.lowest || Math.floor(appraisalValue * 0.7);
 
-      // 권리유형별 인수금액 계산
+      // 권리유형별 인수금액 계산 (배당 정보 포함 가능)
+      // 배당 정보가 있으면 임차권 미배당 잔액 계산에 활용
       const assumedAmount = calculateRightsAmount(
         data.rights || [],
         appraisalValue,
-        propertyType
+        propertyType,
+        data.payout?.rows // 배당 정보 전달 (선택)
       );
 
       // taxlogic.md 기준으로 안전마진 계산
@@ -174,6 +176,8 @@ export default function PropertyPage({ params }: PageProps) {
     if (!data || !bidRange || !analysis) return 0;
 
     const optimalBid = bidRange.optimal;
+    // 시세 계산: scenario가 있으면 estimateMarketPrice 사용 (레거시)
+    // 향후 estimateMarketPriceRange 사용 고려 (범위 및 신뢰도 정보 포함)
     const marketValue = scenario
       ? estimateMarketPrice(scenario)
       : data.price?.appraised || 0;

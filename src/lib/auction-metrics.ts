@@ -109,7 +109,13 @@ function findMaxBidByTargetRate(
   return roundTo(lo, 10);
 }
 
-/** 시장가 추정 (유사매각사례, 유찰추세, 최저가 대비 보정 반영) */
+/**
+ * 시장가 추정 (유사매각사례, 유찰추세, 최저가 대비 보정 반영)
+ * 
+ * @deprecated market-price.ts의 estimateMarketPrice 함수를 사용하는 것을 권장합니다.
+ * 이 함수는 auction-metrics.ts 내부에서만 사용되며, 동일한 로직을 재구현한 것입니다.
+ * 향후 market-price.ts의 함수로 통합 고려 필요.
+ */
 function estimateMarketPriceFromScenario(scenario: SimulationScenario): number {
   const appraisalValue = scenario.basicInfo.appraisalValue;
   const minimumBidPrice = scenario.basicInfo.minimumBidPrice;

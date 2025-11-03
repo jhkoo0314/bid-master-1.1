@@ -3,7 +3,8 @@
  * 매물유형 9가지, 권리유형 13가지, 매물별 위험도를 반영한 정확한 계산
  */
 
-import type { RightRow } from "@/types/property";
+import type { RightRow, PayoutRow } from "@/types/property";
+import { computeAssumableCost, type BaseRight, type RightType } from "./rights-engine";
 
 /** 용도 구분 */
 export type PropertyUse = "RESIDENTIAL" | "COMMERCIAL" | "LAND";
@@ -240,31 +241,163 @@ export const ASSUMABLE_RIGHT_TYPES = [
   "분묘기지권",
 ] as const;
 
-/** 권리유형별 인수금액 계산 */
+/**
+ * 권리 타입 문자열을 RightType으로 안전하게 변환
+ */
+function normalizeRightType(type: string | undefined | null): RightType {
+  if (!type) return "기타";
+  
+  const validTypes: RightType[] = [
+    "근저당권", "저당권", "압류", "가압류", "담보가등기", "소유권이전청구권가등기", "가처분",
+    "전세권", "주택임차권", "상가임차권",
+    "유치권", "법정지상권", "지상권", "분묘기지권",
+    "기타",
+  ];
+  
+  // 정확히 일치하는 경우
+  if (validTypes.includes(type as RightType)) {
+    return type as RightType;
+  }
+  
+  // 부분 일치 검사
+  if (type.includes("근저당")) return "근저당권";
+  if (type.includes("저당")) return "저당권";
+  if (type.includes("압류") && !type.includes("가압류")) return "압류";
+  if (type.includes("가압류")) return "가압류";
+  if (type.includes("담보가등기")) return "담보가등기";
+  if (type.includes("소유권이전청구권")) return "소유권이전청구권가등기";
+  if (type.includes("가처분")) return "가처분";
+  if (type.includes("전세")) return "전세권";
+  if (type.includes("주택임차")) return "주택임차권";
+  if (type.includes("상가임차")) return "상가임차권";
+  if (type.includes("유치")) return "유치권";
+  if (type.includes("법정지상")) return "법정지상권";
+  if (type.includes("지상권")) return "지상권";
+  if (type.includes("분묘기지")) return "분묘기지권";
+  
+  return "기타";
+}
+
+/**
+ * RightRow의 note 필드에서 대항력 여부 추출
+ */
+function extractHasDahang(note?: string): boolean | undefined {
+  if (!note) return undefined;
+  return note.includes("대항력") || note.includes("대항") || undefined;
+}
+
+/**
+ * RightRow를 BaseRight로 매핑 (배당 정보 포함 가능)
+ */
+function mapRightRowToBaseRight(
+  right: RightRow,
+  payoutMap?: Map<string, number>
+): BaseRight {
+  const type = normalizeRightType(right.type);
+  const amount = right.claim || 0;
+  
+  // 배당 정보가 있으면 사용, 없으면 0
+  const distributed = payoutMap
+    ? payoutMap.get(`${right.holder}-${right.type}`) || payoutMap.get(right.holder) || 0
+    : 0;
+  
+  const hasDahang = extractHasDahang(right.note);
+  
+  return {
+    type,
+    amount,
+    distributed,
+    hasDahang,
+    note: right.note,
+  };
+}
+
+/**
+ * PayoutRow 배열을 Map으로 변환 (holder-type 조합으로 조회)
+ */
+function createPayoutMap(payouts: PayoutRow[]): Map<string, number> {
+  const map = new Map<string, number>();
+  
+  for (const payout of payouts) {
+    const key = `${payout.holder}-${payout.type}`;
+    const existing = map.get(key) || 0;
+    map.set(key, existing + (payout.expected || 0));
+    
+    // holder만으로도 조회 가능하도록 설정 (임시)
+    if (!map.has(payout.holder)) {
+      map.set(payout.holder, payout.expected || 0);
+    }
+  }
+  
+  return map;
+}
+
+/** RightRow를 BaseRight로 매핑하여 권리 인수 총액 계산 (새 엔진 사용) */
+function calcRightsAssumableTotal(
+  rights: RightRow[],
+  payouts?: PayoutRow[]
+): number {
+  console.log("💰 [권리계산] rights-engine 통합 계산 시작");
+  console.log(`  - 입력 권리 개수: ${rights.length}개`);
+  console.log(`  - 배당 정보 개수: ${payouts?.length || 0}개`);
+
+  // 배당 정보가 있으면 Map 생성
+  const payoutMap = payouts && payouts.length > 0 
+    ? createPayoutMap(payouts)
+    : undefined;
+
+  // RightRow를 BaseRight로 매핑
+  const mapped: BaseRight[] = (rights ?? []).map((r: RightRow) => 
+    mapRightRowToBaseRight(r, payoutMap)
+  );
+
+  // 매핑 결과 로그
+  if (payoutMap) {
+    const withDistribution = mapped.filter(r => (r.distributed || 0) > 0);
+    if (withDistribution.length > 0) {
+      console.log(`  - 배당 정보 적용된 권리: ${withDistribution.length}개`);
+    }
+  }
+
+  const out = computeAssumableCost({
+    rights: mapped,
+    tenantResidualFactor: 1.0,
+    defaultLikelihood: { 유치권: 0.6, 법정지상권: 0.7, 분묘기지권: 1.0, 지상권: 1.0 },
+    debug: false,
+  });
+
+  console.log(`  ✅ rights-engine 계산 완료: ${out.assumableTotal.toLocaleString()}원`);
+  console.log(`  - 말소 권리 제외: ${out.extinguishedTotal.toLocaleString()}원`);
+  if (out.disputedWeightedTotal > 0) {
+    console.log(`  - 확률가중 권리: ${out.disputedWeightedTotal.toLocaleString()}원`);
+  }
+
+  return out.assumableTotal;
+}
+
+/** 
+ * 권리유형별 인수금액 계산 (하위 호환성 유지 - 새 엔진 사용)
+ * @param rights 권리 목록
+ * @param propertyValue 감정가 (사용하지 않으나 하위 호환성을 위해 유지)
+ * @param propertyType 매물 유형 (사용하지 않으나 하위 호환성을 위해 유지)
+ * @param payouts 배당 정보 (선택) - 있으면 임차권 미배당 잔액 계산에 사용
+ */
 export function calculateRightsAmount(
   rights: RightRow[],
   propertyValue: number,
-  propertyType?: string
+  propertyType?: string,
+  payouts?: PayoutRow[]
 ): number {
   console.log("💰 [권리계산] 권리유형별 인수금액 계산 시작");
   console.log(`  - 권리 개수: ${rights.length}개`);
   console.log(`  - 매물 유형: ${propertyType || "미지정"}`);
   console.log(`  - 감정가: ${propertyValue.toLocaleString()}원`);
 
-  const assumableRights = rights.filter((r) =>
-    ASSUMABLE_RIGHT_TYPES.includes(r.type as any)
-  );
-
-  const totalAmount = assumableRights.reduce((sum, right) => {
-    const claimAmount = right.claim || 0;
-    console.log(`  - ${right.type}: ${claimAmount.toLocaleString()}원`);
-    return sum + claimAmount;
-  }, 0);
+  // 새 엔진을 사용하여 정밀 계산 (배당 정보 포함)
+  const totalAmount = calcRightsAssumableTotal(rights, payouts);
 
   console.log(
-    `  ✅ 총 인수권리 금액: ${totalAmount.toLocaleString()}원 (${
-      assumableRights.length
-    }개 권리)`
+    `  ✅ 총 인수권리 금액: ${totalAmount.toLocaleString()}원`
   );
 
   return totalAmount;

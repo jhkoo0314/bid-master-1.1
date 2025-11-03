@@ -824,6 +824,8 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
       setShowWaitlistModal(false);
 
       // 시장가 계산 및 로그
+      // 시세 계산: estimateMarketPrice 사용 (레거시)
+      // 향후 estimateMarketPriceRange 사용 고려 (범위 및 신뢰도 정보 포함)
       const computedMarket = estimateMarketPrice(property);
       console.log(
         "📈 [시장가] 시장가 계산 완료:",
@@ -1164,6 +1166,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
                   <div className="p-3 bg-[#FAFAFA] rounded-xl border border-neutral-100">
                     <div className="text-[#6B7280]">예상 시장가</div>
                     <div className="font-semibold text-[#0B1220]">
+                      {/* 시세: estimateMarketPrice 사용 (레거시) */}
                       {formatCurrency(estimateMarketPrice(property))}
                     </div>
                   </div>
