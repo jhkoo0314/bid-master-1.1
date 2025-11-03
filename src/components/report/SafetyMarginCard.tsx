@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import InfoTip from "@/components/common/InfoTip";
 
 // ✅ FMV/Exit/User MoS 단일 카드
 type Props = {
@@ -33,14 +34,23 @@ export default function SafetyMarginCard({
   return (
     <div className="rounded-2xl border p-2.5 md:p-3 flex flex-col gap-1">
       <div className="flex items-center justify-between">
-        <div className="font-medium text-sm">{title}</div>
-        {tooltip && (
-          <span
-            className="text-muted-foreground text-xs cursor-help"
-            title={tooltip}
-          >
-            ℹ️</span>
-        )}
+        <div className="font-medium text-sm flex items-center">
+          {title}
+          {tooltip && (
+            <InfoTip
+              title={title === "FMV 기준" ? "FMV 기준 안전마진" : title}
+              description={
+                title === "FMV 기준"
+                  ? "FMV(공정시세)에서 총인수금액을 뺀 값입니다.\n\n" +
+                    "• FMV: 현재 시장 가치를 반영한 공정시세\n" +
+                    "• 계산식: FMV − 총인수금액(A)\n" +
+                    "• 의미: 즉시 매각 가정 시의 안전마진\n\n" +
+                    "이는 현재 시세 기준으로 투자 시 얼마나 여유가 있는지를 보여주는 지표입니다."
+                  : tooltip
+              }
+            />
+          )}
+        </div>
       </div>
       <div className={`text-xl md:text-2xl font-semibold ${color}`}>
         {amount >= 0 ? "+" : ""}

@@ -165,7 +165,7 @@ export default function AuctionAnalysisReportModal({
         <div className="divide-y divide-gray-200">
           {/* 1. 요약 */}
           <section className="px-8 py-5 bg-gray-50">
-            <div className="grid gap-4 grid-cols-2 md:grid-cols-4 text-[13px]">
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-3 text-[13px]">
               <div className="p-3 bg-white border border-gray-300">
                 <div className="text-[11px] text-gray-600 flex items-center">
                   감정가
@@ -204,72 +204,41 @@ export default function AuctionAnalysisReportModal({
                   {Math.round(discountRate * 100)}%
                 </div>
               </div>
-            </div>
-            {/* 시세 정보 추가 */}
-            {analysis?.marketValue && (
-              <div className="mt-4 grid gap-4 grid-cols-2 md:grid-cols-3 text-[13px]">
-                <div className="p-3 bg-white border border-gray-300">
-                  <div className="text-[11px] text-gray-600 flex items-center">
-                    공정시세(FMV)
-                    <InfoTip
-                      title="공정시세(FMV)"
-                      description={
-                        "안전마진 계산에 사용되는 공정시세. 감정가를 기준으로 지역/면적/연식/유형을 반영하여 산정."
-                      }
-                    />
+              {/* 시세 정보 추가 */}
+              {analysis?.marketValue && (
+                <>
+                  <div className="p-3 bg-white border border-gray-300">
+                    <div className="text-[11px] text-gray-600 flex items-center">
+                      공정시세(FMV)
+                      <InfoTip
+                        title="공정시세(FMV)"
+                        description={
+                          "안전마진 계산에 사용되는 공정시세. 감정가를 기준으로 지역/면적/연식/유형을 반영하여 산정."
+                        }
+                      />
+                    </div>
+                    <div className="font-semibold text-gray-900">
+                      {analysis.marketValue.fairMarketValue.toLocaleString()}원
+                    </div>
                   </div>
-                  <div className="font-semibold text-gray-900">
-                    {analysis.marketValue.fairMarketValue.toLocaleString()}원
+                  <div className="p-3 bg-white border border-gray-300">
+                    <div className="text-[11px] text-gray-600 flex items-center">
+                      경매가 가이드
+                      <InfoTip
+                        title="경매가 가이드"
+                        description={
+                          "입찰 전략 수립용 경매가 중심값. 공정시세 대비 평균 12% 할인 적용."
+                        }
+                      />
+                    </div>
+                    <div className="font-semibold text-gray-900">
+                      {analysis.marketValue.auctionCenter.toLocaleString()}원
+                    </div>
                   </div>
-                </div>
-                <div className="p-3 bg-white border border-gray-300">
-                  <div className="text-[11px] text-gray-600 flex items-center">
-                    경매가 가이드
-                    <InfoTip
-                      title="경매가 가이드"
-                      description={
-                        "입찰 전략 수립용 경매가 중심값. 공정시세 대비 평균 12% 할인 적용."
-                      }
-                    />
-                  </div>
-                  <div className="font-semibold text-gray-900">
-                    {analysis.marketValue.auctionCenter.toLocaleString()}원
-                  </div>
-                </div>
-                <div className="p-3 bg-white border border-gray-300">
-                  <div className="text-[11px] text-gray-600 flex items-center">
-                    모델 중심값
-                    <InfoTip
-                      title="모델 중심값"
-                      description={
-                        "AI 시세 모델이 산출한 원본 중심값. 계수 적용 전 내부 기준값."
-                      }
-                    />
-                  </div>
-                  <div className="font-semibold text-gray-900">
-                    {analysis.marketValue.center.toLocaleString()}원
-                  </div>
-                </div>
-              </div>
-            )}
-            {/* 고도화 안전마진 정보 추가 */}
-            {analysis?.advancedSafetyMargin && (
-              <div className="mt-4 grid gap-4 grid-cols-2 md:grid-cols-3 text-[13px]">
-                <div className="p-3 bg-blue-50 border border-blue-300">
-                  <div className="text-[11px] text-gray-600 flex items-center">
-                    고도화 인수금액
-                    <InfoTip
-                      title="고도화 인수금액"
-                      description={
-                        "유형 가중치를 적용한 인수금액. 매물 유형별 리스크를 반영합니다."
-                      }
-                    />
-                  </div>
-                  <div className="font-semibold text-blue-900">
-                    {analysis.advancedSafetyMargin.assumedAmount.toLocaleString()}
-                    원
-                  </div>
-                </div>
+                </>
+              )}
+              {/* 고도화 안전마진 정보 추가 */}
+              {analysis?.advancedSafetyMargin && (
                 <div className="p-3 bg-green-50 border border-green-300">
                   <div className="text-[11px] text-gray-600 flex items-center">
                     최소 안전마진 (고도화)
@@ -285,8 +254,8 @@ export default function AuctionAnalysisReportModal({
                     원
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </section>
 
           {/* v1.2 경매분석 리포트 (AuctionAnalysisReport 컴포넌트 사용) */}

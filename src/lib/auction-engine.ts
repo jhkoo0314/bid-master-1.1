@@ -6,10 +6,7 @@ import {
   type AIMarketPriceResult,
 } from "@/lib/property/market-price";
 
-import {
-  calcTaxes,
-  type TaxInput,
-} from "@/lib/auction-cost";
+import { calcTaxes, type TaxInput } from "@/lib/auction-cost";
 
 import { AcquisitionBreakdown, CalcResult } from "@/types/property";
 
@@ -22,8 +19,8 @@ export type StrategyStage = "conservative" | "neutral" | "aggressive";
 export interface BidStrategyItem {
   stage: StrategyStage;
   label: "보수적" | "중립" | "공격적";
-  value: number;        // 권장 입찰가
-  basis: "FMV";         // 기준 (현재 v1.2는 FMV 기준)
+  value: number; // 권장 입찰가
+  basis: "FMV"; // 기준 (현재 v1.2는 FMV 기준)
 }
 
 export interface ExitAssumption {
@@ -44,16 +41,17 @@ export interface ExitAssumption {
 }
 
 export interface AcquisitionCostInput {
-  bidPrice: number;     // B: 입찰가(낙찰가 가정)
-  rights: number;       // R: 인수권리+임차보증금 총액
-  capex?: number;       // C: 수리비
-  eviction?: number;    // E: 명도비
-  carrying?: number;    // K: 보유비(이자/관리비)
+  bidPrice: number; // B: 입찰가(낙찰가 가정)
+  rights: number; // R: 인수권리+임차보증금 총액
+  capex?: number; // C: 수리비
+  eviction?: number; // E: 명도비
+  carrying?: number; // K: 보유비(이자/관리비)
   contingency?: number; // U: 예비비
-  taxInput?: TaxInput;  // T: 취득세 등 세금 계산 입력
+  taxInput?: TaxInput; // T: 취득세 등 세금 계산 입력
 }
 
-export interface MarketInput extends Omit<AIMarketPriceParams,"minimumBidPrice"> {
+export interface MarketInput
+  extends Omit<AIMarketPriceParams, "minimumBidPrice"> {
   /** 최저가 (FMV 하한 클램프 보조용. market-price 모듈이 내부적으로 사용) */
   minimumBidPrice?: number;
 }
@@ -191,9 +189,24 @@ export function calcAcquisitionAndMoS(input: {
     },
     prices: { fmv: input.fmv, exit: input.exit },
     margins: {
-      fmv:  { label: "FMV",  amount: mosFMV,  pct: safeDiv(mosFMV,  input.fmv),  referencePrice: input.fmv  },
-      exit: { label: "EXIT", amount: mosExit, pct: safeDiv(mosExit, input.exit), referencePrice: input.exit },
-      user: { label: "USER", amount: mosUser, pct: safeDiv(mosUser, input.fmv),  referencePrice: input.fmv  },
+      fmv: {
+        label: "FMV",
+        amount: mosFMV,
+        pct: safeDiv(mosFMV, input.fmv),
+        referencePrice: input.fmv,
+      },
+      exit: {
+        label: "EXIT",
+        amount: mosExit,
+        pct: safeDiv(mosExit, input.exit),
+        referencePrice: input.exit,
+      },
+      user: {
+        label: "USER",
+        amount: mosUser,
+        pct: safeDiv(mosUser, input.fmv),
+        referencePrice: input.fmv,
+      },
     },
   };
 }
@@ -206,14 +219,17 @@ export function calcAcquisitionAndMoS(input: {
 function computeExitPrice(baseForExit: number, exit?: ExitAssumption): number {
   if (!exit) return baseForExit;
 
-  if (typeof exit.exitPriceExplicit === "number" && exit.exitPriceExplicit > 0) {
+  if (
+    typeof exit.exitPriceExplicit === "number" &&
+    exit.exitPriceExplicit > 0
+  ) {
     return exit.exitPriceExplicit;
   }
 
   const holdingMonths = exit.holdingMonths ?? 6;
-  const annualApp = exit.annualAppreciation ?? 0;    // 예: 0.06
+  const annualApp = exit.annualAppreciation ?? 0; // 예: 0.06
   const uplift = exit.rehabUplift ?? 0;
-  const sellRate = exit.sellCostRate ?? 0.015;       // 기본 1.5% 가정
+  const sellRate = exit.sellCostRate ?? 0.015; // 기본 1.5% 가정
 
   // 간단 성장: base × (1 + 연간상승률 × (개월/12))
   const grown = baseForExit * (1 + annualApp * (holdingMonths / 12));
@@ -227,10 +243,17 @@ function computeExitPrice(baseForExit: number, exit?: ExitAssumption): number {
 // 유틸: 총인수금액 A 계산
 // A = B + R + T + C + E + K + U
 // ===============================
-function computeTotalAcquisition(input: AcquisitionCostInput, debug?: boolean): { A: number; taxes: number; breakdown: AcquisitionCostBreakdown } {
+function computeTotalAcquisition(
+  input: AcquisitionCostInput,
+  debug?: boolean
+): { A: number; taxes: number; breakdown: AcquisitionCostBreakdown } {
   const {
-    bidPrice, rights,
-    capex = 0, eviction = 0, carrying = 0, contingency = 0,
+    bidPrice,
+    rights,
+    capex = 0,
+    eviction = 0,
+    carrying = 0,
+    contingency = 0,
     taxInput,
   } = input;
 
@@ -255,7 +278,14 @@ function computeTotalAcquisition(input: AcquisitionCostInput, debug?: boolean): 
   if (debug) {
     console.log("💰 [총인수금액] A 계산 시작");
     console.log("💰 [총인수금액] 구성 요소:", {
-      bidPrice, rights, taxes, capex, eviction, carrying, contingency, A,
+      bidPrice,
+      rights,
+      taxes,
+      capex,
+      eviction,
+      carrying,
+      contingency,
+      A,
     });
   }
 
@@ -267,13 +297,28 @@ function computeTotalAcquisition(input: AcquisitionCostInput, debug?: boolean): 
 // ===============================
 function buildBidStrategy(
   fmv: number,
-  multipliers: typeof DEFAULT_STRATEGY_MULTIPLIERS,
+  multipliers: typeof DEFAULT_STRATEGY_MULTIPLIERS
 ): BidStrategyItem[] {
-  return ([
-    { stage: "conservative", label: "보수적",  value: roundTo10k(fmv * multipliers.conservative), basis: "FMV" as const },
-    { stage: "neutral",      label: "중립",    value: roundTo10k(fmv * multipliers.neutral),      basis: "FMV" as const },
-    { stage: "aggressive",   label: "공격적",  value: roundTo10k(fmv * multipliers.aggressive),   basis: "FMV" as const },
-  ]);
+  return [
+    {
+      stage: "conservative",
+      label: "보수적",
+      value: roundTo10k(fmv * multipliers.conservative),
+      basis: "FMV" as const,
+    },
+    {
+      stage: "neutral",
+      label: "중립",
+      value: roundTo10k(fmv * multipliers.neutral),
+      basis: "FMV" as const,
+    },
+    {
+      stage: "aggressive",
+      label: "공격적",
+      value: roundTo10k(fmv * multipliers.aggressive),
+      basis: "FMV" as const,
+    },
+  ];
 }
 
 // ===============================
@@ -299,8 +344,11 @@ export function evaluateAuction(input: AuctionEvalInput): AuctionEvalResult {
   const fmv = marketResult.fairCenter; // MoS_fmv 기준값
   if (debug) {
     console.log("💰 [FMV] fairCenter =", fmv.toLocaleString(), {
-      min: marketResult.min, max: marketResult.max, center: marketResult.center,
-      auctionCenter: marketResult.auctionCenter, confidence: marketResult.confidence,
+      min: marketResult.min,
+      max: marketResult.max,
+      center: marketResult.center,
+      auctionCenter: marketResult.auctionCenter,
+      confidence: marketResult.confidence,
     });
   }
 
@@ -311,16 +359,26 @@ export function evaluateAuction(input: AuctionEvalInput): AuctionEvalResult {
   const exitPrice = computeExitPrice(fmv, exit);
 
   // 4) MoS 계산
-  const mos_fmv  = roundTo10k(fmv - A);
+  const mos_fmv = roundTo10k(fmv - A);
   const mos_exit = roundTo10k(exitPrice - A);
   const roi_exit = A > 0 ? +(mos_exit / A).toFixed(6) : 0;
 
   if (debug) {
-    console.log("💰 [MoS] { A, FMV, Exit } =>", { A, fmv, exitPrice, mos_fmv, mos_exit, roi_exit });
+    console.log("💰 [MoS] { A, FMV, Exit } =>", {
+      A,
+      fmv,
+      exitPrice,
+      mos_fmv,
+      mos_exit,
+      roi_exit,
+    });
   }
 
   // 5) 3단계 입찰전략 (FMV 기준 배수)
-  const mult = { ...DEFAULT_STRATEGY_MULTIPLIERS, ...(strategyMultipliers ?? {}) };
+  const mult = {
+    ...DEFAULT_STRATEGY_MULTIPLIERS,
+    ...(strategyMultipliers ?? {}),
+  };
   const strategy = buildBidStrategy(fmv, mult);
 
   return {

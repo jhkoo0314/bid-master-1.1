@@ -168,7 +168,9 @@ export function SaleSpecificationModal({
             {devMode?.isDevMode ? (
               <button
                 onClick={() => {
-                  console.log("📄 [다운로드] 매각물건명세서 인쇄/다운로드 (print)");
+                  console.log(
+                    "📄 [다운로드] 매각물건명세서 인쇄/다운로드 (print)"
+                  );
                   window.print();
                 }}
                 className="text-xs px-3 py-1 border border-gray-300 bg-white hover:bg-gray-50"
@@ -212,13 +214,15 @@ export function SaleSpecificationModal({
                 <div className="text-blue-800">
                   고도화 인수금액:{" "}
                   <span className="font-semibold">
-                    {analysis.advancedSafetyMargin.assumedAmount.toLocaleString()}원
+                    {analysis.advancedSafetyMargin.assumedAmount.toLocaleString()}
+                    원
                   </span>
                 </div>
                 <div className="text-green-800">
                   최소 안전마진 (고도화):{" "}
                   <span className="font-semibold">
-                    {analysis.advancedSafetyMargin.minSafetyMargin.toLocaleString()}원
+                    {analysis.advancedSafetyMargin.minSafetyMargin.toLocaleString()}
+                    원
                   </span>
                 </div>
               </div>
@@ -479,7 +483,9 @@ export function SaleSpecificationModal({
           (analysis?.advancedSafetyMargin?.trace &&
             analysis.advancedSafetyMargin.trace.length > 0) ? (
             <section className="px-6 py-4 bg-gray-50">
-              <h3 className="font-semibold mb-2 text-sm text-gray-700">근거 보기</h3>
+              <h3 className="font-semibold mb-2 text-sm text-gray-700">
+                근거 보기
+              </h3>
               <div className="space-y-3">
                 {/* 고도화 안전마진 계산 근거 */}
                 {analysis?.advancedSafetyMargin?.trace &&
