@@ -79,6 +79,7 @@ bid-master-ai/
 │   │   ├── common/            # 공통 컴포넌트
 │   │   │   ├── EmptyState.tsx         # 빈 상태 컴포넌트
 │   │   │   ├── ErrorState.tsx         # 에러 상태 컴포넌트
+│   │   │   ├── FMVDisplay.tsx         # FMV 표시 컴포넌트
 │   │   │   ├── InfoTip.tsx            # 정보 툴팁
 │   │   │   └── SkeletonCard.tsx       # 스켈레톤 로딩
 │   │   ├── filters/           # 필터 컴포넌트
@@ -101,9 +102,13 @@ bid-master-ai/
 │   │   │   ├── ActionButtons.tsx       # 액션 버튼
 │   │   │   ├── SidebarSummary.tsx      # 사이드바 요약
 │   │   │   ├── SimilarCases.tsx        # 유사 케이스
+│   │   │   ├── AuctionAnalysisReport.tsx # 경매분석 리포트
 │   │   │   ├── RightsAnalysisReportModal.tsx  # 권리분석 리포트 모달
 │   │   │   ├── AuctionAnalysisReportModal.tsx # 경매분석 리포트 모달
 │   │   │   └── CourtDocumentModal.tsx         # 법원 문서 모달
+│   │   ├── report/            # 리포트 컴포넌트
+│   │   │   ├── SafetyMarginCard.tsx    # 안전마진 카드
+│   │   │   └── SafetyMarginComparison.tsx # 안전마진 비교
 │   │   ├── hero/              # 히어로 섹션
 │   │   │   └── MainHero.tsx            # 메인 히어로
 │   │   ├── learn/             # 학습 컴포넌트
@@ -127,6 +132,9 @@ bid-master-ai/
 │   │   ├── PropertyFilter.tsx         # 매물 필터
 │   │   └── WaitlistModal.tsx          # 사전 알림 모달
 │   ├── lib/                    # 핵심 로직
+│   │   ├── auction/            # 경매 관련 로직
+│   │   │   ├── competitor-bids.ts    # 경쟁자 입찰 생성
+│   │   │   └── overheat.ts           # 과열 점수 계산
 │   │   ├── auction-cost.ts    # 경매 비용 계산
 │   │   ├── auction-engine.ts   # 경매 엔진
 │   │   ├── auction-metrics.ts  # 경매 메트릭
@@ -138,13 +146,16 @@ bid-master-ai/
 │   │   ├── profit-calculator.ts # 수익 계산
 │   │   ├── property/          # 매물 관련 유틸리티
 │   │   │   ├── fetchers.ts            # 데이터 페처
-│   │   │   ├── formatters.ts          # 포맷터
+│   │   │   ├── formatters.ts          # 포맷터 (v1)
+│   │   │   ├── formatters_v2.ts       # 포맷터 (v2)
 │   │   │   ├── generateSimilarCases.ts # 유사 케이스 생성
 │   │   │   ├── market-price.ts        # 시세 계산
 │   │   │   └── safety-calc.ts         # 안전성 계산
 │   │   ├── regional-analysis.ts # 지역분석
 │   │   ├── rights-analysis-engine.ts # 권리분석 엔진
 │   │   ├── rights-engine.ts    # 권리 엔진
+│   │   ├── rights-terminology.ts # 권리 용어 정의
+│   │   ├── tenant-risk-calculator.ts # 임차인 리스크 계산
 │   │   └── unsplash-client.ts  # Unsplash 이미지 API
 │   ├── store/                  # 상태 관리
 │   │   └── simulation-store.ts # 시뮬레이션 상태 (Zustand)
@@ -300,6 +311,7 @@ interface SimulationStore {
 - **권리 인수/소멸 판단**: 말소기준권리보다 선순위는 인수, 후순위는 소멸
 - **임차인 대항력 판단**: 전입일과 확정일자 요건 충족 여부
 - **안전 마진 계산**: 인수해야 할 권리와 임차보증금 총액
+- **FMV/Exit 기준 안전마진**: 공정시세(FMV)와 예상 매각가(Exit) 기준 안전마진 비교
 
 ### 3. AI 매물 생성 (`src/lib/openai-client.ts`)
 
@@ -307,13 +319,20 @@ interface SimulationStore {
 - **시뮬레이션용 매물 생성**: 실전 입찰 훈련용 현실적 데이터
 - **개발 모드 지원**: API 키 없이도 더미 데이터로 작동
 
-### 4. 매물 카드 컴포넌트 (`src/components/PropertyCard.tsx`)
+### 4. 매물 카드 컴포넌트 (`src/components/list/PropertyCard.tsx`)
 
 - 난이도별 색상 구분 (초급: 녹색, 중급: 노란색, 고급: 빨간색)
 - 용어 설명 툴팁 (호버 시 법률 용어 설명 표시)
 - 입찰 모달 연동
 - Unsplash 이미지 통합 (매물별 고품질 이미지 자동 로딩)
 - 반응형 디자인 (모바일 최적화)
+
+### 4-1. 안전마진 리포트 시스템 (`src/components/report/`)
+
+- **SafetyMarginCard**: FMV/Exit/User 기준 안전마진을 개별 카드로 표시
+- **SafetyMarginComparison**: 세 가지 기준(FMV, Exit, 현재 입찰가)의 안전마진 비교
+- **FMV 초과 경고**: 입찰가가 FMV를 초과할 경우 경고 표시
+- **퍼센트 및 금액 표시**: 안전마진을 퍼센트와 원화로 동시 표시
 
 ### 5. Google Sheets 연동 (`src/lib/google-sheets.ts`)
 
@@ -334,7 +353,32 @@ interface SimulationStore {
 - **성능 최적화**: 이미지 크기 및 품질 최적화
 - **에러 처리**: API 실패 시 기본 이미지로 대체
 
-### 7. 사전 알림 시스템 (`src/app/actions/submit-waitlist.ts`)
+### 7. 경매 경쟁 시스템 (`src/lib/auction/`)
+
+#### competitor-bids.ts
+
+- **경쟁자 입찰 생성**: 실제 시장을 반영한 경쟁자 입찰가 생성
+- **3단계 전략 분포**: 상위(공격형), 중위(평균층), 하위(보수형) 그룹 분배
+- **난이도 반영**: 난이도에 따른 입찰가 분포 조정
+- **과열 점수 반영**: 과열 지수에 따른 입찰가 상승 압력 반영
+
+#### overheat.ts
+
+- **과열 점수 계산**: 입찰가 대비 FMV와 감정가를 고려한 과열 점수 (0~1)
+- **보수적 계산**: FMV와 감정가 중 더 큰 값을 기준으로 계산
+- **과열도 표시**: 경매 시장의 과열 정도를 수치로 표현
+
+### 8. 입찰 시스템 (`src/components/BiddingModal.tsx`)
+
+핵심 기능:
+
+- **입찰 폼**: 입찰자 정보 및 입찰가 입력
+- **경쟁자 시뮬레이션**: 가상 경쟁자들의 입찰가 생성 및 경쟁률 계산
+- **안전마진 리포트**: FMV/Exit/User 기준 안전마진 비교 표시
+- **과열도 표시**: 입찰가의 과열 정도를 시각적으로 표현
+- **낙찰 결과**: 사용자 입찰가와 경쟁자 입찰가 비교 결과 표시
+
+### 9. 사전 알림 시스템 (`src/app/actions/submit-waitlist.ts`)
 
 - **이중 저장**: 구글 시트 + 로컬 파일 동시 저장
 - **이메일 발송**: Gmail API를 통한 확인 메일 자동 발송
@@ -348,9 +392,11 @@ interface SimulationStore {
 1. **필터링**: 사용자 선택 조건에 따른 매물 유형/지역/가격 필터링
 2. **템플릿 선택**: 매물 유형별 사전 정의된 템플릿에서 랜덤 선택
 3. **가격 생성**: 현실적인 부동산 시세를 반영한 가격 범위 생성
-4. **권리/임차인 생성**: 난이도별 복잡도에 따른 권리 구조 생성
-5. **권리분석**: 권리분석 엔진을 통한 말소기준권리 판단 및 인수/소멸 여부 계산
-6. **교육 콘텐츠**: 매물별 맞춤형 교육 콘텐츠 생성
+4. **FMV 생성**: AI 기반 공정시세(FMV) 생성
+5. **권리/임차인 생성**: 난이도별 복잡도에 따른 권리 구조 생성
+6. **권리분석**: 권리분석 엔진을 통한 말소기준권리 판단 및 인수/소멸 여부 계산
+7. **안전마진 계산**: FMV/Exit 기준 안전마진 계산
+8. **교육 콘텐츠**: 매물별 맞춤형 교육 콘텐츠 생성
 
 ### 2. 권리분석 엔진 로직
 
@@ -370,6 +416,41 @@ const analyzedTenants = determineTenantDaehangryeok(
 
 // 안전 마진 계산
 const safetyMargin = calculateSafetyMargin(analyzedRights, analyzedTenants);
+
+// FMV/Exit 기준 안전마진 계산
+const fmvSafetyMargin = calculateFMVSafetyMargin(fmv, totalAssumedAmount);
+const exitSafetyMargin = calculateExitSafetyMargin(
+  exitPrice,
+  totalAssumedAmount
+);
+```
+
+### 3-1. 경쟁자 입찰 생성 로직 (`src/lib/auction/competitor-bids.ts`)
+
+```typescript
+// 경쟁자 그룹 분배 (상위 1명, 중위 50~60%, 나머지 하위)
+const topCount = 1;
+const midCount = Math.floor(n * 0.55);
+const lowCount = n - topCount - midCount;
+
+// 상위 그룹: 공격형 (FMV +5% ~ +15%)
+// 중위 그룹: 실제 시장 평균층 (FMV -2% ~ +4%)
+// 하위 그룹: 보수형 투자자 (최저가 ~ FMV -8%)
+
+// 난이도 및 과열 점수 반영
+const difficultyBoost =
+  difficulty === "hard" ? 1.12 : difficulty === "easy" ? 0.9 : 1.0;
+const heat = 1 + (overheatScore ?? 0) * 0.25;
+```
+
+### 3-2. 과열 점수 계산 (`src/lib/auction/overheat.ts`)
+
+```typescript
+// FMV 대비 과열, 감정가 대비 과열을 함께 고려
+const r1 = Math.max(0, bidPrice / fmv - 0.95) / 0.1; // 0.95~1.05 구간을 0~1
+const r2 = Math.max(0, bidPrice / appraisal - 0.9) / 0.12; // 0.90~1.02 구간을 0~1
+
+return Math.max(0, Math.min(1, Math.max(r1, r2))); // 보수적으로 더 큰 값 사용
 ```
 
 ### 3. 개발자 모드
@@ -406,7 +487,19 @@ const safetyMargin = calculateSafetyMargin(analyzedRights, analyzedTenants);
 5. 매물 카드에 이미지 적용
 ```
 
-### 6. 테스트 시스템
+### 6. 안전마진 리포트 시스템
+
+```typescript
+// 안전마진 비교 리포트 생성
+1. FMV 기준 안전마진 계산 (FMV - 총인수금액)
+2. Exit 기준 안전마진 계산 (Exit - 총인수금액)
+3. 현재 입찰가 기준 안전마진 계산 (FMV - 입찰가)
+4. FMV 초과 여부 판단 (입찰가 > FMV)
+5. SafetyMarginComparison 컴포넌트로 비교 표시
+6. 경고 메시지 표시 (FMV 초과 시)
+```
+
+### 7. 테스트 시스템
 
 - **구글 시트 테스트**: `/test-sheets` - 구글 시트 연결 및 데이터 저장 테스트
 - **로컬 저장 테스트**: `/test-simple` - 로컬 파일 저장 기능 테스트
@@ -436,7 +529,9 @@ const safetyMargin = calculateSafetyMargin(analyzedRights, analyzedTenants);
 - ✅ 테스트 페이지들 (구글 시트, 로컬 파일, 이미지, Gmail, 그래프)
 - ✅ 상세한 로깅 시스템
 - ✅ 모바일 최적화 및 반응형 디자인
-- ✅ 컴포넌트 구조화 (common, filters, list, property 등)
+- ✅ 컴포넌트 구조화 (common, filters, list, property, report 등)
+- ✅ 안전마진 리포트 시스템 (FMV/Exit/User 기준 비교)
+- ✅ 경매 경쟁 시스템 (경쟁자 입찰 생성, 과열 점수 계산)
 
 ### Phase 2: 사용자 인증 (Clerk)
 
@@ -505,6 +600,8 @@ const safetyMargin = calculateSafetyMargin(analyzedRights, analyzedTenants);
 5. **에러 처리**: API 실패, 검증 오류, 네트워크 문제
 6. **사전 알림**: 구글 시트 저장, 로컬 백업, 이메일 발송
 7. **테스트 시스템**: 각종 API 테스트 결과 및 성능 지표
+8. **경쟁자 입찰**: 경쟁자 입찰가 생성, 과열 점수 계산
+9. **안전마진**: FMV/Exit/User 기준 안전마진 계산 결과
 
 ### 로그 형식 예시
 
@@ -528,9 +625,45 @@ console.log("📧 [사전 알림] 확인 메일 발송 완료");
 // 테스트 로그
 console.log("🧪 [테스트] 구글 시트 연결 테스트 시작");
 console.log("🧪 [테스트] 테스트 완료 - 응답시간: 2.3초");
+
+// 경쟁자 입찰 로그
+console.log("🎯 [경쟁자 입찰] 경쟁자 입찰가 생성 시작");
+console.log("🎯 [경쟁자 입찰] 생성 완료 - 상위: 1명, 중위: 5명, 하위: 3명");
+
+// 안전마진 로그
+console.log("📊 [안전마진] FMV 기준 안전마진: +25,000,000원 (26.6%)");
+console.log("📊 [안전마진] Exit 기준 안전마진: +30,000,000원 (31.2%)");
+console.log("⚠️ [안전마진] FMV 초과 입찰 경고 - 손실 위험 있음");
 ```
 
 ## 📝 최근 업데이트 내역
+
+### 2025.01.30
+
+- **안전마진 리포트 시스템 추가**
+
+  - `SafetyMarginCard` 컴포넌트: FMV/Exit/User 기준 안전마진 개별 카드 표시
+  - `SafetyMarginComparison` 컴포넌트: 세 가지 기준 안전마진 비교
+  - FMV 초과 입찰 경고 시스템 추가
+  - report 디렉토리 신규 생성
+
+- **경매 경쟁 시스템 고도화**
+
+  - `competitor-bids.ts`: 3단계 전략 분포 경쟁자 입찰 생성 (상위/중위/하위)
+  - `overheat.ts`: FMV 및 감정가 대비 과열 점수 계산
+  - 난이도 및 과열도에 따른 입찰가 분포 조정
+  - auction 디렉토리 구조화
+
+- **컴포넌트 구조 개선**
+
+  - common 디렉토리에 `FMVDisplay` 컴포넌트 추가
+  - property 디렉토리에 `AuctionAnalysisReport` 컴포넌트 추가
+  - lib/property에 `formatters_v2.ts` 추가
+
+- **입찰 시스템 업데이트**
+  - BiddingModal에 경쟁자 시뮬레이션 통합
+  - 안전마진 리포트 통합
+  - 과열도 시각화 추가
 
 ### 2025.01.29
 

@@ -231,7 +231,9 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
       Math.min(12, Math.round(baseCompetitorCount * overheatMultiplier))
     );
     const competitorIncrease = ((overheatMultiplier - 1) * 100).toFixed(0);
-    console.log(`👥 [경쟁자 생성] 경쟁자 수: ${competitorCount}명 (기본 ${baseCompetitorCount}명 + ${competitorIncrease}% 증가)`);
+    console.log(
+      `👥 [경쟁자 생성] 경쟁자 수: ${competitorCount}명 (기본 ${baseCompetitorCount}명 + ${competitorIncrease}% 증가)`
+    );
 
     // ✅ generateCompetitorBids 사용
     const competitorBids = generateCompetitorBids({

@@ -121,7 +121,6 @@ export default function RightsAnalysisReportModal({
     label: totalAssumedLabel,
   });
 
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
       <div className="bg-white rounded-lg shadow w-full max-w-4xl mx-4 overflow-y-auto max-h-[90vh] flex flex-col font-serif">
@@ -214,7 +213,10 @@ export default function RightsAnalysisReportModal({
                   {(() => {
                     const term = getTerminologyExplanation("인수추정액");
                     return term ? (
-                      <InfoTip title={term.title} description={term.description} />
+                      <InfoTip
+                        title={term.title}
+                        description={term.description}
+                      />
                     ) : (
                       <InfoTip
                         title="인수추정액"
@@ -245,7 +247,9 @@ export default function RightsAnalysisReportModal({
               {(data as any)?.analysisV12?.fmv?.fairMarketValue && (
                 <div className="col-span-2 md:col-span-3">
                   <FMVDisplay
-                    fairMarketValue={(data as any).analysisV12.fmv.fairMarketValue}
+                    fairMarketValue={
+                      (data as any).analysisV12.fmv.fairMarketValue
+                    }
                     min={(data as any).analysisV12.fmv.fairMarketValue * 0.95}
                     max={(data as any).analysisV12.fmv.fairMarketValue * 1.05}
                     auctionCenter={(data as any).analysisV12.fmv.auctionCenter}
@@ -297,11 +301,13 @@ export default function RightsAnalysisReportModal({
                   pct:
                     (data as any).analysisV12.fmv.fairMarketValue > 0
                       ? ((data as any).analysisV12.fmv.fairMarketValue -
-                          (data as any).analysisV12.acquisition.parts.bidPrice) /
+                          (data as any).analysisV12.acquisition.parts
+                            .bidPrice) /
                         (data as any).analysisV12.fmv.fairMarketValue
                       : 0,
                   referencePrice: (data as any).analysisV12.fmv.fairMarketValue,
-                  bidPrice: (data as any).analysisV12.acquisition.parts.bidPrice,
+                  bidPrice: (data as any).analysisV12.acquisition.parts
+                    .bidPrice,
                 }}
               />
             </section>
@@ -319,7 +325,10 @@ export default function RightsAnalysisReportModal({
                   {(() => {
                     const term = getTerminologyExplanation("말소기준권리");
                     return term ? (
-                      <InfoTip title={term.title} description={term.description} />
+                      <InfoTip
+                        title={term.title}
+                        description={term.description}
+                      />
                     ) : null;
                   })()}
                 </span>
@@ -338,7 +347,10 @@ export default function RightsAnalysisReportModal({
                   {(() => {
                     const term = getTerminologyExplanation("미소멸권리");
                     return term ? (
-                      <InfoTip title={term.title} description={term.description} />
+                      <InfoTip
+                        title={term.title}
+                        description={term.description}
+                      />
                     ) : null;
                   })()}
                 </div>
@@ -489,7 +501,8 @@ export default function RightsAnalysisReportModal({
                     />
                   </div>
                   <div className="font-semibold text-orange-900 text-base">
-                    {analysis.tenantRisk.riskScore}% ({analysis.tenantRisk.riskLabel})
+                    {analysis.tenantRisk.riskScore}% (
+                    {analysis.tenantRisk.riskLabel})
                   </div>
                 </div>
                 <div className="p-3 bg-white border border-orange-300 rounded">
@@ -511,7 +524,10 @@ export default function RightsAnalysisReportModal({
                   {(() => {
                     const term = getTerminologyExplanation("배당요구");
                     return term ? (
-                      <InfoTip title={term.title} description={term.description} />
+                      <InfoTip
+                        title={term.title}
+                        description={term.description}
+                      />
                     ) : null;
                   })()}
                 </div>
@@ -548,7 +564,10 @@ export default function RightsAnalysisReportModal({
                 {(() => {
                   const term = getTerminologyExplanation("배당요구");
                   return term ? (
-                    <InfoTip title={term.title} description={term.description} />
+                    <InfoTip
+                      title={term.title}
+                      description={term.description}
+                    />
                   ) : null;
                 })()}
               </div>
@@ -563,9 +582,13 @@ export default function RightsAnalysisReportModal({
             <div className="space-y-3 text-xs">
               {/* 사실 기반 정보 */}
               <div className="p-3 bg-gray-50 border border-gray-200 rounded">
-                <div className="font-semibold text-gray-900 mb-2">📊 사실 확인</div>
+                <div className="font-semibold text-gray-900 mb-2">
+                  📊 사실 확인
+                </div>
                 <ul className="list-disc pl-5 text-gray-700 space-y-1">
-                  <li>최선순위권리: {mainRight ? `${mainRight.type}` : "없음"}</li>
+                  <li>
+                    최선순위권리: {mainRight ? `${mainRight.type}` : "없음"}
+                  </li>
                   <li>
                     말소기준권리:{" "}
                     {analysis?.malsoBaseRight
@@ -575,8 +598,8 @@ export default function RightsAnalysisReportModal({
                       : "없음"}
                   </li>
                   <li>
-                    말소권리: {analysis?.extinguishedRights?.length || 0}건, 인수권리:{" "}
-                    {analysis?.assumedRights?.length || 0}건
+                    말소권리: {analysis?.extinguishedRights?.length || 0}건,
+                    인수권리: {analysis?.assumedRights?.length || 0}건
                   </li>
                   {analysis?.assumedRights &&
                     analysis.assumedRights.length === 0 && (
@@ -589,27 +612,35 @@ export default function RightsAnalysisReportModal({
               {/* 경고 기반 정보 */}
               {analysis &&
                 (analysis.assumedRights?.length > 0 ||
-                  (analysis.tenantRisk && analysis.tenantRisk.riskScore >= 50)) && (
+                  (analysis.tenantRisk &&
+                    analysis.tenantRisk.riskScore >= 50)) && (
                   <div className="p-3 bg-orange-50 border border-orange-200 rounded">
                     <div className="font-semibold text-orange-900 mb-2">
                       ⚠️ 주의사항
                     </div>
                     <ul className="list-disc pl-5 text-orange-800 space-y-1">
-                      {analysis.assumedRights && analysis.assumedRights.length > 0 && (
-                        <li>
-                          인수권리 {analysis.assumedRights.length}건이 있어 입찰가 계산에 반드시 반영해야 합니다.
-                        </li>
-                      )}
-                      {analysis.tenantRisk && analysis.tenantRisk.riskScore >= 50 && (
-                        <li>
-                          점유 리스크가 {analysis.tenantRisk.riskLabel} 수준입니다. 명도비용{" "}
-                          {analysis.tenantRisk.evictionCostMin.toLocaleString()}원 ~{" "}
-                          {analysis.tenantRisk.evictionCostMax.toLocaleString()}원을 추가로 고려하세요.
-                        </li>
-                      )}
+                      {analysis.assumedRights &&
+                        analysis.assumedRights.length > 0 && (
+                          <li>
+                            인수권리 {analysis.assumedRights.length}건이 있어
+                            입찰가 계산에 반드시 반영해야 합니다.
+                          </li>
+                        )}
+                      {analysis.tenantRisk &&
+                        analysis.tenantRisk.riskScore >= 50 && (
+                          <li>
+                            점유 리스크가 {analysis.tenantRisk.riskLabel}{" "}
+                            수준입니다. 명도비용{" "}
+                            {analysis.tenantRisk.evictionCostMin.toLocaleString()}
+                            원 ~{" "}
+                            {analysis.tenantRisk.evictionCostMax.toLocaleString()}
+                            원을 추가로 고려하세요.
+                          </li>
+                        )}
                       {notExtinguished.length > 0 && (
                         <li>
-                          미소멸권리 {notExtinguished.length}건이 있어 입찰가 산정에 반드시 반영하세요.
+                          미소멸권리 {notExtinguished.length}건이 있어 입찰가
+                          산정에 반드시 반영하세요.
                         </li>
                       )}
                     </ul>
@@ -622,13 +653,16 @@ export default function RightsAnalysisReportModal({
                 </div>
                 <ul className="list-disc pl-5 text-blue-800 space-y-1">
                   <li>
-                    최선순위권리 확인 후 말소기준권리 판단이 우선입니다. 이 권리가 모든 권리 소멸/인수의 기준이 됩니다.
+                    최선순위권리 확인 후 말소기준권리 판단이 우선입니다. 이
+                    권리가 모든 권리 소멸/인수의 기준이 됩니다.
                   </li>
                   <li>
-                    미소멸권리 유무에 따른 인수/소멸 여부를 확정한 후, 인수액을 기반으로 입찰 가능 최고가를 역산합니다.
+                    미소멸권리 유무에 따른 인수/소멸 여부를 확정한 후, 인수액을
+                    기반으로 입찰 가능 최고가를 역산합니다.
                   </li>
                   <li>
-                    {analysis?.assumedRights && analysis.assumedRights.length > 0
+                    {analysis?.assumedRights &&
+                    analysis.assumedRights.length > 0
                       ? `인수권리 ${analysis.assumedRights.length}건과 점유 리스크를 모두 고려하여 총인수금액(A)을 산출한 후, FMV와 비교하여 안전마진을 확인하세요.`
                       : "인수 위험이 없으므로 입찰가 결정이 비교적 단순합니다. 다만 점유 상태는 별도로 확인이 필요합니다."}
                   </li>

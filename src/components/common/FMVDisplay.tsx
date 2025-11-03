@@ -29,7 +29,8 @@ export default function FMVDisplay({
     auctionCenter,
   });
 
-  const hasRange = showRange && typeof min === "number" && typeof max === "number";
+  const hasRange =
+    showRange && typeof min === "number" && typeof max === "number";
   const rangeText = hasRange
     ? `${min.toLocaleString()}원 ~ ${max.toLocaleString()}원`
     : null;
@@ -97,4 +98,3 @@ export default function FMVDisplay({
     </div>
   );
 }
-

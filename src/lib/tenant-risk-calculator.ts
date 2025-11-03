@@ -200,4 +200,3 @@ export function estimateEvictionCost(
     return Math.max(minCost, Math.min(maxCost, Math.floor(totalCost)));
   }
 }
-
