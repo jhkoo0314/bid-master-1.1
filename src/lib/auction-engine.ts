@@ -30,9 +30,27 @@ import {
   type AIMarketPriceResult,
 } from "@/lib/property/market-price";
 
-import { calcTaxes, type TaxInput } from "@/lib/auction-cost";
+// ⚠️ v1.2 백업 코드: auction-cost.ts 의존성 제거됨 (Phase 5.1)
+// calcTaxes와 TaxInput은 새 엔진의 costs.ts에서 제공됨
+// import { calcTaxes, type TaxInput } from "@/lib/auction-cost";
 
 import { AcquisitionBreakdown, CalcResult } from "@/types/property";
+
+// ⚠️ v1.2 백업 코드용 임시 타입 정의 (Phase 5.2에서 v1.2 코드 제거 예정)
+type TaxInput = {
+  use: "RESIDENTIAL" | "COMMERCIAL" | "LAND";
+  price: number;
+  region?: string;
+  householdHomes?: number;
+  regulatedArea?: boolean;
+};
+
+// ⚠️ v1.2 백업 코드용 임시 함수 (Phase 5.2에서 v1.2 코드 제거 예정)
+function calcTaxes(input: TaxInput): { totalTaxesAndFees: number } {
+  // 임시 구현: v1.2 백업 코드에서만 사용되며, 실제로는 호출되지 않음
+  console.warn("⚠️ [v1.2 백업] calcTaxes 호출됨 - 이 코드는 Phase 5.2에서 제거 예정");
+  return { totalTaxesAndFees: 0 };
+}
 
 // ===============================
 // 타입 정의

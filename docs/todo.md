@@ -1589,12 +1589,15 @@
 
 ### 5.1 사용되지 않는 파일 제거
 
-- [ ] 모든 참조 제거 확인 (`grep -r "auction-cost"`)
-- [ ] `src/lib/auction-cost.ts` 삭제
-- [ ] 모든 참조 제거 확인 (`grep -r "profit-calculator"`)
-- [ ] `src/lib/profit-calculator.ts` 삭제
-- [ ] 모든 참조 제거 확인 (`grep -r "rights-analysis-engine"`)
-- [ ] `src/lib/rights-analysis-engine.ts` 삭제
+- [x] `src/lib/auction-engine.ts` v1.2 백업 코드에서 `auction-cost.ts` 의존성 제거
+- [ ] `src/lib/rights-analysis-engine.ts`에서 `auction-cost.ts` 의존성 제거 (별도 작업 필요)
+- [ ] `src/lib/auction-metrics.ts`에서 `auction-cost.ts` 의존성 제거 (별도 작업 필요)
+- [ ] 모든 참조 제거 확인 후 `src/lib/auction-cost.ts` 삭제
+- [ ] `src/components/ProfitCalculator.tsx`에서 `profit-calculator.ts` 의존성 제거 또는 파일 유지 결정
+- [ ] 모든 참조 제거 확인 후 `src/lib/profit-calculator.ts` 삭제 (또는 유지)
+- [ ] `src/app/actions/generate-simulation.ts`에서 `rights-analysis-engine.ts` 의존성 제거 (validateScenario 함수)
+- [ ] `src/app/legacy/property/[caseId]/page.tsx`에서 `rights-analysis-engine.ts` 의존성 제거 (analyzeRights 함수)
+- [ ] 모든 참조 제거 확인 후 `src/lib/rights-analysis-engine.ts` 삭제
 - [ ] Git 커밋으로 백업 확인
 
 ### 5.2 구버전 auction-engine.ts 코드 정리
