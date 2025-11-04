@@ -15,13 +15,12 @@ import {
   RightsAnalysisResult,
   CaseBasicInfo,
 } from "@/types/simulation";
+// 🔄 v0.1 엔진으로 교체: auction-cost.ts 의존성 제거
+import { auctionEngine } from "@/lib/auction-engine";
 import {
-  calcAcquisitionAndMoS,
-  calcTaxes,
-  mapPropertyTypeToUse,
-  parseMoneyValue,
-  type TaxInput,
-} from "@/lib/auction-cost";
+  mapSimulationToSnapshot,
+  mapEngineOutputToRightsAnalysisResult,
+} from "@/lib/auction/mappers";
 import {
   estimateMarketPrice,
   estimateAIMarketPrice,
@@ -554,6 +553,10 @@ export function calculateSafetyMargin(
 
 /**
  * 시뮬레이션 시나리오에 대한 전체 권리분석을 실행합니다.
+ * 
+ * ✅ v0.1 엔진으로 교체: auction-cost.ts 의존성 제거
+ * 새 엔진(auctionEngine)을 사용하여 권리분석을 수행하고,
+ * 결과를 기존 형식(RightsAnalysisResult)으로 변환합니다.
  *
  * @param scenario 시뮬레이션 시나리오
  * @returns 권리분석 결과
@@ -561,7 +564,7 @@ export function calculateSafetyMargin(
 export function analyzeRights(
   scenario: SimulationScenario
 ): RightsAnalysisResult {
-  console.log("🚀 [권리분석 엔진] 전체 권리분석 시작");
+  console.log("🚀 [권리분석 엔진] 전체 권리분석 시작 (v0.1 엔진 사용)");
   console.log(`  - 시나리오 ID: ${scenario.id}`);
   console.log(`  - 사건번호: ${scenario.basicInfo.caseNumber}`);
   console.log(`  - 권리 개수: ${scenario.rights.length}`);
@@ -570,6 +573,39 @@ export function analyzeRights(
     `  - 감정가: ${scenario.basicInfo.appraisalValue.toLocaleString()}원`
   );
 
+  // ✅ v0.1 엔진 사용: SimulationScenario → PropertySnapshot → EngineOutput → RightsAnalysisResult
+  const snapshot = mapSimulationToSnapshot(scenario);
+  
+  const output = auctionEngine({
+    snapshot,
+    userBidPrice: scenario.basicInfo.minimumBidPrice,
+    options: { devMode: false },
+  });
+
+  // ✅ 브리지 함수로 기존 형식으로 변환
+  const rightsAnalysisResult = mapEngineOutputToRightsAnalysisResult(output, scenario);
+
+  console.log("✅ [권리분석 엔진] 전체 권리분석 완료 (v0.1 엔진)");
+  console.log(`  - 말소기준권리: ${rightsAnalysisResult.malsoBaseRight?.rightType || "없음"}`);
+  console.log(`  - 인수권리 개수: ${rightsAnalysisResult.assumedRights.length}개`);
+  console.log(`  - 소멸권리 개수: ${rightsAnalysisResult.extinguishedRights.length}개`);
+  console.log(`  - 인수임차인 개수: ${rightsAnalysisResult.assumedTenants.length}명`);
+  console.log(
+    `  - 총 인수금액(권리만): ${rightsAnalysisResult.totalAssumedAmount.toLocaleString()}원`
+  );
+  console.log(`  - 임차보증금 총액: ${rightsAnalysisResult.totalTenantDeposit.toLocaleString()}원`);
+  console.log(`  - 총인수금액(A): ${rightsAnalysisResult.totalAcquisition.toLocaleString()}원`);
+  console.log(`  - 안전마진: ${rightsAnalysisResult.safetyMargin.toLocaleString()}원`);
+
+  return rightsAnalysisResult;
+}
+
+// ⚠️ 아래 코드는 v0.1 엔진으로 교체되었습니다 (Phase 5.1)
+// 기존 코드는 백업용으로 주석 처리 (Phase 5.2에서 완전 제거 예정)
+/*
+export function analyzeRights_OLD(
+  scenario: SimulationScenario
+): RightsAnalysisResult {
   const { schedule, rights, tenants, basicInfo, propertyDetails } = scenario;
 
   // 1. 말소기준권리 판단
@@ -979,6 +1015,7 @@ export function analyzeRights(
     tenantRisk: tenantRiskResult,
   };
 }
+*/ // ⚠️ 기존 analyzeRights 함수 끝 (백업용)
 
 // ============================================
 // 6. 리스크 분석

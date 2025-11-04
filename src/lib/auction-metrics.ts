@@ -3,10 +3,29 @@
  * 총인수금액, 안전마진, 권장입찰가 범위를 한 번에 계산
  */
 
+// 🔄 v0.1 엔진 기반으로 교체 → auction-cost.ts 제거
+import type { EngineOutput } from "@/types/auction";
+
 import type { TaxInput, TaxOptions, TaxBreakdown } from "./auction-cost";
 import { calcTaxes } from "./auction-cost";
 import { toKRWNumber } from "./format-utils";
 import type { SimulationScenario } from "@/types/simulation";
+
+// ✅ 새 엔진 기반: 총 인수금액 / 안전마진 / 수익률 → 이미 계산됨
+export function deriveAuctionMetrics(result: EngineOutput) {
+  const totalAcquisition = result.costs.totalAcquisition;
+  const safetyMargin = result.safety.fmv.amount;
+  const marginRate = result.profit.marginRateVsFMV;
+
+  // ✅ 결과 형태는 기존 API 유지 (호환 유지 목적)
+  return {
+    totalAcquisition,
+    safetyMargin,
+    marginRate,
+    fmv: result.valuation.fmv,
+    exitPrice: result.valuation.fmv, // fallback
+  };
+}
 
 /** 금액을 숫자로 변환 (문자열 포함 '원' 처리) */
 function toNumber(value: string | number | undefined | null): number {

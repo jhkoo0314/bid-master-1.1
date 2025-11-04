@@ -4,6 +4,29 @@
 
 "use client";
 
+// ✅ v0.1 엔진 기반으로 교체
+import { calculateProfitFromEngine } from "@/lib/profit-calculator";
+import type { EngineOutput } from "@/types/auction";
+
+export function ProfitCalculator({ data }: { data: { engineResult: EngineOutput } }) {
+  const result: EngineOutput = data.engineResult;
+  const profit = calculateProfitFromEngine(result);
+
+  return (
+    <div className="p-4 bg-white rounded-md border">
+      <div className="flex items-center gap-2 mb-2">
+        <p className="text-lg font-semibold">수익 분석</p>
+      </div>
+      <div className="mt-3 space-y-2 text-sm">
+        <p>총 인수금액: {profit.totalAcquisition.toLocaleString()}원</p>
+        <p>예상 시세(FMV): {profit.fmv.toLocaleString()}원</p>
+        <p>예상 수익: {profit.margin.toLocaleString()}원</p>
+      </div>
+    </div>
+  );
+}
+
+// 기존 복잡한 계산기 컴포넌트 (레거시 - 호환성 유지)
 import { useState } from "react";
 import {
   calculateProfit,
@@ -18,7 +41,7 @@ import {
   getFormattedInputValue,
 } from "@/lib/format-utils";
 
-export function ProfitCalculator() {
+export function ProfitCalculatorLegacy() {
   const [input, setInput] = useState<ProfitInput>({
     appraisalValue: 1000000000, // 10억
     minimumBidPrice: 700000000, // 7억

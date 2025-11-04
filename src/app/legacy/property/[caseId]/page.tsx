@@ -9,7 +9,10 @@ import { useParams } from "next/navigation";
 import { SimulationScenario } from "@/types/simulation";
 import { useSimulationStore } from "@/store/simulation-store";
 import { generateProperty } from "@/app/actions/generate-property";
-import { analyzeRights } from "@/lib/rights-analysis-engine";
+// ✅ v0.1 엔진 기반으로 교체
+import { auctionEngine } from "@/lib/auction-engine";
+import type { PropertySnapshot } from "@/types/auction";
+import { mapSimulationToSnapshot } from "@/lib/auction/mappers";
 import { AuctionAnalysisModal } from "@/components/AuctionAnalysisModal";
 import { submitWaitlist } from "@/app/actions/submit-waitlist";
 import Link from "next/link";
@@ -755,12 +758,18 @@ export default function PropertyDetailPage() {
           console.log("매물 정보 찾음:", foundProperty);
           setProperty(foundProperty);
 
-          // 개발자 모드에서 권리분석 실행
+          // ✅ 개발자 모드에서 엔진 실행
           if (devMode.isDevMode) {
-            console.log("🔍 [개발자 모드] 권리분석 실행");
-            const analysis = analyzeRights(foundProperty);
-            setRightsAnalysis(analysis);
-            console.log("권리분석 결과:", analysis);
+            console.log("🔍 [개발자 모드] 엔진 실행");
+            const snapshot = mapSimulationToSnapshot(foundProperty);
+            const engineResult = auctionEngine({
+              snapshot: snapshot as PropertySnapshot,
+              userBidPrice: foundProperty.basicInfo.minimumBidPrice || 0,
+              exitPriceHint: foundProperty.basicInfo.marketValue,
+              options: { devMode: true, logPrefix: `🏛️ [LEGACY:${propertyId}]` },
+            });
+            setRightsAnalysis(engineResult);
+            console.log("엔진 결과:", engineResult);
           }
         } else {
           console.log("매물을 찾을 수 없음, 새로 생성:", propertyId);
@@ -769,12 +778,18 @@ export default function PropertyDetailPage() {
           console.log("새로 생성된 매물:", newProperty);
           setProperty(newProperty);
 
-          // 개발자 모드에서 권리분석 실행
+          // ✅ 개발자 모드에서 엔진 실행
           if (devMode.isDevMode) {
-            console.log("🔍 [개발자 모드] 권리분석 실행");
-            const analysis = analyzeRights(newProperty);
-            setRightsAnalysis(analysis);
-            console.log("권리분석 결과:", analysis);
+            console.log("🔍 [개발자 모드] 엔진 실행");
+            const snapshot = mapSimulationToSnapshot(newProperty);
+            const engineResult = auctionEngine({
+              snapshot: snapshot as PropertySnapshot,
+              userBidPrice: newProperty.basicInfo.minimumBidPrice || 0,
+              exitPriceHint: newProperty.basicInfo.marketValue,
+              options: { devMode: true, logPrefix: `🏛️ [LEGACY:${propertyId}]` },
+            });
+            setRightsAnalysis(engineResult);
+            console.log("엔진 결과:", engineResult);
           }
         }
       } catch (err) {

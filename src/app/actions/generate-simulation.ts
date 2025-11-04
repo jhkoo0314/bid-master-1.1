@@ -6,13 +6,23 @@
 
 import { SimulationScenario, DifficultyLevel } from "@/types/simulation";
 import { generateSimulationProperty } from "@/lib/openai-client";
-import { validateScenario } from "@/lib/rights-analysis-engine";
 import { generateRegionalAnalysis } from "@/lib/regional-analysis";
 import { auctionEngine } from "@/lib/auction-engine";
+import type { PropertySnapshot } from "@/types/auction";
 import {
   mapSimulationToSnapshot,
   mapEngineOutputToRightsAnalysisResult,
 } from "@/lib/auction/mappers";
+
+// ✅ v0.1 엔진 사용으로 인해 기존 권리엔진 검증 제거
+// 기존 시나리오 검증 → v0.1 엔진 대응형으로 교체
+function validateSnapshotForEngine(snapshot: PropertySnapshot) {
+  if (!snapshot?.appraisal || !snapshot?.minBid || !snapshot?.rights) {
+    console.warn("⚠️ [validateSnapshot] 필수 필드 부족 → regenerate");
+    return false;
+  }
+  return true;
+}
 
 // 필터 옵션 타입 정의
 interface PropertyFilterOptions {
@@ -35,19 +45,33 @@ export async function generateSimulation(): Promise<SimulationScenario> {
     // 1. OpenAI로 매물 생성
     let scenario = await generateSimulationProperty();
 
-    // 2. 권리분석 엔진으로 검증
-    const validation = validateScenario(scenario);
-    if (!validation.isValid) {
+    // ✅ 기존 validateScenario → 새 validateSnapshotForEngine
+    let snapshot = mapSimulationToSnapshot(scenario);
+    const valid = validateSnapshotForEngine(snapshot);
+    if (!valid) {
       console.warn("⚠️ [서버 액션] 시나리오 검증 실패, 재생성 시도");
-      console.warn("  검증 오류:", validation.errors);
 
       // 재생성 시도 (최대 1회)
       scenario = await generateSimulationProperty();
+      snapshot = mapSimulationToSnapshot(scenario);
+      const retryValid = validateSnapshotForEngine(snapshot);
+      if (!retryValid) {
+        console.warn("⚠️ [서버 액션] 재생성 후에도 검증 실패");
+      }
+    }
+
+    // ✅ 엔진이 정상 실행되는지 확인 (권리분석 실패 등 내부 오류 방지)
+    try {
+      auctionEngine({ snapshot, userBidPrice: snapshot.minBid || scenario.basicInfo.minimumBidPrice });
+    } catch (err) {
+      console.warn("⚠️ [generateSimulation] 엔진 분석 실패 → regenerate", err);
+      // 재생성 시도
+      scenario = await generateSimulationProperty();
+      snapshot = mapSimulationToSnapshot(scenario);
     }
 
     // 3. 권리분석 실행 (새 엔진 사용)
     console.log("🏠 [매물 생성] 권리분석 엔진 실행 시작");
-    const snapshot = mapSimulationToSnapshot(scenario);
     const engineOutput = auctionEngine({
       snapshot,
       userBidPrice: scenario.basicInfo.minimumBidPrice,
@@ -130,21 +154,35 @@ export async function generateMultipleProperties(
         // 1. OpenAI로 매물 생성
         let property = await generateSimulationProperty();
 
-        // 2. 권리분석 엔진으로 검증
-        const validation = validateScenario(property);
-        if (!validation.isValid) {
+        // 2. 권리분석 엔진으로 검증 (새 검증 함수 사용)
+        let snapshot = mapSimulationToSnapshot(property);
+        const valid = validateSnapshotForEngine(snapshot);
+        if (!valid) {
           console.warn(
             `⚠️ [서버 액션] 매물 ${i + 1} 시나리오 검증 실패, 재생성 시도`
           );
-          console.warn("  검증 오류:", validation.errors);
 
           // 재생성 시도 (최대 1회)
           property = await generateSimulationProperty();
+          snapshot = mapSimulationToSnapshot(property);
+          const retryValid = validateSnapshotForEngine(snapshot);
+          if (!retryValid) {
+            console.warn(`⚠️ [서버 액션] 매물 ${i + 1} 재생성 후에도 검증 실패`);
+          }
+        }
+
+        // ✅ 엔진이 정상 실행되는지 확인 (권리분석 실패 등 내부 오류 방지)
+        try {
+          auctionEngine({ snapshot, userBidPrice: snapshot.minBid || property.basicInfo.minimumBidPrice });
+        } catch (err) {
+          console.warn(`⚠️ [generateMultipleProperties] 매물 ${i + 1} 엔진 분석 실패 → regenerate`, err);
+          // 재생성 시도
+          property = await generateSimulationProperty();
+          snapshot = mapSimulationToSnapshot(property);
         }
 
         // 3. 권리분석 실행 (새 엔진 사용)
         console.log(`🏠 [매물 생성] 매물 ${i + 1} 권리분석 엔진 실행 시작`);
-        const snapshot = mapSimulationToSnapshot(property);
         const engineOutput = auctionEngine({
           snapshot,
           userBidPrice: property.basicInfo.minimumBidPrice,

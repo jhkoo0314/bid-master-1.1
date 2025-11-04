@@ -3,6 +3,23 @@
  * 경매 낙찰 후 예상 수익을 계산하는 로직
  */
 
+// 🔄 v0.1 엔진 기반으로 교체 → auction-cost.ts 제거
+import type { EngineOutput } from "@/types/auction";
+
+// ✅ 새 wrapper: 엔진 결과를 그대로 정리해서 반환
+export function calculateProfitFromEngine(result: EngineOutput) {
+  const totalAcquisition = result.costs.totalAcquisition;
+  const fmv = result.valuation.fmv;
+  const exit = result.profit.marginVsExit + totalAcquisition;
+
+  return {
+    totalAcquisition,
+    fmv,
+    exit,
+    margin: result.profit.marginVsFMV,
+  };
+}
+
 export interface ProfitInput {
   appraisalValue: number; // 감정가
   minimumBidPrice: number; // 최저가
