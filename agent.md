@@ -71,6 +71,7 @@ bid-master-ai/
 │   │   ├── test-images/       # 이미지 테스트 페이지
 │   │   ├── test-gmail/        # Gmail 테스트 페이지
 │   │   ├── test-graphs/       # 그래프 테스트 페이지
+│   │   ├── test-smoke/        # 스모크 테스트 페이지
 │   │   ├── layout.tsx          # 루트 레이아웃
 │   │   ├── page.tsx            # 메인 페이지
 │   │   ├── globals.css         # 글로벌 스타일
@@ -81,6 +82,7 @@ bid-master-ai/
 │   │   │   ├── ErrorState.tsx         # 에러 상태 컴포넌트
 │   │   │   ├── FMVDisplay.tsx         # FMV 표시 컴포넌트
 │   │   │   ├── InfoTip.tsx            # 정보 툴팁
+│   │   │   ├── RiskBadge.tsx          # 리스크 배지 컴포넌트
 │   │   │   └── SkeletonCard.tsx       # 스켈레톤 로딩
 │   │   ├── filters/           # 필터 컴포넌트
 │   │   │   ├── FilterBar.tsx          # 필터 바
@@ -134,10 +136,19 @@ bid-master-ai/
 │   ├── lib/                    # 핵심 로직
 │   │   ├── auction/            # 경매 관련 로직
 │   │   │   ├── competitor-bids.ts    # 경쟁자 입찰 생성
-│   │   │   └── overheat.ts           # 과열 점수 계산
-│   │   ├── auction-cost.ts    # 경매 비용 계산
-│   │   ├── auction-engine.ts   # 경매 엔진
+│   │   │   ├── overheat.ts           # 과열 점수 계산
+│   │   │   ├── mappers.ts            # 타입 매핑 함수 (기존 타입 ↔ 새 엔진 타입)
+│   │   │   ├── integration-tests.ts  # 통합 테스트
+│   │   │   ├── verification-checklist.ts  # 검증 체크리스트
+│   │   │   └── mappers-validation-checklist.ts  # 매핑 함수 검증
+│   │   ├── auction-cost.ts    # 경매 비용 계산 (deprecated, auction-engine.ts로 통합)
+│   │   ├── auction-engine.ts   # 경매 엔진 v0.2 (통합 엔진)
 │   │   ├── auction-metrics.ts  # 경매 메트릭
+│   │   ├── costs.ts            # 비용 계산 레이어 (auction-engine v0.2)
+│   │   ├── profit.ts           # 수익 분석 레이어 (auction-engine v0.2)
+│   │   ├── valuation.ts        # 시세 평가 레이어 (auction-engine v0.2)
+│   │   ├── rights/             # 권리 분석 레이어
+│   │   │   └── rights-engine.ts  # 권리 엔진 (auction-engine v0.2)
 │   │   ├── format-utils.ts    # 포맷 유틸리티
 │   │   ├── gmail-client.ts    # Gmail SMTP 클라이언트
 │   │   ├── google-sheets.ts   # 구글 시트 연동
@@ -152,10 +163,12 @@ bid-master-ai/
 │   │   │   ├── market-price.ts        # 시세 계산
 │   │   │   └── safety-calc.ts         # 안전성 계산
 │   │   ├── regional-analysis.ts # 지역분석
-│   │   ├── rights-analysis-engine.ts # 권리분석 엔진
-│   │   ├── rights-engine.ts    # 권리 엔진
+│   │   ├── rights-analysis-engine.ts # 권리분석 엔진 (deprecated, auction-engine.ts로 통합)
+│   │   ├── rights-engine.ts    # 권리 엔진 (레거시, rights/rights-engine.ts 사용)
 │   │   ├── rights-terminology.ts # 권리 용어 정의
 │   │   ├── tenant-risk-calculator.ts # 임차인 리스크 계산
+│   │   └── test/               # 테스트 유틸리티
+│   │       └── smoke-test.ts   # 스모크 테스트
 │   │   └── unsplash-client.ts  # Unsplash 이미지 API
 │   ├── store/                  # 상태 관리
 │   │   └── simulation-store.ts # 시뮬레이션 상태 (Zustand)
@@ -243,6 +256,7 @@ bid-master-ai/
   - 매각 물건 명세서 상세 보기
   - 대시보드 통계 초기화 및 테스트 데이터 추가
   - 디버그 정보 표시 (생성 시간, 토큰 사용량, 권리분석 상세 로그)
+  - 경매 엔진 v0.2 상세 로그 (devMode 옵션으로 레이어별 실행 과정 확인)
 
 ### 5. 사전 알림 시스템
 
@@ -303,21 +317,34 @@ interface SimulationStore {
 }
 ```
 
-### 2. 권리분석 엔진 (`src/lib/rights-analysis-engine.ts`)
+### 2. 경매 엔진 v0.2 (`src/lib/auction-engine.ts`)
 
-핵심 기능:
+**통합 엔진**: 파편화된 계산 로직을 단일 진입점으로 통합
 
+**레이어 구조**:
+1. **Valuation 레이어** (`src/lib/valuation.ts`): FMV, 감정가, 최저가 계산
+2. **Rights 레이어** (`src/lib/rights/rights-engine.ts`): 권리 인수/소멸 판단, 임차인 대항력 분석
+3. **Costs 레이어** (`src/lib/costs.ts`): 세금, 명도비, 총인수금액 계산
+4. **Profit 레이어** (`src/lib/profit.ts`): FMV/Exit 기준 안전마진, 손익분기점 계산
+
+**핵심 기능**:
 - **말소기준권리 판단**: 배당요구종기일 이전에 설정된 최선순위 권리
 - **권리 인수/소멸 판단**: 말소기준권리보다 선순위는 인수, 후순위는 소멸
 - **임차인 대항력 판단**: 전입일과 확정일자 요건 충족 여부
-- **안전 마진 계산**: 인수해야 할 권리와 임차보증금 총액
-- **FMV/Exit 기준 안전마진**: 공정시세(FMV)와 예상 매각가(Exit) 기준 안전마진 비교
+- **안전 마진 계산**: FMV/Exit 기준 안전마진 및 손익분기점
+- **위험 배지 시스템**: 소유권분쟁, 상가임차, 유치권 등 위험 요소 표시
+- **유형별 κ 값**: 매물 유형별 공정시세 계산 계수 적용
+
+**타입 매핑 시스템** (`src/lib/auction/mappers.ts`):
+- 기존 타입(`SimulationScenario`, `RightRecord` 등) ↔ 새 엔진 타입(`PropertySnapshot`, `RegisteredRight` 등) 변환
+- 브리지 함수로 기존 컴포넌트와 호환성 유지
 
 ### 3. AI 매물 생성 (`src/lib/openai-client.ts`)
 
 - **교육용 매물 생성**: 난이도별 맞춤형 교육 콘텐츠 포함
 - **시뮬레이션용 매물 생성**: 실전 입찰 훈련용 현실적 데이터
 - **개발 모드 지원**: API 키 없이도 더미 데이터로 작동
+- **경매 엔진 통합**: 생성된 매물에 자동으로 권리분석 및 수익 계산 적용
 
 ### 4. 매물 카드 컴포넌트 (`src/components/list/PropertyCard.tsx`)
 
@@ -398,31 +425,35 @@ interface SimulationStore {
 7. **안전마진 계산**: FMV/Exit 기준 안전마진 계산
 8. **교육 콘텐츠**: 매물별 맞춤형 교육 콘텐츠 생성
 
-### 2. 권리분석 엔진 로직
+### 2. 경매 엔진 v0.2 로직
 
 ```typescript
-// 말소기준권리 판단
-const malsoBaseRight = determineMalsoBaseRight(rights, dividendDeadline);
+// 통합 엔진 실행
+const output = auctionEngine({
+  snapshot: mapSimulationToSnapshot(scenario),
+  userBidPrice: bidPrice,
+  exitPriceHint: exitPrice,
+  valuationInput: { marketSignals, fmvHint },
+  options: { devMode: true }
+});
 
-// 권리 인수/소멸 판단
-const analyzedRights = determineRightStatus(rights, malsoBaseRight);
+// 레이어별 결과 접근
+const { valuation, rights, costs, profit, safety } = output;
 
-// 임차인 대항력 판단
-const analyzedTenants = determineTenantDaehangryeok(
-  tenants,
-  malsoBaseRight,
-  dividendDeadline
-);
+// FMV 기준 안전마진
+const fmvMargin = safety.fmv.amount;
+const fmvMarginRate = safety.fmv.rate;
 
-// 안전 마진 계산
-const safetyMargin = calculateSafetyMargin(analyzedRights, analyzedTenants);
+// Exit 기준 안전마진
+const exitMargin = safety.exit.amount;
+const exitMarginRate = safety.exit.rate;
 
-// FMV/Exit 기준 안전마진 계산
-const fmvSafetyMargin = calculateFMVSafetyMargin(fmv, totalAssumedAmount);
-const exitSafetyMargin = calculateExitSafetyMargin(
-  exitPrice,
-  totalAssumedAmount
-);
+// 권리 분석 결과
+const assumedRightsAmount = rights.assumedRightsAmount;
+const tenantFindings = rights.tenantFindings;
+
+// 총인수금액
+const totalAcquisition = costs.totalAcquisition;
 ```
 
 ### 3-1. 경쟁자 입찰 생성 로직 (`src/lib/auction/competitor-bids.ts`)
@@ -463,6 +494,7 @@ return Math.max(0, Math.min(1, Math.max(r1, r2))); // 보수적으로 더 큰 �
   - 경매분석 리포트 상세 보기
   - 매각 물건 명세서 상세 보기
   - 대시보드 통계 초기화 및 테스트 데이터 추가
+  - 경매 엔진 v0.2 상세 로그 (레이어별 실행 과정 확인)
 
 ### 4. 사전 알림 시스템 프로세스
 
@@ -504,6 +536,9 @@ return Math.max(0, Math.min(1, Math.max(r1, r2))); // 보수적으로 더 큰 �
 - **구글 시트 테스트**: `/test-sheets` - 구글 시트 연결 및 데이터 저장 테스트
 - **로컬 저장 테스트**: `/test-simple` - 로컬 파일 저장 기능 테스트
 - **이미지 테스트**: `/test-images` - Unsplash API 및 이미지 생성 테스트
+- **스모크 테스트**: `/test-smoke` - 시스템 전체 스모크 테스트
+- **통합 테스트**: `src/lib/auction/integration-tests.ts` - 경매 엔진 통합 테스트
+- **검증 체크리스트**: `src/lib/auction/verification-checklist.ts` - 엔진 검증 테스트
 - **API 개별 테스트**: 각 엔드포인트별 독립적인 테스트 가능
 - **실시간 모니터링**: 모든 테스트에 상세한 로그 및 결과 표시
 
@@ -526,12 +561,15 @@ return Math.max(0, Math.min(1, Math.max(r1, r2))); // 보수적으로 더 큰 �
 - ✅ Unsplash 이미지 통합 시스템
 - ✅ 개발자 모드 (무제한 생성 + 디버그 정보)
 - ✅ 필터링 시스템 (매물 유형, 지역, 가격 범위, 난이도, 권리 유형)
-- ✅ 테스트 페이지들 (구글 시트, 로컬 파일, 이미지, Gmail, 그래프)
+- ✅ 테스트 페이지들 (구글 시트, 로컬 파일, 이미지, Gmail, 그래프, 스모크 테스트)
 - ✅ 상세한 로깅 시스템
 - ✅ 모바일 최적화 및 반응형 디자인
 - ✅ 컴포넌트 구조화 (common, filters, list, property, report 등)
 - ✅ 안전마진 리포트 시스템 (FMV/Exit/User 기준 비교)
 - ✅ 경매 경쟁 시스템 (경쟁자 입찰 생성, 과열 점수 계산)
+- ✅ 경매 엔진 v0.2 통합 (단일 진입점으로 모든 계산 로직 통합)
+- ✅ 위험 배지 시스템 (권리분석 시 위험 요소 자동 수집 및 표시)
+- ✅ 타입 매핑 시스템 (기존 타입과 새 엔진 타입 간 자동 변환)
 
 ### Phase 2: 사용자 인증 (Clerk)
 
@@ -634,9 +672,56 @@ console.log("🎯 [경쟁자 입찰] 생성 완료 - 상위: 1명, 중위: 5명,
 console.log("📊 [안전마진] FMV 기준 안전마진: +25,000,000원 (26.6%)");
 console.log("📊 [안전마진] Exit 기준 안전마진: +30,000,000원 (31.2%)");
 console.log("⚠️ [안전마진] FMV 초과 입찰 경고 - 손실 위험 있음");
+
+// 경매 엔진 로그 (devMode 활성화 시)
+console.log("🧠 [ENGINE] 경매 엔진 실행 시작 - caseId: case001");
+console.log("📐 [Valuation] Valuation 레이어 실행 시작");
+console.log("📐 [Valuation] FMV 계산 완료: 150,000,000원");
+console.log("⚖️ [권리분석] Rights 레이어 실행 시작");
+console.log("⚖️ [권리분석] 말소기준권리 판단 완료");
+console.log("💰 [비용계산] Costs 레이어 실행 시작");
+console.log("💰 [비용계산] 총인수금액 계산 완료: 120,000,000원");
+console.log("📊 [수익분석] Profit 레이어 실행 시작");
+console.log("📊 [수익분석] FMV 기준 안전마진: +30,000,000원 (20.0%)");
+console.log("🧠 [ENGINE] 경매 엔진 실행 완료");
+
+// 매핑 함수 로그
+console.log("🔄 [매핑] SimulationScenario → PropertySnapshot 변환 시작");
+console.log("🔄 [매핑] 변환 완료 - caseId: case001, 권리: 3개, 임차인: 2명");
+console.log("🔄 [브리지] EngineOutput → RightsAnalysisResult 변환 시작");
+console.log("🔄 [브리지] 변환 완료 - 총 인수금액: 120,000,000원");
 ```
 
 ## 📝 최근 업데이트 내역
+
+### 2025.01.XX (최신)
+
+- **경매 엔진 v0.2 통합 완료**
+
+  - `auction-engine.ts`: 통합 엔진 단일 진입점 구현
+  - 레이어 구조: Valuation → Rights → Costs → Profit 순서로 실행
+  - 매핑 함수 시스템: `mappers.ts`로 기존 타입과 새 엔진 타입 간 변환
+  - 위험 배지 시스템: 권리분석 시 위험 요소 자동 수집 및 표시
+  - 유형별 κ 값 적용: 매물 유형별 공정시세 계산 계수 적용
+
+- **컴포넌트 교체 완료**
+
+  - `BiddingModal.tsx`: 새 엔진 기반으로 입찰 계산 로직 교체
+  - `property/[id]/page.tsx`: 매물 상세 페이지에서 새 엔진 사용
+  - `generate-property.ts`, `generate-simulation.ts`: 매물 생성 시 새 엔진 적용
+  - 리포트 모달: 권리분석/경매분석 리포트에서 새 엔진 결과 사용
+
+- **테스트 시스템 강화**
+
+  - 통합 테스트: `integration-tests.ts`로 전체 플로우 테스트
+  - 검증 체크리스트: `verification-checklist.ts`로 엔진 검증
+  - 매핑 함수 검증: `mappers-validation-checklist.ts`로 타입 변환 검증
+  - 스모크 테스트 페이지: `/test-smoke` 추가
+
+- **컴포넌트 추가**
+
+  - `RiskBadge.tsx`: 위험 배지 표시 컴포넌트 추가
+  - 리포트에서 위험 요소 시각화
 
 ### 2025.01.30
 
