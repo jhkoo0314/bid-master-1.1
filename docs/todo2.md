@@ -255,7 +255,7 @@
 
 1. **Import 문 추가**
 
-   - [ ] 파일 상단에 `constants.auction.ts`에서 상수 및 타입 import 추가
+   - [x] 파일 상단에 `constants.auction.ts`에서 상수 및 타입 import 추가
      ```typescript
      import {
        FMV_KAPPA_BY_TYPE,
@@ -263,21 +263,21 @@
        PropertyTypeKorean,
      } from "./constants.auction";
      ```
-   - [ ] 기존 import 문(`@/types/auction`)과 충돌하지 않는지 확인
+   - [x] 기존 import 문(`@/types/auction`)과 충돌하지 않는지 확인
 
 2. **κ 값 결정 로직 교체**
 
-   - [ ] 기존 `const kFromAppraisal = 0.91;` 삭제
-   - [ ] propertyType을 PropertyTypeKorean으로 타입 캐스팅
+   - [x] 기존 `const kFromAppraisal = 0.91;` 삭제
+   - [x] propertyType을 PropertyTypeKorean으로 타입 캐스팅
      ```typescript
      const pType: PropertyTypeKorean | undefined = input.propertyType as any;
      ```
-   - [ ] κ 값 결정 로직 구현 (우선순위: overrides.kappa > propertyType별 κ > 기본값 0.90)
+   - [x] κ 값 결정 로직 구현 (우선순위: overrides.kappa > propertyType별 κ > 기본값 0.90)
      ```typescript
      const kappa =
        input.overrides?.kappa ?? (pType ? FMV_KAPPA_BY_TYPE[pType] : 0.9);
      ```
-   - [ ] 로그에 적용된 κ 값과 propertyType 정보 추가
+   - [x] 로그에 적용된 κ 값과 propertyType 정보 추가
      ```typescript
      console.log("📐 [Valuation] κ 값 결정", {
        propertyType: pType,
@@ -292,24 +292,24 @@
 
 3. **최저가 계산 로직 교체**
 
-   - [ ] 모든 하드코딩된 `0.8`을 `MINBID_ALPHA_DEFAULT` 상수로 교체
-   - [ ] `appraisal * 0.8` → `appraisal * MINBID_ALPHA_DEFAULT`로 변경
-   - [ ] `minBid / 0.8` → `minBid / MINBID_ALPHA_DEFAULT`로 변경
-   - [ ] notes 메시지에 하드코딩된 값 대신 상수 값 사용
+   - [x] 모든 하드코딩된 `0.8`을 `MINBID_ALPHA_DEFAULT` 상수로 교체
+   - [x] `appraisal * 0.8` → `appraisal * MINBID_ALPHA_DEFAULT`로 변경
+   - [x] `minBid / 0.8` → `minBid / MINBID_ALPHA_DEFAULT`로 변경
+   - [x] notes 메시지에 하드코딩된 값 대신 상수 값 사용
      ```typescript
      notes.push(`최저가 부재 → 감정가×${MINBID_ALPHA_DEFAULT}로 산출`);
      ```
 
 4. **FMV 역산 로직 교체**
 
-   - [ ] FMV가 없을 때 감정가 기반 FMV 계산 시 κ 값 사용
+   - [x] FMV가 없을 때 감정가 기반 FMV 계산 시 κ 값 사용
      ```typescript
      if (!fmv) {
        fmv = Math.round((appraisal as number) * kappa);
        notes.push(`FMV 부재 → 감정가 기반 κ=${kappa.toFixed(2)} 적용`);
      }
      ```
-   - [ ] appraisal, minBid 둘 다 없을 때 FMV로 역산 시 κ 값 사용
+   - [x] appraisal, minBid 둘 다 없을 때 FMV로 역산 시 κ 값 사용
      ```typescript
      if (!appraisal && !minBid) {
        if (!fmv) {
@@ -324,24 +324,24 @@
 
 5. **시장 신호 보정 로직 유지**
 
-   - [ ] 기존 marketSignals 보정 로직 유지 (±10% 캡)
-   - [ ] 로그 형식 유지 (v0.1과 동일)
+   - [x] 기존 marketSignals 보정 로직 유지 (±10% 캡)
+   - [x] 로그 형식 유지 (v0.1과 동일)
 
 6. **로그 개선**
-   - [ ] κ 값 결정 과정 로그 추가
-   - [ ] propertyType 정보 로그 추가
-   - [ ] 계산 완료 시 적용된 κ 값과 propertyType 정보 포함
+   - [x] κ 값 결정 과정 로그 추가
+   - [x] propertyType 정보 로그 추가
+   - [x] 계산 완료 시 적용된 κ 값과 propertyType 정보 포함
 
 **검증 체크리스트**:
 
-- [ ] TypeScript 컴파일 에러 없음 확인
-- [ ] 모든 import 경로가 올바른지 확인
-- [ ] propertyType이 있을 때 해당 유형의 κ 값이 올바르게 적용되는지 확인
-- [ ] propertyType이 없을 때 기본값 0.90이 적용되는지 확인
-- [ ] overrides.kappa가 있을 때 우선 적용되는지 확인
-- [ ] 하드코딩된 0.8이 모두 MINBID_ALPHA_DEFAULT로 교체되었는지 확인
-- [ ] 시장 신호 보정 로직이 정상 작동하는지 확인
-- [ ] 기존 로그 형식이 유지되는지 확인 (📐 [Valuation] 형식)
+- [x] TypeScript 컴파일 에러 없음 확인
+- [x] 모든 import 경로가 올바른지 확인
+- [ ] propertyType이 있을 때 해당 유형의 κ 값이 올바르게 적용되는지 확인 (테스트 필요)
+- [ ] propertyType이 없을 때 기본값 0.90이 적용되는지 확인 (테스트 필요)
+- [ ] overrides.kappa가 있을 때 우선 적용되는지 확인 (테스트 필요)
+- [x] 하드코딩된 0.8이 모두 MINBID_ALPHA_DEFAULT로 교체되었는지 확인
+- [x] 시장 신호 보정 로직이 정상 작동하는지 확인
+- [x] 기존 로그 형식이 유지되는지 확인 (📐 [Valuation] 형식)
 
 **테스트 케이스**:
 
@@ -707,7 +707,7 @@
 
 - [x] `src/lib/constants.auction.ts` 생성 완료
 - [x] `src/types/auction.ts` 교체 완료
-- [ ] `src/lib/valuation.ts` 교체 완료
+- [x] `src/lib/valuation.ts` 교체 완료
 - [x] `src/lib/rights/rights-engine.ts` 교체 완료 (0원 방지 포함)
 - [ ] `src/lib/costs.ts` 교체 완료
 - [ ] `src/lib/auction-engine.ts` 교체 완료
