@@ -463,140 +463,554 @@
 
 ### 2.1 기존 v1.2 코드 백업 및 구조 확인
 
-- [ ] 기존 v1.2 코드 분석
-  - [ ] 현재 `auction-engine.ts` 파일의 export 함수 목록 확인
-    - [ ] `evaluateAuction()` 함수 확인 (v1.2 메인 함수)
-    - [ ] 기존 타입 정의 확인: `AuctionEvalInput`, `AuctionEvalResult`, `BidStrategyItem`, `ExitAssumption` 등
-  - [ ] 기존 코드에서 사용 중인 타입 및 인터페이스 확인
-    - [ ] `StrategyStage`, `BidStrategyItem`, `ExitAssumption`, `AcquisitionCostInput`, `MarketInput`, `AuctionEvalInput` 등
-  - [ ] 기존 코드 참조 위치 확인
-    - [ ] `src/app/property/[id]/page.tsx`: `evaluateAuction`, `AuctionEvalInput` 사용
-    - [ ] `src/components/BiddingModal.tsx`: `evaluateAuction`, `AuctionEvalInput` 사용
-    - [ ] `src/lib/property/formatters_v2.ts`: `AuctionEvalResult` 타입 사용
+- [x] 기존 v1.2 코드 분석
+  - [x] 현재 `auction-engine.ts` 파일의 export 함수 목록 확인
+    - [x] `evaluateAuction()` 함수 확인 (v1.2 메인 함수)
+    - [x] `calcAcquisitionAndMoS()` 함수 확인
+    - [x] 기존 타입 정의 확인: `AuctionEvalInput`, `AuctionEvalResult`, `BidStrategyItem`, `ExitAssumption` 등
+  - [x] 기존 코드에서 사용 중인 타입 및 인터페이스 확인
+    - [x] `StrategyStage`, `BidStrategyItem`, `ExitAssumption`, `AcquisitionCostInput`, `MarketInput`, `AuctionEvalInput` 등
+    - [x] `MarginBlock`, `AcquisitionCostBreakdown` 확인
+    - [x] `DEFAULT_STRATEGY_MULTIPLIERS` 상수 확인
+  - [x] 기존 코드 참조 위치 확인
+    - [x] `src/app/property/[id]/page.tsx`: `evaluateAuction`, `AuctionEvalInput` 사용
+    - [x] `src/components/BiddingModal.tsx`: `evaluateAuction`, `AuctionEvalInput` 사용
+    - [x] `src/lib/property/formatters_v2.ts`: `AuctionEvalResult` 타입 사용
     - **주의**: Phase 4에서 이들 컴포넌트를 새 엔진으로 교체 예정
-- [ ] 기존 v1.2 코드 백업
-  - [ ] 파일 상단에 백업 주석 블록 추가
-  - [ ] `// ===== v1.2 BACKUP START =====` ~ `// ===== v1.2 BACKUP END =====`
-  - [ ] 기존 코드 전체를 주석 처리하여 백업
-  - [ ] 백업 범위: export된 함수, 타입 정의, 인터페이스 모두 포함
-  - [ ] Git 커밋으로 백업 확인 (선택)
+- [x] 기존 v1.2 코드 백업
+  - [x] 파일 상단에 백업 주석 블록 추가
+  - [x] `// ===== v1.2 BACKUP START =====` ~ `// ===== v1.2 BACKUP END =====`
+  - [x] 백업 범위 문서화: export된 함수, 타입 정의, 인터페이스 모두 포함
+  - [x] 백업 코드 구조 문서화 (파일 끝에 상세 주석 추가)
+  - [x] 참조 위치 문서화 (사용 위치 목록)
   - **참고**: Phase 4에서 컴포넌트 교체 완료 후 최종 삭제 예정
+  - **주의**: Phase 4까지는 기존 코드를 그대로 사용하므로 코드는 주석 처리하지 않고 백업 블록으로 표시만 함
 
 ### 2.2 auctionEngine() 함수 기본 구조 구현
 
-- [ ] 파일 헤더 및 import 설정
-  - [ ] 파일 헤더 주석 추가 (목적, 참조 문서, 작성일)
-  - [ ] 필요한 타입 import: `EngineInput`, `EngineOutput` from `@/types/auction`
-  - [ ] 레이어 함수 import:
+- [x] 파일 헤더 및 import 설정
+  - [x] 파일 헤더 주석 추가 (목적, 참조 문서, 작성일)
+  - [x] 필요한 타입 import: `EngineInput`, `EngineOutput` from `@/types/auction`
+  - [x] 레이어 함수 import:
     - `estimateValuation` from `./valuation`
     - `analyzeRights` from `./rights/rights-engine`
     - `calcCosts` from `./costs`
     - `evaluateProfit` from `./profit`
-- [ ] `auctionEngine()` 함수 시그니처 작성
-  - [ ] 함수 선언: `export function auctionEngine(input: EngineInput): EngineOutput`
-  - [ ] JSDoc 주석 추가 (단일 진입점 설명, 입력/출력 설명)
-- [ ] 입력 파라미터 구조 분해
-  - [ ] `snapshot`, `userBidPrice`, `exitPriceHint`, `valuationInput`, `options` 추출
+- [x] `auctionEngine()` 함수 시그니처 작성
+  - [x] 함수 선언: `export function auctionEngine(input: EngineInput): EngineOutput`
+  - [x] JSDoc 주석 추가 (단일 진입점 설명, 입력/출력 설명, 실행 순서)
+- [x] 입력 파라미터 구조 분해
+  - [x] `snapshot`, `userBidPrice`, `exitPriceHint`, `valuationInput`, `options` 추출
+  - [x] 다음 단계 구현을 위한 TODO 주석 추가
 
 ### 2.3 devMode 로그 시스템 구현
 
-- [ ] 로그 헬퍼 함수 구현
-  - [ ] `log()` 함수 생성: `options?.devMode` 체크
-  - [ ] 로그 접두사 설정: `options?.logPrefix ?? "🧠 [ENGINE]"`
-  - [ ] `console.log` 호출 (eslint-disable 주석 추가)
-- [ ] 로그 포인트 확인
-  - [ ] 각 레이어 실행 전/후 로그 포인트 설정
-  - [ ] 로그 형식 확인: 이모지 + 레이어명 + 데이터
+- [x] 로그 헬퍼 함수 구현
+  - [x] `log()` 함수 생성: `options?.devMode` 체크
+  - [x] 로그 접두사 설정: `options?.logPrefix ?? "🧠 [ENGINE]"`
+  - [x] `console.log` 호출 (eslint-disable 주석 추가)
+  - [x] 선택적 데이터 파라미터 지원
+- [x] 로그 포인트 확인
+  - [x] 엔진 실행 시작 로그 추가 (caseId, propertyType, userBidPrice, 권리/임차인 수 등)
+  - [x] 로그 형식 확인: 이모지 + 레이어명 + 데이터
+  - [x] 각 레이어 실행 전/후 로그 포인트는 Phase 2.4에서 구현 예정
 
 ### 2.4 레이어별 호출 구현 (순서: Valuation → Rights → Costs → Profit)
 
-- [ ] 1단계: Valuation 레이어 호출
-  - [ ] `estimateValuation()` 호출
-  - [ ] 입력 데이터 구성: `snapshot.appraisal`, `snapshot.minBid`, `snapshot.fmvHint ?? valuationInput?.fmvHint`, `valuationInput?.marketSignals`, `snapshot.propertyType`
-  - [ ] 결과 로그: `log("📐 valuation", valuation)`
-  - [ ] 결과 저장: `const valuation = ...`
-- [ ] 2단계: Rights 레이어 호출
-  - [ ] `analyzeRights()` 호출
-  - [ ] 입력 데이터: `snapshot` (전체)
-  - [ ] 결과 로그: `log("⚖️ rights", rights)`
-  - [ ] 결과 저장: `const rights = ...`
-- [ ] 3단계: Costs 레이어 호출
-  - [ ] `calcCosts()` 호출
-  - [ ] 입력 데이터 구성:
+- [x] 1단계: Valuation 레이어 호출
+  - [x] `estimateValuation()` 호출
+  - [x] 입력 데이터 구성: `snapshot.appraisal`, `snapshot.minBid`, `snapshot.fmvHint ?? valuationInput?.fmvHint`, `valuationInput?.marketSignals`, `snapshot.propertyType`
+  - [x] 실행 전/후 로그: `log("📐 Valuation 레이어 실행 시작")`, `log("📐 Valuation 레이어 완료", { fmv, appraisal, minBid })`
+  - [x] 결과 저장: `const valuation = ...`
+- [x] 2단계: Rights 레이어 호출
+  - [x] `analyzeRights()` 호출
+  - [x] 입력 데이터: `snapshot` (전체)
+  - [x] 실행 전/후 로그: `log("⚖️ Rights 레이어 실행 시작")`, `log("⚖️ Rights 레이어 완료", { malsoBaseRightId, assumedRightsAmount, ... })`
+  - [x] 결과 저장: `const rights = ...`
+- [x] 3단계: Costs 레이어 호출
+  - [x] `calcCosts()` 호출
+  - [x] 입력 데이터 구성:
     - `bidPrice: userBidPrice`
     - `assumedRightsAmount: rights.assumedRightsAmount`
     - `propertyType: snapshot.propertyType`
     - `regionCode: snapshot.regionCode`
     - `overrides: valuationInput as any` (선택: 상위에서 세율/명도/기타 비용 전달)
-  - [ ] 결과 로그: `log("💰 costs", costs)`
-  - [ ] 결과 저장: `const costs = ...`
-- [ ] 4단계: Profit 레이어 호출
-  - [ ] `evaluateProfit()` 호출
-  - [ ] 입력 데이터 구성:
+  - [x] 실행 전/후 로그: `log("💰 Costs 레이어 실행 시작")`, `log("💰 Costs 레이어 완료", { totalAcquisition, taxes, ... })`
+  - [x] 결과 저장: `const costs = ...`
+- [x] 4단계: Profit 레이어 호출
+  - [x] `evaluateProfit()` 호출
+  - [x] 입력 데이터 구성:
     - `exitPrice: exitPriceHint`
     - `fmv: valuation.fmv`
     - `totalAcquisition: costs.totalAcquisition`
     - `bidPrice: userBidPrice`
-  - [ ] 결과 로그: `log("📊 profit", profit)`
-  - [ ] 결과 저장: `const profit = ...`
+  - [x] 실행 전/후 로그: `log("📊 Profit 레이어 실행 시작")`, `log("📊 Profit 레이어 완료", { marginVsFMV, marginRateVsFMV, ... })`
+  - [x] 결과 저장: `const profit = ...`
 
 ### 2.5 Safety 객체 생성 구현
 
-- [ ] Safety 객체 구조 정의
-  - [ ] `fmv`: FMV 기준 안전마진
+- [x] Safety 객체 구조 정의
+  - [x] `fmv`: FMV 기준 안전마진
     - `amount: valuation.fmv - costs.totalAcquisition`
     - `rate: (valuation.fmv - costs.totalAcquisition) / valuation.fmv` (0으로 나누기 방지)
-  - [ ] `exit`: Exit 기준 안전마진
+  - [x] `exit`: Exit 기준 안전마진
     - `amount: (exitPriceHint ?? valuation.fmv) - costs.totalAcquisition`
     - `rate: ((exitPriceHint ?? valuation.fmv) - costs.totalAcquisition) / (exitPriceHint ?? valuation.fmv)` (0으로 나누기 방지)
-  - [ ] `userBid`: 사용자 입찰가 기준 마진
+  - [x] `userBid`: 사용자 입찰가 기준 마진
     - `amount: valuation.fmv - userBidPrice`
     - `rate: (valuation.fmv - userBidPrice) / valuation.fmv` (0으로 나누기 방지)
-  - [ ] `overFMV`: 입찰가가 FMV를 초과하는지 여부
+  - [x] `overFMV`: 입찰가가 FMV를 초과하는지 여부
     - `overFMV: userBidPrice > valuation.fmv`
-- [ ] Safety 객체 로그
-  - [ ] 결과 로그: `log("🧯 safety", safety)`
+- [x] Safety 객체 로그
+  - [x] 생성 시작 로그: `log("🧯 Safety 객체 생성 시작")`
+  - [x] 생성 완료 로그: `log("🧯 Safety 객체 생성 완료", { fmv, exit, userBid, overFMV })`
+  - [x] 0으로 나누기 방지 헬퍼 함수 `safeDiv()` 구현
 
 ### 2.6 EngineOutput 반환 구현
 
-- [ ] 반환 객체 구성
-  - [ ] `valuation`: ValuationResult
-  - [ ] `rights`: RightAnalysisResult
-  - [ ] `costs`: CostBreakdown
-  - [ ] `profit`: ProfitResult
-  - [ ] `safety`: Safety 객체
-- [ ] 반환 타입 검증
-  - [ ] TypeScript 타입 체크: 반환 객체가 `EngineOutput` 타입과 일치하는지 확인
+- [x] 반환 객체 구성
+  - [x] `valuation`: ValuationResult
+  - [x] `rights`: RightAnalysisResult
+  - [x] `costs`: CostBreakdown
+  - [x] `profit`: ProfitResult
+  - [x] `safety`: Safety 객체
+- [x] 반환 타입 검증
+  - [x] TypeScript 타입 명시: `const output: EngineOutput = { ... }`
+  - [x] 반환 로그 추가: 엔진 실행 완료 및 결과 요약 로그
+  - [x] `return output` 구현
 
 ### 2.7 입력 → 출력 플로우 검증
 
-- [ ] 단위 테스트 작성 (선택)
+- [x] 데이터 흐름 검증 로직 구현
+  - [x] devMode에서만 실행되는 검증 로그 추가
+  - [x] `snapshot` → Valuation 레이어 입력 검증 로그
+  - [x] `valuation.fmv` → Profit 레이어 입력 검증 로그 (역산 검증 포함)
+  - [x] `rights.assumedRightsAmount` → Costs 레이어 입력 검증 로그
+  - [x] `costs.totalAcquisition` → Profit 레이어 입력 검증 로그 (손익분기점 비교)
+  - [x] 모든 레이어 결과 → EngineOutput 검증 로그
+- [x] devMode 로그 출력 확인
+  - [x] devMode 활성화 시 모든 레이어별 로그 출력 확인
+  - [x] 로그 접두사 커스터마이징 지원: `options: { devMode: true, logPrefix: "🏗️ [BidMaster]" }`
+  - [x] 검증 로그는 devMode에서만 출력되도록 구현
+- [ ] 단위 테스트 작성 (선택, Phase 4 이후 진행 가능)
   - [ ] 기본 입력으로 전체 플로우 테스트
   - [ ] 각 레이어 결과가 다음 레이어 입력으로 올바르게 전달되는지 확인
-- [ ] devMode 로그 출력 확인
-  - [ ] `options: { devMode: true }`로 실행 시 로그 출력 확인
-  - [ ] 각 레이어별 로그가 올바르게 출력되는지 확인
-  - [ ] 로그 접두사 커스터마이징 확인: `options: { devMode: true, logPrefix: "🏗️ [BidMaster]" }`
-- [ ] 데이터 흐름 검증
-  - [ ] `snapshot` → Valuation 레이어 입력 확인
-  - [ ] `valuation.fmv` → Profit 레이어 입력 확인
-  - [ ] `rights.assumedRightsAmount` → Costs 레이어 입력 확인
-  - [ ] `costs.totalAcquisition` → Profit 레이어 입력 확인
-  - [ ] 모든 레이어 결과 → EngineOutput 확인
+  - [ ] 실제 테스트 코드는 Phase 4 컴포넌트 교체 후 작성 권장
 
 ---
 
 ## ✅ Phase 3: 기존 타입 매핑 및 브리지 함수 (3-4시간)
 
-### 3.1 타입 매핑 유틸리티 생성
+### 3.1 타입 매핑 유틸리티 파일 생성 및 기본 구조
 
-- [ ] `src/lib/auction/` 디렉토리 생성 (필요 시)
+#### 3.1.1 디렉토리 및 파일 생성
+
+- [ ] `src/lib/auction/` 디렉토리 생성 확인
+  - [ ] 디렉토리 존재 여부 확인 (없으면 생성)
 - [ ] `src/lib/auction/mappers.ts` 파일 생성
-- [ ] `mapSimulationToSnapshot()` 함수 구현
+  - [ ] 파일 헤더 주석 추가 (목적, 참조 문서, 작성일)
+  - [ ] 필요한 타입 import 추가:
+    - `PropertySnapshot`, `RegisteredRight`, `Tenant`, `EngineOutput` from `@/types/auction`
+    - `SimulationScenario`, `RightRecord`, `TenantRecord`, `RightsAnalysisResult` from `@/types/simulation`
+    - `AcquisitionBreakdown`, `SafetyMargin` from `@/types/property`
+    - `DifficultyLevel` from `@/types/simulation`
+    - `Difficulty` from `@/types/auction`
+
+#### 3.1.2 매핑 함수 목록 및 구조 정의
+
+- [ ] 매핑 함수 목록 문서화 (주석으로)
+  - [ ] 7개 매핑 함수 목록 작성:
+    1. `mapSimulationToSnapshot()`: SimulationScenario → PropertySnapshot
+    2. `mapRightRecordToRegisteredRight()`: RightRecord → RegisteredRight
+    3. `mapTenantRecordToTenant()`: TenantRecord → Tenant
+    4. `mapDifficultyLevelToDifficulty()`: DifficultyLevel → Difficulty
+    5. `mapEngineOutputToRightsAnalysisResult()`: EngineOutput → RightsAnalysisResult (하위 호환성)
+    6. `mapCostBreakdownToAcquisitionBreakdown()`: CostBreakdown → AcquisitionBreakdown
+    7. `mapProfitResultToSafetyMargin()`: ProfitResult → SafetyMargin[]
+- [ ] 각 함수 시그니처 작성 (JSDoc 주석 포함)
+
+### 3.2 기본 타입 매핑 함수 구현
+
+#### 3.2.1 Difficulty 매핑 함수
+
+- [ ] `mapDifficultyLevelToDifficulty()` 함수 구현
+  - [ ] 매핑 규칙: "초급" → "easy", "중급" → "normal", "고급" → "hard"
+  - [ ] 기본값 처리: 알 수 없는 값은 "normal" 반환
+  - [ ] 반환 타입: `Difficulty`
+  - [ ] JSDoc 주석 추가 (매핑 규칙 설명)
+- [ ] 타입 안전성 확인
+  - [ ] TypeScript 컴파일 오류 없음 확인
+  - [ ] 모든 DifficultyLevel 값이 올바르게 매핑되는지 확인
+
+#### 3.2.2 RightType 매핑 헬퍼 함수
+
+- [ ] `mapRightTypeToAuctionType()` 헬퍼 함수 구현
+  - [ ] 매핑 규칙 구현 (auction.ts 주석 참조):
+    - "근저당권", "저당권" → "mortgage"
+    - "압류", "가압류", "담보가등기" → "pledge"
+    - "주택임차권", "상가임차권", "전세권" → "lease"
+    - "유치권", "법정지상권", "분묘기지권" → "liens"
+    - "가등기", "예고등기", "소유권이전청구권가등기", "가처분" → "superiorEtc"
+  - [ ] 기본값 처리: 알 수 없는 값은 "pledge" 반환 (보수적)
+  - [ ] 반환 타입: `RightType` (auction.ts)
+  - [ ] JSDoc 주석 추가 (매핑 규칙 설명)
+- [ ] 로그 추가 (규칙 준수: 🔄 [매핑] 형식)
+  - [ ] 알 수 없는 RightType 매핑 시 경고 로그
+- [ ] 타입 안전성 확인
+  - [ ] 모든 RightType (simulation.ts) 값이 올바르게 매핑되는지 확인
+
+### 3.3 RightRecord → RegisteredRight 매핑 함수
+
+#### 3.3.1 기본 매핑 로직 구현
+
 - [ ] `mapRightRecordToRegisteredRight()` 함수 구현
+  - [ ] 필수 필드 매핑:
+    - `id`: `record.id` (그대로)
+    - `type`: `mapRightTypeToAuctionType(record.rightType)` 사용
+  - [ ] 선택 필드 매핑:
+    - `amount`: `record.claimAmount` (0이 아닌 경우만)
+    - `rankOrder`: `record.priority` (priority가 있을 경우)
+    - `establishedAt`: `record.registrationDate` (그대로)
+    - `specialNote`: `record.notes` (그대로)
+  - [ ] 반환 타입: `RegisteredRight`
+  - [ ] JSDoc 주석 추가 (필드 매핑 규칙 설명)
+- [ ] 엔진 계산 결과 필드 제외 확인
+  - [ ] `isMalsoBaseRight`, `willBeExtinguished`, `willBeAssumed` 제외 (엔진이 계산)
+  - [ ] `rightHolder` 제외 (엔진 계산에 불필요)
+- [ ] 로그 추가 (규칙 준수: 🔄 [매핑] 형식)
+  - [ ] 권리 매핑 시작 로그: rightId, rightType, claimAmount
+  - [ ] 매핑 완료 로그: 최종 RegisteredRight 타입, amount, rankOrder 여부
+- [ ] 타입 안전성 확인
+  - [ ] TypeScript 컴파일 오류 없음 확인
+  - [ ] null/undefined 처리 확인
+
+### 3.4 TenantRecord → Tenant 매핑 함수
+
+#### 3.4.1 기본 매핑 로직 구현
+
 - [ ] `mapTenantRecordToTenant()` 함수 구현
-- [ ] `mapEngineOutputToRightsAnalysisResult()` 함수 구현 (하위 호환성)
-- [ ] 각 매핑 함수 타입 안전성 확인
+  - [ ] 필수 필드 매핑:
+    - `id`: `record.id` (그대로)
+    - `deposit`: `record.deposit` (그대로)
+  - [ ] 선택 필드 매핑:
+    - `name`: `record.tenantName` (그대로)
+    - `moveInDate`: `record.moveInDate` (그대로)
+    - `fixedDate`: `record.confirmationDate` (null이 아닌 경우만)
+    - `hasOpposability`: `record.hasDaehangryeok` (명칭 변경)
+    - `vacateRiskNote`: `record.notes` (그대로)
+    - `isDefacto`: 기본값 `false` (엔진이 추정)
+  - [ ] 반환 타입: `Tenant`
+  - [ ] JSDoc 주석 추가 (필드 매핑 규칙 설명)
+- [ ] 엔진 계산 결과 필드 제외 확인
+  - [ ] `isSmallTenant`, `priorityPaymentAmount`, `willBeAssumed` 제외 (엔진이 계산)
+  - [ ] `monthlyRent` 제외 (엔진 계산에 불필요)
+- [ ] 로그 추가 (규칙 준수: 🔄 [매핑] 형식)
+  - [ ] 임차인 매핑 시작 로그: tenantId, tenantName, deposit
+  - [ ] 매핑 완료 로그: name, moveInDate, fixedDate, hasOpposability 여부
+- [ ] 타입 안전성 확인
+  - [ ] TypeScript 컴파일 오류 없음 확인
+  - [ ] null/undefined 처리 확인 (confirmationDate null 처리)
+
+### 3.5 SimulationScenario → PropertySnapshot 매핑 함수
+
+#### 3.5.1 PropertyType 변환 로직 구현
+
+- [ ] `mapPropertyTypeToAuctionType()` 헬퍼 함수 구현
+  - [ ] 매핑 규칙 구현 (auction.ts 주석 참조):
+    - "아파트" → "apartment"
+    - "오피스텔" → "officetel"
+    - "빌라" → "villa"
+    - "단독주택", "주택", "다가구주택", "근린주택", "도시형생활주택" → "villa"
+    - "원룸" → "apartment" (또는 별도 처리)
+    - 토지/상가 등 → "land" / "commercial" (기본값 처리)
+  - [ ] 기본값 처리: 알 수 없는 값은 "apartment" 반환
+  - [ ] 반환 타입: `string` (PropertySnapshot.propertyType)
+  - [ ] JSDoc 주석 추가 (매핑 규칙 설명)
+- [ ] 로그 추가 (규칙 준수: 🔄 [매핑] 형식)
+  - [ ] 알 수 없는 PropertyType 매핑 시 경고 로그
+
+#### 3.5.2 전체 스냅샷 매핑 로직 구현
+
+- [ ] `mapSimulationToSnapshot()` 함수 구현
+  - [ ] 필수 필드 매핑:
+    - `caseId`: `scenario.basicInfo.caseNumber`
+    - `propertyType`: `mapPropertyTypeToAuctionType(scenario.basicInfo.propertyType)`
+    - `rights`: `scenario.rights.map(mapRightRecordToRegisteredRight)`
+    - `tenants`: `scenario.tenants.map(mapTenantRecordToTenant)`
+  - [ ] 선택 필드 매핑:
+    - `regionCode`: `scenario.regionalAnalysis.court.code` (선택)
+    - `appraisal`: `scenario.basicInfo.appraisalValue` (그대로)
+    - `minBid`: `scenario.basicInfo.minimumBidPrice` (그대로)
+    - `fmvHint`: `scenario.basicInfo.marketValue` (그대로)
+    - `dividendDeadline`: `scenario.schedule.dividendDeadline` (그대로)
+  - [ ] 반환 타입: `PropertySnapshot`
+  - [ ] JSDoc 주석 추가 (필드 매핑 규칙, 제거되는 필드 설명)
+- [ ] 제거되는 필드 확인
+  - [ ] 엔진 계산에 불필요한 필드 제외 확인:
+    - id, type, basicInfo 상세 정보, propertyDetails, schedule의 다른 필드
+    - biddingHistory, similarSales, regionalAnalysis 상세 정보, educationalContent, createdAt
+- [ ] 로그 추가 (규칙 준수: 🔄 [매핑] 형식)
+  - [ ] 스냅샷 매핑 시작 로그: caseId, propertyType, 권리/임차인 수
+  - [ ] 매핑 완료 로그: 최종 PropertySnapshot 필드 요약
+- [ ] 타입 안전성 확인
+  - [ ] TypeScript 컴파일 오류 없음 확인
+  - [ ] 모든 필수 필드가 올바르게 매핑되는지 확인
+
+### 3.6 EngineOutput → RightsAnalysisResult 브리지 함수
+
+#### 3.6.1 기존 RightsAnalysisResult 구조 분석
+
+- [ ] 기존 `RightsAnalysisResult` 타입 필드 확인
+  - [ ] 필수 필드 목록 작성:
+    - `malsoBaseRight`: RightRecord | null
+    - `extinguishedRights`: RightRecord[]
+    - `assumedRights`: RightRecord[]
+    - `totalAssumedAmount`: number
+    - `assumedTenants`: TenantRecord[]
+    - `totalTenantDeposit`: number
+    - `totalAcquisition`: number
+    - `safetyMargin`: number
+    - `recommendedBidRange`: { min, max, optimal }
+    - `riskAnalysis`: { overallRiskLevel, riskScore, riskFactors, recommendations }
+  - [ ] 선택 필드 확인:
+    - `marketValue`: { fairMarketValue, auctionCenter, center }
+    - `advancedSafetyMargin`: { minSafetyMargin, assumedAmount, trace }
+    - `tenantRisk`: { riskScore, riskLabel, evictionCostMin, evictionCostMax, ... }
+- [ ] EngineOutput에서 사용 가능한 데이터 확인
+  - [ ] `output.valuation`: ValuationResult (FMV, 감정가, 최저가)
+  - [ ] `output.rights`: RightAnalysisResult (권리 분석 결과)
+  - [ ] `output.costs`: CostBreakdown (총인수금액 포함)
+  - [ ] `output.profit`: ProfitResult (안전마진 포함)
+  - [ ] `output.safety`: Safety 객체 (FMV/Exit/UserBid 기준 마진)
+
+#### 3.6.2 브리지 함수 기본 구조 구현
+
+- [ ] `mapEngineOutputToRightsAnalysisResult()` 함수 시그니처 작성
+  - [ ] 입력 파라미터:
+    - `output: EngineOutput` (필수)
+    - `scenario: SimulationScenario` (필수, 원본 데이터로 RightRecord[] 복원 필요)
+  - [ ] 반환 타입: `RightsAnalysisResult`
+  - [ ] JSDoc 주석 추가 (브리지 함수 목적, 하위 호환성 설명)
+
+#### 3.6.3 말소기준권리 및 권리 배열 매핑
+
+- [ ] `malsoBaseRight` 매핑
+  - [ ] `output.rights.malsoBase`가 있으면:
+    - [ ] `scenario.rights`에서 동일한 `id` 찾기
+    - [ ] 해당 `RightRecord` 반환
+  - [ ] 없으면 `null` 반환
+- [ ] `extinguishedRights` 매핑
+  - [ ] `output.rights.rightFindings`에서 `assumed: false`인 권리 찾기
+  - [ ] `scenario.rights`에서 해당 권리 `RightRecord[]` 반환
+- [ ] `assumedRights` 매핑
+  - [ ] `output.rights.rightFindings`에서 `assumed: true`인 권리 찾기
+  - [ ] `scenario.rights`에서 해당 권리 `RightRecord[]` 반환
+- [ ] `totalAssumedAmount` 매핑
+  - [ ] `output.rights.assumedRightsAmount` 사용 (등기 권리 + 임차보증금 합계)
+  - [ ] 등기 권리만 계산하려면: `assumedRights`의 `claimAmount` 합계
+  - [ ] **주의**: 엔진은 등기 권리 + 임차보증금 합계를 반환하므로, 등기 권리만 필요 시 별도 계산
+
+#### 3.6.4 임차인 배열 매핑
+
+- [ ] `assumedTenants` 매핑
+  - [ ] `output.rights.tenantFindings`에서 `assumed: true`인 임차인 찾기
+  - [ ] `scenario.tenants`에서 해당 임차인 `TenantRecord[]` 반환
+- [ ] `totalTenantDeposit` 매핑
+  - [ ] `assumedTenants`의 `deposit` 합계 계산
+  - [ ] 또는 `output.rights.tenantFindings`에서 `depositAssumed` 합계
+
+#### 3.6.5 총인수금액 및 안전마진 매핑
+
+- [ ] `totalAcquisition` 매핑
+  - [ ] `output.costs.totalAcquisition` 사용 (엔진 계산 결과)
+- [ ] `safetyMargin` 매핑
+  - [ ] `output.profit.marginVsFMV` 사용 (FMV 기준 안전마진)
+  - [ ] 또는 `output.safety.fmv.amount` 사용
+
+#### 3.6.6 권장 입찰가 범위 및 리스크 분석 매핑
+
+- [ ] `recommendedBidRange` 매핑
+  - [ ] 기본값 설정 또는 엔진 결과에서 추정:
+    - `min`: `output.valuation.minBid * 0.9` (보수적)
+    - `max`: `output.valuation.fmv * 1.1` (공격적)
+    - `optimal`: `output.valuation.fmv * 0.95` (중간값)
+  - [ ] **주의**: v0.1 엔진은 권장 입찰가 범위를 직접 계산하지 않으므로, 추정값 사용
+- [ ] `riskAnalysis` 매핑
+  - [ ] 기본값 설정 또는 엔진 결과에서 추정:
+    - `overallRiskLevel`: 안전마진 기반 판단
+    - `riskScore`: 0-100 점수 (안전마진률 기반)
+    - `riskFactors`: 권리/임차인 리스크 요인 추출
+    - `recommendations`: 기본 권장사항
+  - [ ] **주의**: v0.1 엔진은 리스크 분석을 직접 제공하지 않으므로, 기본값 또는 추정값 사용
+
+#### 3.6.7 선택 필드 매핑 (marketValue, advancedSafetyMargin, tenantRisk)
+
+- [ ] `marketValue` 매핑 (선택)
+  - [ ] `fairMarketValue`: `output.valuation.fmv`
+  - [ ] `auctionCenter`, `center`: 기본값 또는 `output.valuation.fmv` 사용
+- [ ] `advancedSafetyMargin` 매핑 (선택)
+  - [ ] 기본값 `undefined` 또는 `output.profit` 기반 계산
+- [ ] `tenantRisk` 매핑 (선택)
+  - [ ] 기본값 `undefined` 또는 `output.rights.tenantFindings` 기반 추정
+- [ ] **주의**: 선택 필드는 기존 컴포넌트가 사용하지 않을 수 있으므로 기본값 처리 가능
+
+#### 3.6.8 브리지 함수 완성 및 검증
+
+- [ ] 전체 함수 구현 완료
+  - [ ] 모든 필수 필드 매핑 완료
+  - [ ] 선택 필드는 기본값 또는 추정값 사용
+- [ ] 로그 추가 (규칙 준수: 🔄 [브리지] 형식)
+  - [ ] 브리지 함수 시작 로그: caseId, 권리/임차인 수
+  - [ ] 매핑 완료 로그: 주요 필드 요약 (totalAcquisition, safetyMargin 등)
+- [ ] 타입 안전성 확인
+  - [ ] TypeScript 컴파일 오류 없음 확인
+  - [ ] 모든 필수 필드가 올바르게 매핑되는지 확인
+
+### 3.7 CostBreakdown → AcquisitionBreakdown 매핑 함수
+
+#### 3.7.1 기본 매핑 로직 구현
+
+- [ ] `mapCostBreakdownToAcquisitionBreakdown()` 함수 구현
+  - [ ] 필드 매핑:
+    - `bidPrice`: 입력 파라미터로 받기 (CostBreakdown에는 없음)
+    - `rights`: `costs` 파라미터 없음 → `assumedRightsAmount` 사용 (입력 파라미터)
+    - `taxes`: `costs.taxes.totalTax`
+    - `costs`: `costs.evictionCost` (명도비)
+    - `financing`: `0` (v0.1에서는 간소화)
+    - `penalty`: `0` (v0.1에서는 간소화)
+    - `misc`: `costs.miscCost`
+    - `total`: `costs.totalAcquisition`
+  - [ ] 입력 파라미터 확인:
+    - `costs: CostBreakdown` (필수)
+    - `bidPrice: number` (필수)
+    - `assumedRightsAmount: number` (필수)
+  - [ ] 반환 타입: `AcquisitionBreakdown`
+  - [ ] JSDoc 주석 추가 (필드 매핑 규칙 설명)
+- [ ] 로그 추가 (규칙 준수: 🔄 [매핑] 형식)
+  - [ ] 매핑 시작 로그: bidPrice, assumedRightsAmount, totalAcquisition
+  - [ ] 매핑 완료 로그: 각 필드별 금액
+- [ ] 타입 안전성 확인
+  - [ ] TypeScript 컴파일 오류 없음 확인
+  - [ ] 총합 일치 확인: `total` === `bidPrice + rights + taxes + costs + financing + penalty + misc`
+
+### 3.8 ProfitResult → SafetyMargin[] 매핑 함수
+
+#### 3.8.1 SafetyMargin 배열 생성 로직 구현
+
+- [ ] `mapProfitResultToSafetyMargin()` 함수 구현
+  - [ ] 입력 파라미터:
+    - `profit: ProfitResult` (필수)
+    - `valuation: ValuationResult` (필수, FMV 참조)
+    - `exitPrice?: number` (선택, Exit 가격)
+    - `userBidPrice?: number` (선택, 사용자 입찰가)
+  - [ ] SafetyMargin 배열 생성:
+    - [ ] FMV 기준 마진:
+      - `label: "FMV"`
+      - `amount: profit.marginVsFMV`
+      - `pct: profit.marginRateVsFMV`
+      - `referencePrice: valuation.fmv`
+    - [ ] Exit 기준 마진:
+      - `label: "EXIT"`
+      - `amount: profit.marginVsExit`
+      - `pct: profit.marginRateVsExit`
+      - `referencePrice: exitPrice ?? valuation.fmv`
+    - [ ] USER 기준 마진 (선택):
+      - `label: "USER"`
+      - `amount: valuation.fmv - (userBidPrice ?? 0)`
+      - `pct: (valuation.fmv - (userBidPrice ?? 0)) / valuation.fmv`
+      - `referencePrice: valuation.fmv`
+  - [ ] 반환 타입: `SafetyMargin[]`
+  - [ ] JSDoc 주석 추가 (매핑 규칙 설명)
+- [ ] 0으로 나누기 방지
+  - [ ] `pct` 계산 시 `referencePrice > 0` 체크
+  - [ ] `referencePrice`가 0이면 `pct: 0` 반환
+- [ ] 로그 추가 (규칙 준수: 🔄 [매핑] 형식)
+  - [ ] 매핑 시작 로그: FMV, Exit, UserBid 가격 여부
+  - [ ] 매핑 완료 로그: 각 SafetyMargin의 label, amount, pct
+- [ ] 타입 안전성 확인
+  - [ ] TypeScript 컴파일 오류 없음 확인
+  - [ ] 배열 길이 확인 (2개 또는 3개)
+
+### 3.9 매핑 함수 통합 테스트 및 검증
+
+#### 3.9.1 각 매핑 함수 단위 검증
+
+- [ ] `mapDifficultyLevelToDifficulty()` 검증
+  - [ ] "초급" → "easy" 확인
+  - [ ] "중급" → "normal" 확인
+  - [ ] "고급" → "hard" 확인
+  - [ ] 알 수 없는 값 → "normal" 확인
+- [ ] `mapRightTypeToAuctionType()` 검증
+  - [ ] 모든 RightType (simulation.ts) 값이 올바르게 매핑되는지 확인
+  - [ ] 알 수 없는 값 → "pledge" 확인
+- [ ] `mapRightRecordToRegisteredRight()` 검증
+  - [ ] 필수 필드 매핑 확인
+  - [ ] 선택 필드 null/undefined 처리 확인
+  - [ ] 엔진 계산 결과 필드 제외 확인
+- [ ] `mapTenantRecordToTenant()` 검증
+  - [ ] 필수 필드 매핑 확인
+  - [ ] confirmationDate null 처리 확인
+  - [ ] 엔진 계산 결과 필드 제외 확인
+- [ ] `mapSimulationToSnapshot()` 검증
+  - [ ] 필수 필드 매핑 확인
+  - [ ] 선택 필드 매핑 확인
+  - [ ] rights, tenants 배열 매핑 확인
+- [ ] `mapEngineOutputToRightsAnalysisResult()` 검증
+  - [ ] 필수 필드 매핑 확인
+  - [ ] 권리/임차인 배열 매핑 확인
+  - [ ] 총인수금액, 안전마진 매핑 확인
+- [ ] `mapCostBreakdownToAcquisitionBreakdown()` 검증
+  - [ ] 모든 필드 매핑 확인
+  - [ ] 총합 일치 확인
+- [ ] `mapProfitResultToSafetyMargin()` 검증
+  - [ ] SafetyMargin 배열 길이 확인
+  - [ ] 각 마진의 amount, pct 계산 확인
+
+#### 3.9.2 통합 플로우 검증
+
+- [ ] 전체 매핑 플로우 테스트
+  - [ ] SimulationScenario → PropertySnapshot → EngineOutput → RightsAnalysisResult
+  - [ ] 각 단계별 데이터 정확성 확인
+- [ ] 엔진 실행 후 브리지 함수 테스트
+  - [ ] `auctionEngine()` 실행
+  - [ ] `mapEngineOutputToRightsAnalysisResult()` 실행
+  - [ ] 기존 컴포넌트가 기대하는 형식과 일치하는지 확인
+
+#### 3.9.3 TypeScript 컴파일 검증
+
+- [ ] `pnpm exec tsc --noEmit src/lib/auction/mappers.ts` 실행
+  - [ ] 컴파일 오류 없음 확인
+- [ ] 전체 프로젝트 타입 체크 (`pnpm exec tsc --noEmit`)
+  - [ ] mappers.ts로 인한 새로운 타입 오류 없음 확인
+
+#### 3.9.4 문서화 및 주석
+
+- [ ] 각 매핑 함수에 상세한 JSDoc 주석 추가
+  - [ ] 매핑 규칙 설명
+  - [ ] 입력/출력 타입 설명
+  - [ ] 사용 예시 (선택)
+- [ ] 파일 상단에 매핑 함수 목록 및 사용 가이드 주석 추가
+- [ ] 기존 타입과의 차이점 명시 (주석으로)
+
+### 3.10 검증 체크리스트
+
+- [ ] 모든 매핑 함수가 올바르게 구현되었는가?
+  - [ ] 7개 매핑 함수 모두 구현 완료
+  - [ ] 각 함수의 입력/출력 타입이 올바른가?
+- [ ] 타입 안전성이 보장되는가?
+  - [ ] TypeScript 컴파일 오류 없음
+  - [ ] null/undefined 처리 확인
+  - [ ] 0으로 나누기 방지 확인
+- [ ] 로그가 올바르게 추가되었는가?
+  - [ ] 모든 매핑 함수에 로그 추가 (🔄 [매핑] 또는 🔄 [브리지] 형식)
+  - [ ] 로그 내용이 디버깅에 유용한가?
+- [ ] 기존 타입과의 호환성이 보장되는가?
+  - [ ] `mapEngineOutputToRightsAnalysisResult()`가 기존 컴포넌트가 기대하는 형식과 일치하는가?
+  - [ ] `mapCostBreakdownToAcquisitionBreakdown()`이 기존 컴포넌트가 기대하는 형식과 일치하는가?
+  - [ ] `mapProfitResultToSafetyMargin()`이 기존 컴포넌트가 기대하는 형식과 일치하는가?
+- [ ] 매핑 규칙이 문서화되어 있는가?
+  - [ ] auction.ts 주석의 매핑 규칙과 일치하는가?
+  - [ ] JSDoc 주석에 매핑 규칙이 명시되어 있는가?
 
 ---
 
