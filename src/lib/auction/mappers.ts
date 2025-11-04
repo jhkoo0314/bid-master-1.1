@@ -325,8 +325,9 @@ export function mapRightRecordToRegisteredRight(record: RightRecord): Registered
   };
 
   // 선택 필드 매핑
-  // amount: claimAmount가 0이 아닌 경우만
-  if (record.claimAmount && record.claimAmount > 0) {
+  // amount: claimAmount를 그대로 설정 (0이어도 설정하여 인수금액 계산에 사용)
+  // ✅ v0.1 핫픽스: claimAmount가 0이어도 amount를 설정하여 인수금액 계산 시 누락 방지
+  if (record.claimAmount !== undefined) {
     result.amount = record.claimAmount;
   }
 

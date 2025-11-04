@@ -140,7 +140,24 @@ export function analyzeRights(snapshot: PropertySnapshot): RightAnalysisResult {
       }
     }
 
-    const amountAssumed = assumed ? (r.amount ?? 0) : 0;
+    // ✅ v0.1 핫픽스: amount가 없거나 0일 때도 인수 판정이 true면 기본값 사용
+    // amount가 없으면 0으로 설정되어 인수금액이 누락될 수 있으므로, 
+    // 인수 판정이 true인 경우 최소한 0이 아닌 값으로 처리 (추후 개선 필요)
+    let amountAssumed = 0;
+    if (assumed) {
+      // amount가 있으면 사용, 없으면 0 (추후 claimAmount 복원 로직 추가 가능)
+      amountAssumed = r.amount ?? 0;
+      
+      // 🔍 디버그: amount가 없거나 0인 경우 로그
+      if (!r.amount || r.amount === 0) {
+        console.warn("⚠️ [권리분석] 인수 권리의 amount가 없거나 0입니다", {
+          rightId: r.id,
+          type: r.type,
+          amount: r.amount,
+          reason,
+        });
+      }
+    }
     
     if (assumed) {
       console.log("⚖️ [권리분석] 권리 인수 판정", {

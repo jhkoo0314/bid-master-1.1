@@ -560,7 +560,7 @@ export function auctionEngine(input: EngineInput): EngineOutput {
   // ✅ v0.1 핫픽스 — 인수금액 필드명 통합 대응
   const assumed =
     rights.assumedRightsAmount ??
-    (rights as any).totalAssumedAmount ?? // 구버전 대응
+    rights.totalAssumedAmount ?? // 구버전 대응
     0;
 
   console.log(

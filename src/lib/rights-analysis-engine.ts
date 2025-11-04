@@ -617,17 +617,10 @@ export function analyzeRights(
   let assumedRightsAmount = 0;
 
   // ✅ 기존 totalAssumedAmount 대신 assumedRightsAmount 필드 확정
-  // 권리 인수 금액 합산
-  const rightsSum = assumedRights.reduce(
-    (sum, r) =>
-      sum +
-      (r.claimAmount > 0
-        ? r.claimAmount
-        : calculateRightClaimAmount(r, basicInfo.appraisalValue, propertyType)),
-    0
-  );
+  const rightsSum = assumedRights.reduce((sum, r) => sum + (r.claimAmount ?? 0), 0);
 
   // ✅ 임차인 보증금 인수 반영 (기존 누락 이슈 해결)
+  // assumedTenants는 이미 willBeAssumed === true로 필터링된 배열
   const tenantSum = assumedTenants.reduce(
     (sum, t) => sum + (t.isSmallTenant ? t.priorityPaymentAmount : t.deposit),
     0
