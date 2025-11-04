@@ -516,26 +516,29 @@ export default function RightsAnalysisReportModal({
                   const rightExplanation = getRightTypeExplanation(r.type);
                   // ✅ 수정: rightFindings에서 해당 권리의 disposition 찾기
                   // originalIndex로 정확히 매칭 (data.rights의 앞부분은 scenario.rights와 1:1 매칭)
-                  const finding = analysis?.rightFindings?.find(
-                    (f) => {
-                      // 1차: originalIndex로 매칭 (가장 정확)
-                      if (f.originalIndex && f.originalIndex === r.order) {
-                        return true;
-                      }
-                      // 2차: type + order로 매칭 (fallback)
-                      // 같은 타입의 권리 중에서 순서로 매칭
-                      if (f.type === r.type) {
-                        const sameTypeRights = rights.filter((r2) => r2.type === r.type);
-                        const indexInSameType = sameTypeRights.findIndex((r2) => r2 === r);
-                        const sameTypeFindings = analysis?.rightFindings?.filter(
+                  const finding = analysis?.rightFindings?.find((f) => {
+                    // 1차: originalIndex로 매칭 (가장 정확)
+                    if (f.originalIndex && f.originalIndex === r.order) {
+                      return true;
+                    }
+                    // 2차: type + order로 매칭 (fallback)
+                    // 같은 타입의 권리 중에서 순서로 매칭
+                    if (f.type === r.type) {
+                      const sameTypeRights = rights.filter(
+                        (r2) => r2.type === r.type
+                      );
+                      const indexInSameType = sameTypeRights.findIndex(
+                        (r2) => r2 === r
+                      );
+                      const sameTypeFindings =
+                        analysis?.rightFindings?.filter(
                           (f2) => f2.type === r.type
                         ) || [];
-                        return sameTypeFindings[indexInSameType] === f;
-                      }
-                      return false;
+                      return sameTypeFindings[indexInSameType] === f;
                     }
-                  );
-                  
+                    return false;
+                  });
+
                   console.log("⚖️ [권리분석] 권리 매칭", {
                     order: r.order,
                     type: r.type,
@@ -543,7 +546,7 @@ export default function RightsAnalysisReportModal({
                     disposition: finding?.disposition || "소멸",
                     originalIndex: finding?.originalIndex,
                   });
-                  
+
                   const disposition = finding?.disposition || "소멸";
                   const amountAssumed = finding?.amountAssumed || 0;
 
@@ -605,9 +608,14 @@ export default function RightsAnalysisReportModal({
             {(analysis?.assumedRights && analysis.assumedRights.length > 0) ||
             nonExtinguishedCount > 0 ? (
               <div className="mt-3 p-3 border border-red-300 bg-red-50 text-red-600 text-xs rounded leading-relaxed">
-                ⚠️ 인수권리(금액 인수)뿐 아니라 위험권리(금액 불확정·소유권분쟁 가능성)도 존재할 수 있습니다.<br />
-                ⚠️ 미소멸 권리는 「인수 + 위험」을 모두 포함하며, 입찰가·명도비·수익계산에 직접적인 영향을 미칩니다.<br />
-                ⚠️ 특히 위험권리는 금액이 확정되지 않아 예상보다 추가비용이 발생할 수 있으므로 주의해야 합니다.
+                ⚠️ 인수권리(금액 인수)뿐 아니라 위험권리(금액 불확정·소유권분쟁
+                가능성)도 존재할 수 있습니다.
+                <br />
+                ⚠️ 미소멸 권리는 「인수 + 위험」을 모두 포함하며,
+                입찰가·명도비·수익계산에 직접적인 영향을 미칩니다.
+                <br />
+                ⚠️ 특히 위험권리는 금액이 확정되지 않아 예상보다 추가비용이
+                발생할 수 있으므로 주의해야 합니다.
               </div>
             ) : null}
           </section>
