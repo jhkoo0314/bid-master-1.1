@@ -1,8 +1,8 @@
 /**
- * Bid Master AI - Auction Engine v0.1 통합 타입 정의
+ * Bid Master AI - Auction Engine v0.2 통합 타입 정의
  * 
  * 목적: 파편화된 계산 로직을 제거하고 auction-engine.ts 단일 진입점으로 통합
- * 참조 문서: docs/auction-engine-v0.1.md
+ * 참조 문서: docs/auction-engine-v0.2.md
  * 작성일: 2025-01-XX
  * 
  * 이 파일은 경매 엔진의 모든 타입 정의를 포함합니다:
@@ -11,6 +11,12 @@
  * - 레이어별 입력/출력 (Valuation, Rights, Costs, Profit)
  * - 엔진 입력/출력 (EngineInput, EngineOutput)
  */
+
+import type {
+  PropertyTypeKorean,
+  RightTypeKorean,
+  RiskFlagKey,
+} from "@/lib/constants.auction";
 
 // ============================================
 // 1. 기본 타입 정의
@@ -95,6 +101,7 @@ export interface Tenant {
   hasOpposability?: boolean;      // 대항력(전입+점유) 여부 (없으면 엔진이 추정)
   isDefacto?: boolean;            // 사실상 임차(추정치)
   vacateRiskNote?: string;        // 명도 리스크 메모
+  type?: "주택임차권" | "상가임차권" | "기타"; // 임차권 유형 (v0.2 추가)
 }
 
 /**
@@ -112,10 +119,10 @@ export interface Tenant {
  * - 필수 필드: id, type
  * - 선택 필드: amount, rankOrder, establishedAt, specialNote
  * - 엔진 계산 결과 제외: 입력 데이터만 포함, 계산 결과는 RightAnalysisResult에 포함
- * - 영문 권리 코드: type (5가지 그룹)
+ * - 한글 권리명: type (15가지: v0.2에서 RightTypeKorean으로 변경)
  * 
  * 필드 매핑 규칙 (Phase 3에서 구현):
- * - rightType → type (한글 → 영문 코드 매핑 필요, RightType 매핑 규칙 참조)
+ * - rightType → type (한글 권리명 그대로 사용, RightTypeKorean 타입 사용)
  * - claimAmount → amount (필수 → 선택)
  * - registrationDate → establishedAt (명칭 변경, 필수 → 선택)
  * - priority → rankOrder (명칭 변경, 필수 → 선택)
@@ -134,7 +141,7 @@ export interface Tenant {
  */
 export interface RegisteredRight {
   id: string;
-  type: RightType;
+  type: RightTypeKorean;        // 한글 권리명 (v0.2에서 RightType에서 변경)
   amount?: number;               // 피담보채권액/보증금 등
   rankOrder?: number;            // 등기부 순위(작을수록 선순위)
   establishedAt?: string;        // 설정일
@@ -158,13 +165,8 @@ export interface RegisteredRight {
  * 
  * 매핑 규칙 (Phase 3에서 mapSimulationToSnapshot() 구현):
  * - caseId: basicInfo.caseNumber
- * - propertyType: basicInfo.propertyType (한글 → 영문 변환 필요)
- *   - "아파트" → "apartment"
- *   - "오피스텔" → "officetel"
- *   - "빌라" → "villa"
- *   - "단독주택", "주택", "다가구주택", "근린주택", "도시형생활주택" → "villa"
- *   - "원룸" → "apartment" (또는 별도 처리)
- *   - 토지/상가 등 → "land" / "commercial"
+ * - propertyType: basicInfo.propertyType (한글 그대로 사용, PropertyTypeKorean 타입)
+ *   - v0.2에서는 한글 매물유형 9종을 그대로 사용: "아파트", "오피스텔", "단독주택", "빌라", "원룸", "주택", "다가구주택", "근린주택", "도시형생활주택"
  * - regionCode: regionalAnalysis에서 추출 (선택)
  * - appraisal: basicInfo.appraisalValue (선택)
  * - minBid: basicInfo.minimumBidPrice (선택)
@@ -190,7 +192,7 @@ export interface RegisteredRight {
  */
 export interface PropertySnapshot {
   caseId: string;
-  propertyType: "apartment" | "officetel" | "villa" | "land" | "commercial" | string;
+  propertyType: PropertyTypeKorean; // 한글 매물유형 (v0.2에서 변경)
   regionCode?: string;
   appraisal?: number;        // 감정가(있을 경우)
   minBid?: number;           // 최저가(있을 경우)
@@ -214,7 +216,9 @@ export interface PropertySnapshot {
  * - appraisal, minBid 둘 다 없으면: fmvHint 또는 기본 FMV로 역산
  * - appraisal만 있으면: minBid = appraisal * 0.8
  * - minBid만 있으면: appraisal = minBid / 0.8
- * - FMV 없으면: appraisal 기반 κ=0.91로 산정 (교육 목적상 보수적)
+ * - FMV 없으면: appraisal 기반 κ로 산정 (propertyType에 따라 유형별 κ 값 적용, v0.2)
+ * - propertyType이 없으면 기본값 0.90 사용
+ * - overrides.kappa가 있으면 우선 적용
  * - marketSignals: 1.0 기준 외부 지표로 최종 FMV를 ±10% 범위 내에서 보정
  * 
  * marketSignals 예시:
@@ -227,7 +231,10 @@ export interface ValuationInput {
   minBid?: number;           // 최저가 (원)
   fmvHint?: number;          // FMV 힌트 (원)
   marketSignals?: Record<string, number>; // 외부 지표 보정(선택): 1.0 기준
-  propertyType?: string;     // 매물 유형 (세금 계산 등에 활용)
+  propertyType?: PropertyTypeKorean; // 매물 유형 (유형별 κ 값 적용에 사용, v0.2)
+  overrides?: Partial<{
+    kappa: number; // 유형 기본 κ 대신 강제 적용 (v0.2)
+  }>;
 }
 
 /**
@@ -281,11 +288,15 @@ export interface ValuationResult {
  * 필드 설명:
  * - malsoBase: 말소기준권리 (배당요구종기일 이전 설정된 최선순위 담보성 권리)
  * - assumedRightsAmount: 인수 권리 총액 (등기 권리 + 임차보증금 합계)
+ * - riskFlags: 위험 배지 배열 (v0.2 추가)
  * - tenantFindings: 임차인별 분석 결과
+ *   - kind: 임차권 유형 (주택임차권/상가임차권/기타, v0.2 추가)
  *   - opposability: 대항력 강도 (strong/weak/none)
  *   - assumed: 인수 대상 여부
  *   - depositAssumed: 인수되는 보증금 금액 (weak일 경우 50% 인수)
  * - rightFindings: 권리별 인수/소멸 판단 결과
+ *   - type: 권리 유형 (RightTypeKorean, v0.2 추가)
+ *   - disposition: 판정 결과 (소멸/인수/위험, v0.2 추가)
  *   - assumed: 인수 대상 여부 (말소기준권리보다 선순위면 인수)
  *   - amountAssumed: 인수되는 권리 금액
  * 
@@ -297,8 +308,10 @@ export interface ValuationResult {
 export interface RightAnalysisResult {
   malsoBase?: RegisteredRight | null; // 말소기준권리
   assumedRightsAmount: number;        // 인수 권리 총액(임차보증금 포함)
+  riskFlags: RiskFlagKey[];           // 위험 배지 배열 (v0.2 추가)
   tenantFindings: Array<{
     tenantId: string;
+    kind: "주택임차권" | "상가임차권" | "기타"; // 임차권 유형 (v0.2 추가)
     opposability: "strong" | "weak" | "none";
     assumed: boolean;                 // 인수 대상 여부
     reason: string;
@@ -306,6 +319,8 @@ export interface RightAnalysisResult {
   }>;
   rightFindings: Array<{
     rightId: string;
+    type: RightTypeKorean;            // 권리 유형 (v0.2 추가)
+    disposition: "소멸" | "인수" | "위험"; // 판정 결과 (v0.2 추가)
     assumed: boolean;
     reason: string;
     amountAssumed: number;
@@ -322,30 +337,31 @@ export interface RightAnalysisResult {
  * 
  * 엔진의 Costs 레이어 입력. 총인수금액 계산에 필요한 데이터.
  * 
- * 기본 세율 (교육용, v0.1):
- * - 취득세율: 주거 1.1%, 토지/상가 2.0%
+ * 기본 세율 (교육용, v0.2):
+ * - 취득세율: 매물유형별 상이 (ACQ_TAX_RATE_BY_TYPE 참조)
  * - 교육세: 취득세의 0.1% (0.001)
  * - 농특세: 취득세의 0.2% (0.002)
- * - 명도비: 기본 3,000,000원 (리스크 기반 추정 가능)
- * - 기타비용: 기본 1,000,000원 (법무/등기 등)
+ * - 명도비: 매물유형별 기본값 + 위험 가산 (BASE_EVICTION_BY_TYPE + RISK_EVICTION_ADD)
+ * - 기타비용: 기본 1,000,000원 + 위험 가산 (BASE_MISC_COST + RISK_MISC_ADD)
  * 
  * overrides로 정확한 세율/비용 주입 권장:
  * - 실제 세율과 상이할 수 있으므로 상위에서 정확 데이터 전달
- * - evictionCost는 임차 리스크에 따라 3,000,000 ~ 6,000,000 범위 권장
+ * - evictionCost는 위험 가산이 자동 적용되므로 기본값만 지정 가능
  */
 export interface CostInput {
   bidPrice: number;           // 사용자 입찰가(또는 낙찰가)
   assumedRightsAmount: number; // Rights 레이어에서 계산된 인수 권리 총액
-  propertyType?: string;      // 매물 유형 (세율 결정에 사용)
+  propertyType: PropertyTypeKorean; // 매물 유형 (세율/명도비 결정에 사용, v0.2 필수 필드)
   regionCode?: string;        // 지역 코드 (선택)
+  riskFlags?: RiskFlagKey[];  // 위험 배지 배열 (명도비/기타비용 가산에 사용, v0.2)
 
   // 선택적 오버라이드
   overrides?: Partial<{
     acquisitionTaxRate: number;       // 취득세율(기본은 타입별 내장)
     educationTaxRate: number;          // 교육세율 (기본 0.1%)
     specialTaxRate: number;            // 농특세율 (기본 0.2%)
-    evictionCost: number;              // 명도비(기본: 리스크 기반 추정)
-    miscCost: number;                  // 법무/등기/기타 (기본 1,000,000원)
+    evictionCost: number;              // 명도비(기본: 타입별 + 위험 가산)
+    miscCost: number;                  // 법무/등기/기타 (기본: 1,000,000원 + 위험 가산)
   }>;
 }
 
@@ -527,10 +543,19 @@ export interface EngineInput {
  * - userBid: 사용자 입찰가 기준 마진 (FMV - 입찰가)
  * - overFMV: 입찰가가 FMV를 초과하는지 여부
  * 
+ * 위험 배지 (riskFlags, v0.2 추가):
+ * - Rights 레이어에서 수집된 위험 배지 배열
+ * - 소유권분쟁, 상가임차, 유치권, 법정지상권, 분묘, 배당불명확, 임차다수 등
+ * 
+ * 메타 정보 (meta, v0.2 추가):
+ * - engineVersion: 엔진 버전 (예: "v0.2")
+ * - generatedAt: 생성 시각 (ISO 8601 형식)
+ * 
  * 사용 목적:
  * - 단일 진입점으로 모든 계산 결과 제공
  * - 기존 컴포넌트와의 연동을 위해 브리지 함수로 변환 필요 (Phase 3)
  * - UI에 직접 사용 가능 (SafetyMarginCard, 리포트 등)
+ * - 위험 배지를 리포트에 표시하여 사용자에게 리스크 정보 제공
  */
 export interface EngineOutput {
   valuation: ValuationResult;      // Valuation 레이어 결과
@@ -542,6 +567,11 @@ export interface EngineOutput {
     exit: { amount: number; rate: number };      // Exit 기준 안전마진
     userBid: { amount: number; rate: number };   // 사용자 입찰가 기준 마진 (FMV - bid)
     overFMV: boolean;                            // 입찰가가 FMV 초과 여부
+  };
+  riskFlags: RiskFlagKey[];        // 위험 배지 배열 (v0.2 추가)
+  meta?: {                         // 메타 정보 (v0.2 추가)
+    engineVersion: string;          // 엔진 버전 (예: "v0.2")
+    generatedAt: string;           // 생성 시각 (ISO 8601)
   };
 }
 
