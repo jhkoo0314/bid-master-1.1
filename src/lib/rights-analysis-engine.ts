@@ -553,7 +553,7 @@ export function calculateSafetyMargin(
 
 /**
  * 시뮬레이션 시나리오에 대한 전체 권리분석을 실행합니다.
- * 
+ *
  * ✅ v0.1 엔진으로 교체: auction-cost.ts 의존성 제거
  * 새 엔진(auctionEngine)을 사용하여 권리분석을 수행하고,
  * 결과를 기존 형식(RightsAnalysisResult)으로 변환합니다.
@@ -575,7 +575,7 @@ export function analyzeRights(
 
   // ✅ v0.1 엔진 사용: SimulationScenario → PropertySnapshot → EngineOutput → RightsAnalysisResult
   const snapshot = mapSimulationToSnapshot(scenario);
-  
+
   const output = auctionEngine({
     snapshot,
     userBidPrice: scenario.basicInfo.minimumBidPrice,
@@ -583,19 +583,38 @@ export function analyzeRights(
   });
 
   // ✅ 브리지 함수로 기존 형식으로 변환
-  const rightsAnalysisResult = mapEngineOutputToRightsAnalysisResult(output, scenario);
+  const rightsAnalysisResult = mapEngineOutputToRightsAnalysisResult(
+    output,
+    scenario
+  );
 
   console.log("✅ [권리분석 엔진] 전체 권리분석 완료 (v0.1 엔진)");
-  console.log(`  - 말소기준권리: ${rightsAnalysisResult.malsoBaseRight?.rightType || "없음"}`);
-  console.log(`  - 인수권리 개수: ${rightsAnalysisResult.assumedRights.length}개`);
-  console.log(`  - 소멸권리 개수: ${rightsAnalysisResult.extinguishedRights.length}개`);
-  console.log(`  - 인수임차인 개수: ${rightsAnalysisResult.assumedTenants.length}명`);
+  console.log(
+    `  - 말소기준권리: ${
+      rightsAnalysisResult.malsoBaseRight?.rightType || "없음"
+    }`
+  );
+  console.log(
+    `  - 인수권리 개수: ${rightsAnalysisResult.assumedRights.length}개`
+  );
+  console.log(
+    `  - 소멸권리 개수: ${rightsAnalysisResult.extinguishedRights.length}개`
+  );
+  console.log(
+    `  - 인수임차인 개수: ${rightsAnalysisResult.assumedTenants.length}명`
+  );
   console.log(
     `  - 총 인수금액(권리만): ${rightsAnalysisResult.totalAssumedAmount.toLocaleString()}원`
   );
-  console.log(`  - 임차보증금 총액: ${rightsAnalysisResult.totalTenantDeposit.toLocaleString()}원`);
-  console.log(`  - 총인수금액(A): ${rightsAnalysisResult.totalAcquisition.toLocaleString()}원`);
-  console.log(`  - 안전마진: ${rightsAnalysisResult.safetyMargin.toLocaleString()}원`);
+  console.log(
+    `  - 임차보증금 총액: ${rightsAnalysisResult.totalTenantDeposit.toLocaleString()}원`
+  );
+  console.log(
+    `  - 총인수금액(A): ${rightsAnalysisResult.totalAcquisition.toLocaleString()}원`
+  );
+  console.log(
+    `  - 안전마진: ${rightsAnalysisResult.safetyMargin.toLocaleString()}원`
+  );
 
   return rightsAnalysisResult;
 }
