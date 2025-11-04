@@ -2,14 +2,14 @@
  * Bid Master AI - Profit 레이어
  * 
  * 목적: FMV/Exit 기준 안전마진, 손익분기점 등 수익성 평가
- * 참조 문서: docs/auction-engine-v0.1.md
+ * 참조 문서: docs/auction-engine-v0.2.md
  * 작성일: 2025-01-XX
  */
 
 import { ProfitInput, ProfitResult } from "@/types/auction";
 
 /**
- * v0.1:
+ * v0.2: (변경 없음)
  * - marginVsFMV  = FMV  - 총인수금액
  * - marginVsExit = Exit - 총인수금액 (Exit 없으면 FMV 사용)
  * - bePoint = 총인수금액 (손익분기점 가격)
