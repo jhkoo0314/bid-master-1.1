@@ -2082,7 +2082,29 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
             isOpen={showRightsReportModal}
             onClose={() => setShowRightsReportModal(false)}
             data={mapSimulationToPropertyDetail(property)}
-            analysis={rightsAnalysisResult}
+            analysis={{
+              ...rightsAnalysisResult,
+              // ✅ v0.2: 위험 배지 및 rightFindings 추가
+              riskFlags: output.riskFlags,
+              costNotes: output.costs.notes || [],
+              rightFindings: output.rights.rightFindings.map((f, idx) => {
+                // 원본 property.rights에서 해당 권리 찾기
+                const originalRight = property.rights.find((r) => r.id === f.rightId);
+                // 원본 rights 배열에서의 인덱스 (1-based order)
+                const originalIndex = originalRight 
+                  ? property.rights.findIndex((r) => r.id === originalRight.id) + 1
+                  : idx + 1;
+                
+                return {
+                  rightId: f.rightId,
+                  type: f.type,
+                  disposition: f.disposition,
+                  amountAssumed: f.amountAssumed,
+                  reason: f.reason,
+                  originalIndex, // ✅ 원본 rights 배열에서의 순서 (매칭용)
+                };
+              }),
+            }}
           />
         );
       })()}

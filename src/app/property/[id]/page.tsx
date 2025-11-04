@@ -1126,13 +1126,23 @@ export default function PropertyPage({ params }: PageProps) {
                 // ✅ v0.2: 위험 배지 및 rightFindings 추가
                 riskFlags: engineOutput.riskFlags,
                 costNotes: engineOutput.costs.notes || [],
-                rightFindings: engineOutput.rights.rightFindings.map((f) => ({
-                  rightId: f.rightId,
-                  type: f.type,
-                  disposition: f.disposition,
-                  amountAssumed: f.amountAssumed,
-                  reason: f.reason,
-                })),
+                rightFindings: engineOutput.rights.rightFindings.map((f, idx) => {
+                  // 원본 scenario.rights에서 해당 권리 찾기
+                  const originalRight = scenario.rights.find((r) => r.id === f.rightId);
+                  // 원본 rights 배열에서의 인덱스 (1-based order)
+                  const originalIndex = originalRight 
+                    ? scenario.rights.findIndex((r) => r.id === originalRight.id) + 1
+                    : idx + 1;
+                  
+                  return {
+                    rightId: f.rightId,
+                    type: f.type,
+                    disposition: f.disposition,
+                    amountAssumed: f.amountAssumed,
+                    reason: f.reason,
+                    originalIndex, // ✅ 원본 rights 배열에서의 순서 (매칭용)
+                  };
+                }),
               }}
             />
           );
