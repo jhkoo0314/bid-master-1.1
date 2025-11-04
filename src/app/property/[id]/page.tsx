@@ -132,6 +132,10 @@ export default function PropertyPage({ params }: PageProps) {
         safetyMargin: rightsAnalysisResult.safetyMargin,
         totalAssumedAmount: rightsAnalysisResult.totalAssumedAmount,
         trace: [],
+        // ✅ v0.2: 위험 배지 추가
+        riskFlags: engineOutput.riskFlags,
+        // ✅ v0.2: 위험 가산 비용 정보 (costs.notes에서 추출 가능)
+        costNotes: engineOutput.costs.notes || [],
         marketValue: {
           fairMarketValue: engineOutput.valuation.fmv, // 엔진 결과 사용
           auctionCenter: aiMarketPriceResult.auctionCenter,
@@ -1119,6 +1123,16 @@ export default function PropertyPage({ params }: PageProps) {
                         rightsAnalysisResult.tenantRisk.assumedTenants,
                     }
                   : undefined,
+                // ✅ v0.2: 위험 배지 및 rightFindings 추가
+                riskFlags: engineOutput.riskFlags,
+                costNotes: engineOutput.costs.notes || [],
+                rightFindings: engineOutput.rights.rightFindings.map((f) => ({
+                  rightId: f.rightId,
+                  type: f.type,
+                  disposition: f.disposition,
+                  amountAssumed: f.amountAssumed,
+                  reason: f.reason,
+                })),
               }}
             />
           );
@@ -1162,6 +1176,9 @@ export default function PropertyPage({ params }: PageProps) {
               totalAssumedAmount: rightsAnalysisResult.totalAssumedAmount,
               marketValue: rightsAnalysisResult.marketValue,
               advancedSafetyMargin: rightsAnalysisResult.advancedSafetyMargin,
+              // ✅ v0.2: 위험 배지 및 costNotes 추가
+              riskFlags: engineOutput.riskFlags,
+              costNotes: engineOutput.costs.notes || [],
             };
           })()}
         />

@@ -9,6 +9,8 @@ import {
   getTerminologyExplanation,
   getRightTypeExplanation,
 } from "@/lib/rights-terminology";
+import { RiskBadgeList } from "@/components/common/RiskBadge";
+import type { RiskFlagKey } from "@/lib/constants.auction";
 
 interface RightsAnalysisReportModalProps {
   isOpen: boolean;
@@ -59,6 +61,18 @@ interface RightsAnalysisReportModalProps {
       hasDividendRequest: boolean;
       assumedTenants: number;
     };
+    // ✅ v0.2: 위험 배지 추가
+    riskFlags?: RiskFlagKey[];
+    // ✅ v0.2: 비용 설명 (위험 가산 정보 포함)
+    costNotes?: string[];
+    // ✅ v0.2: rightFindings 정보 (disposition 표시용)
+    rightFindings?: Array<{
+      rightId: string;
+      type: string;
+      disposition: "소멸" | "인수" | "위험";
+      amountAssumed: number;
+      reason: string;
+    }>;
   };
 }
 export default function RightsAnalysisReportModal({
@@ -267,6 +281,19 @@ export default function RightsAnalysisReportModal({
                 </div>
               )}
             </div>
+            {/* ✅ v0.2: 위험 배지 섹션 추가 */}
+            {analysis?.riskFlags && analysis.riskFlags.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-gray-300">
+                <h4 className="text-xs font-semibold text-gray-700 mb-2 flex items-center">
+                  위험 요소
+                  <InfoTip
+                    title="위험 요소"
+                    description="권리분석 결과 검토된 주요 위험 요소입니다. 각 위험 요소는 명도비용이나 기타 비용에 영향을 줄 수 있습니다."
+                  />
+                </h4>
+                <RiskBadgeList flags={analysis.riskFlags} />
+              </div>
+            )}
             {/* 고도화 안전마진 정보 추가 */}
             {analysis?.advancedSafetyMargin && (
               <div className="mt-4 grid gap-4 grid-cols-2 md:grid-cols-3 text-[13px]">
@@ -451,12 +478,34 @@ export default function RightsAnalysisReportModal({
                   <th className="px-2 py-1 border-r border-gray-300 text-left">
                     등기일
                   </th>
-                  <th className="px-2 py-1 text-left">청구금액</th>
+                  <th className="px-2 py-1 border-r border-gray-300 text-left">
+                    청구금액
+                  </th>
+                  {/* ✅ v0.2: 판정 컬럼 추가 */}
+                  <th className="px-2 py-1 border-r border-gray-300 text-left">
+                    판정
+                  </th>
+                  {/* ✅ v0.2: 인수금액 컬럼 추가 */}
+                  <th className="px-2 py-1 text-left">인수금액</th>
                 </tr>
               </thead>
               <tbody>
                 {rights.map((r, idx) => {
                   const rightExplanation = getRightTypeExplanation(r.type);
+                  // rightFindings에서 해당 권리의 disposition 찾기
+                  const finding = analysis?.rightFindings?.find(
+                    (f) => f.rightId === r.order?.toString() || f.type === r.type
+                  );
+                  const disposition = finding?.disposition || "소멸";
+                  const amountAssumed = finding?.amountAssumed || 0;
+                  
+                  // disposition 배지 색상
+                  const dispositionColors = {
+                    소멸: "bg-green-50 text-green-700 border-green-300",
+                    인수: "bg-blue-50 text-blue-700 border-blue-300",
+                    위험: "bg-red-50 text-red-700 border-red-300",
+                  };
+                  
                   return (
                     <tr key={idx}>
                       <td className="px-2 py-1 border-t border-r border-gray-300">
@@ -479,8 +528,26 @@ export default function RightsAnalysisReportModal({
                       <td className="px-2 py-1 border-t border-r border-gray-300">
                         {r.date}
                       </td>
-                      <td className="px-2 py-1 border-t border-gray-300 text-right">
+                      <td className="px-2 py-1 border-t border-r border-gray-300 text-right">
                         {r.claim?.toLocaleString?.()}원
+                      </td>
+                      {/* ✅ v0.2: 판정 컬럼 */}
+                      <td className="px-2 py-1 border-t border-r border-gray-300">
+                        <span
+                          className={`inline-block px-2 py-0.5 rounded text-xs border ${dispositionColors[disposition]}`}
+                        >
+                          {disposition}
+                        </span>
+                      </td>
+                      {/* ✅ v0.2: 인수금액 컬럼 */}
+                      <td className="px-2 py-1 border-t border-gray-300 text-right">
+                        {disposition === "소멸" ? (
+                          <span className="text-gray-400">0원</span>
+                        ) : (
+                          <span className="font-semibold">
+                            {amountAssumed.toLocaleString()}원
+                          </span>
+                        )}
                       </td>
                     </tr>
                   );

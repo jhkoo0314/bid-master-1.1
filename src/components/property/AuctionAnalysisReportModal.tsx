@@ -5,6 +5,8 @@ import { useSimulationStore } from "@/store/simulation-store";
 import InfoTip from "@/components/common/InfoTip";
 import { AuctionAnalysisReport } from "./AuctionAnalysisReport";
 import FMVDisplay from "@/components/common/FMVDisplay";
+import { RiskBadgeList } from "@/components/common/RiskBadge";
+import type { RiskFlagKey } from "@/lib/constants.auction";
 
 interface AuctionAnalysisReportModalProps {
   isOpen: boolean;
@@ -46,6 +48,10 @@ interface AuctionAnalysisReportModalProps {
         total: number;
       };
     };
+    // ✅ v0.2: 위험 배지 추가
+    riskFlags?: RiskFlagKey[];
+    // ✅ v0.2: 비용 설명 (위험 가산 정보 포함)
+    costNotes?: string[];
   };
 }
 export default function AuctionAnalysisReportModal({
@@ -231,6 +237,19 @@ export default function AuctionAnalysisReportModal({
                 </div>
               )}
             </div>
+            {/* ✅ v0.2: 위험 배지 섹션 추가 */}
+            {analysis?.riskFlags && analysis.riskFlags.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-gray-300">
+                <h4 className="text-xs font-semibold text-gray-700 mb-2 flex items-center">
+                  위험 요소
+                  <InfoTip
+                    title="위험 요소"
+                    description="경매분석 결과 검토된 주요 위험 요소입니다. 각 위험 요소는 명도비용이나 기타 비용에 영향을 줄 수 있습니다."
+                  />
+                </h4>
+                <RiskBadgeList flags={analysis.riskFlags} />
+              </div>
+            )}
           </section>
 
           {/* v1.2 경매분석 리포트 (AuctionAnalysisReport 컴포넌트 사용) */}
@@ -409,6 +428,19 @@ export default function AuctionAnalysisReportModal({
                     <div className="px-3 py-2 text-[10px] text-gray-500 bg-gray-50 border-t border-gray-200">
                       * 총인수금액 A = B + R + T + C + E + K + U
                     </div>
+                    {/* ✅ v0.2: 위험 가산 비용 설명 추가 */}
+                    {analysis?.costNotes && analysis.costNotes.length > 0 && (
+                      <div className="px-3 py-2 text-[10px] text-orange-700 bg-orange-50 border-t border-orange-200">
+                        <div className="font-semibold mb-1">위험 가산 비용:</div>
+                        <ul className="list-disc pl-4 space-y-0.5">
+                          {analysis.costNotes
+                            .filter((note) => note.includes("위험 가산"))
+                            .map((note, i) => (
+                              <li key={i}>{note}</li>
+                            ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
                 </section>
               )}
