@@ -1169,13 +1169,57 @@ export default function PropertyPage({ params }: PageProps) {
               scenario
             );
             
-            console.log("🧠 [ENGINE] 경매분석 리포트 모달을 위한 엔진 실행 완료");
+            // ✅ auctionEval 생성 (안전마진 카드탭 표시용)
+            const fmv = engineOutput.valuation.fmv;
+            const auctionEval = {
+              mos_fmv: engineOutput.safety.fmv.amount,
+              mos_exit: engineOutput.safety.exit.amount,
+              exitPrice: engineOutput.profit.exitPrice,
+              roi_exit: engineOutput.profit.roi_exit,
+              strategy: [
+                {
+                  stage: "conservative" as const,
+                  label: "보수적" as const,
+                  value: Math.round(fmv * 0.83),
+                },
+                {
+                  stage: "neutral" as const,
+                  label: "중립" as const,
+                  value: Math.round(fmv * 0.89),
+                },
+                {
+                  stage: "aggressive" as const,
+                  label: "공격적" as const,
+                  value: Math.round(fmv * 0.96),
+                },
+              ],
+              costBreakdown: {
+                bidPrice: engineOutput.costs.bidPrice,
+                rights: engineOutput.costs.rights,
+                taxes: engineOutput.costs.taxes,
+                capex: engineOutput.costs.capex,
+                eviction: engineOutput.costs.eviction,
+                carrying: engineOutput.costs.carrying,
+                contingency: engineOutput.costs.contingency,
+                total: engineOutput.costs.totalAcquisition,
+              },
+            };
+            
+            console.log("🧠 [ENGINE] 경매분석 리포트 모달을 위한 엔진 실행 완료", {
+              auctionEval: {
+                mos_fmv: auctionEval.mos_fmv,
+                mos_exit: auctionEval.mos_exit,
+                exitPrice: auctionEval.exitPrice,
+              },
+            });
             
             return {
               safetyMargin: rightsAnalysisResult.safetyMargin,
               totalAssumedAmount: rightsAnalysisResult.totalAssumedAmount,
               marketValue: rightsAnalysisResult.marketValue,
               advancedSafetyMargin: rightsAnalysisResult.advancedSafetyMargin,
+              // ✅ auctionEval 추가 (안전마진 카드탭 표시용)
+              auctionEval,
               // ✅ v0.2: 위험 배지 및 costNotes 추가
               riskFlags: engineOutput.riskFlags,
               costNotes: engineOutput.costs.notes || [],

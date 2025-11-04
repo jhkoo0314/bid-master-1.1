@@ -7,6 +7,7 @@ import { AuctionAnalysisReport } from "./AuctionAnalysisReport";
 import FMVDisplay from "@/components/common/FMVDisplay";
 import { RiskBadgeList } from "@/components/common/RiskBadge";
 import type { RiskFlagKey } from "@/lib/constants.auction";
+import SafetyMarginComparison from "@/components/report/SafetyMarginComparison";
 
 interface AuctionAnalysisReportModalProps {
   isOpen: boolean;
@@ -442,6 +443,51 @@ export default function AuctionAnalysisReportModal({
                       </div>
                     )}
                   </div>
+                </section>
+              )}
+
+              {/* ✅ 안전마진 카드탭 (SafetyMarginComparison) */}
+              {analysis?.auctionEval && (
+                <section className="px-8 py-5 bg-white">
+                  {(() => {
+                    // FMV 계산: marketValue가 있으면 사용, 없으면 mos_fmv + 총인수금액으로 역산
+                    const fmv = analysis.marketValue?.fairMarketValue ?? 
+                      (analysis.auctionEval.mos_fmv + analysis.auctionEval.costBreakdown.total);
+                    
+                    console.log("📊 [경매분석] 안전마진 카드탭 데이터", {
+                      fmv,
+                      mos_fmv: analysis.auctionEval.mos_fmv,
+                      mos_exit: analysis.auctionEval.mos_exit,
+                      exitPrice: analysis.auctionEval.exitPrice,
+                      bidPrice: analysis.auctionEval.costBreakdown.bidPrice,
+                      totalAcquisition: analysis.auctionEval.costBreakdown.total,
+                    });
+
+                    return (
+                      <SafetyMarginComparison
+                        fmv={{
+                          amount: analysis.auctionEval.mos_fmv,
+                          pct: fmv > 0 ? analysis.auctionEval.mos_fmv / fmv : 0,
+                          referencePrice: fmv,
+                        }}
+                        exit={{
+                          amount: analysis.auctionEval.mos_exit,
+                          pct: analysis.auctionEval.exitPrice > 0
+                            ? analysis.auctionEval.mos_exit / analysis.auctionEval.exitPrice
+                            : 0,
+                          referencePrice: analysis.auctionEval.exitPrice,
+                        }}
+                        user={{
+                          amount: fmv - analysis.auctionEval.costBreakdown.bidPrice,
+                          pct: fmv > 0
+                            ? (fmv - analysis.auctionEval.costBreakdown.bidPrice) / fmv
+                            : 0,
+                          referencePrice: fmv,
+                          bidPrice: analysis.auctionEval.costBreakdown.bidPrice,
+                        }}
+                      />
+                    );
+                  })()}
                 </section>
               )}
 
