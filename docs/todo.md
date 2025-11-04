@@ -1160,32 +1160,357 @@
 
 ## ✅ Phase 4: 컴포넌트 연동 (점진적 교체) (4-6시간)
 
-### 4.1 BiddingModal.tsx 교체
+### 4.1 BiddingModal.tsx 교체 (예상 시간: 2-3시간)
 
-- [ ] 기존 import 제거 (analyzeRights, calculateProfit, calcAcquisitionAndMoS, calculateRightsAmount)
-- [ ] 새 import 추가 (auctionEngine, mapSimulationToSnapshot)
-- [ ] 계산 로직 교체
-- [ ] 결과를 기존 UI 구조에 맞게 변환
-- [ ] 테스트: 입찰가 입력 → 계산 결과 표시
-- [ ] 테스트: 안전마진 카드 표시
-- [ ] 테스트: 리포트 모달 동작
+#### 4.1.1 Import 문 교체 및 준비
 
-### 4.2 property/[id]/page.tsx 교체
+- [x] 기존 import 제거
+  - [x] `analyzeRights` from `@/lib/rights-analysis-engine` 제거
+  - [x] `calculateProfit`, `ProfitInput` from `@/lib/profit-calculator` 제거
+  - [x] `calcAcquisitionAndMoS`, `calcTaxes`, `mapPropertyTypeToUse`, `TaxInput` from `@/lib/auction-cost` 제거
+  - [x] `calculateRightsAmount` from `@/lib/auction-cost` 제거
+  - [x] `evaluateAuction`, `AuctionEvalInput` from `@/lib/auction-engine` 제거
+- [x] 새 import 추가
+  - [x] `auctionEngine` from `@/lib/auction-engine` 추가
+  - [x] `mapSimulationToSnapshot` from `@/lib/auction/mappers` 추가
+  - [x] `mapEngineOutputToRightsAnalysisResult` from `@/lib/auction/mappers` 추가
+  - [x] `mapCostBreakdownToAcquisitionBreakdown` from `@/lib/auction/mappers` 추가
+  - [x] `mapProfitResultToSafetyMargin` from `@/lib/auction/mappers` 추가
+  - [x] `EngineInput`, `EngineOutput` from `@/types/auction` 추가
+
+#### 4.1.2 입찰 결과 계산 로직 교체 (handleSubmit 함수)
+
+- [x] `handleSubmit` 함수 내부 로직 교체
+  - [x] 기존 `analyzeRights(property)` 호출 제거 (라인 378)
+  - [x] `mapSimulationToSnapshot(property)` 호출로 PropertySnapshot 생성
+  - [x] `auctionEngine()` 호출로 엔진 실행:
+    - `snapshot`: PropertySnapshot
+    - `userBidPrice`: `winningBid` (낙찰가)
+    - `exitPriceHint`: `marketValue` (AI 시세 중립값)
+    - `valuationInput`: `marketSignals` 배열 (AI 시세 신호)
+    - `options`: `{ devMode: devMode?.isDevMode ?? false }`
+  - [x] `EngineOutput` 결과 저장
+- [x] 권리분석 결과 추출 로직 교체
+  - [x] `mapEngineOutputToRightsAnalysisResult(output, property)` 호출
+  - [x] `rightsAnalysisResult`에서 `recommendedRange`, `totalAssumedAmount`, `safetyMargin`, `totalTenantDeposit` 추출
+  - [x] 기존 `analyzeRights(property)` 호출 제거
+- [x] 총인수금액 계산 로직 교체
+  - [x] 기존 `calcAcquisitionAndMoS()` 호출 제거
+  - [x] `output.costs.totalAcquisition` 사용 (이미 엔진에서 계산됨)
+  - [x] `mapCostBreakdownToAcquisitionBreakdown(output.costs, winningBid, output.rights.assumedRightsAmount)` 호출
+  - [x] `acquisitionResult` 객체 구성 (기존 UI 호환성 유지)
+- [x] 수익 계산 로직 교체
+  - [x] 기존 `calculateProfit(profitInput)` 호출 제거
+  - [x] `output.profit` 사용 (이미 엔진에서 계산됨)
+  - [x] ROI 계산: `output.profit.marginRateVsExit * 100`
+  - [x] `profitResult` 객체 구성 (기존 UI 호환성 유지)
+- [x] 안전마진 계산 로직 교체
+  - [x] `output.profit.marginVsFMV` 사용 (FMV 기준 안전마진)
+  - [x] `output.profit.marginRateVsFMV` 사용 (FMV 기준 안전마진률)
+  - [x] `mapProfitResultToSafetyMargin(output.profit, output.valuation, exitPriceHint, winningBid)` 호출
+  - [x] `safetyMarginArray` 생성 (기존 UI 호환성 유지)
+
+#### 4.1.3 권리분석 요약 생성 함수 교체 (generateRightsAnalysisSummary)
+
+- [x] `generateRightsAnalysisSummary` 함수 수정
+  - [x] 기존 `analyzeRights(property)` 호출 제거 (라인 842)
+  - [x] 함수 내부에서 `auctionEngine()` 호출 추가:
+    - `snapshot`: `mapSimulationToSnapshot(property)`
+    - `userBidPrice`: `property.basicInfo.minimumBidPrice` (기본 입찰가)
+    - `options`: `{ devMode: false }`
+  - [x] `mapEngineOutputToRightsAnalysisResult(output, property)` 호출
+  - [x] `actualRightsAnalysis`에서 필요한 값 추출
+  - [x] 기존 로직 유지 (안전마진 비율 계산, 위험도 판단 등)
+
+#### 4.1.4 리포트 모달 데이터 전달 교체
+
+- [x] RightsAnalysisReportModal 데이터 교체
+  - [x] 기존 `analyzeRights(property)` 호출 제거 (라인 2021)
+  - [x] 모달 열기 전에 `auctionEngine()` 실행
+  - [x] `mapEngineOutputToRightsAnalysisResult(output, property)` 호출
+  - [x] `analysis` prop에 `rightsAnalysisResult` 전달
+- [x] AuctionAnalysisReportModal 데이터 교체
+  - [x] 기존 `analyzeRights(property)`, `calculateRightsAmount()`, `evaluateAuction()` 호출 제거
+  - [x] 모달 열기 전에 `auctionEngine()` 실행
+  - [x] `mapEngineOutputToRightsAnalysisResult(output, property)` 호출
+  - [x] `mapCostBreakdownToAcquisitionBreakdown(output.costs, minimumBidPrice, output.rights.assumedRightsAmount)` 호출
+  - [x] `analysis` prop에 필요한 데이터 구성:
+    - `safetyMargin`: `output.profit.marginVsFMV`
+    - `totalAssumedAmount`: `output.rights.assumedRightsAmount`
+    - `marketValue`: `{ fairMarketValue: output.valuation.fmv, auctionCenter: output.valuation.fmv, center: output.valuation.fmv }`
+    - `advancedSafetyMargin`: `rightsAnalysisResult.advancedSafetyMargin`
+
+#### 4.1.5 로그 추가 및 검증
+
+- [x] 로그 추가 (규칙 준수: 🧠 [ENGINE] 형식)
+  - [x] `auctionEngine()` 실행 시작/완료 로그
+  - [x] 매핑 함수 호출 로그 (🔄 [매핑] 형식)
+  - [x] 결과 변환 로그 (📊 [결과 변환] 형식)
+- [x] 타입 안전성 확인
+  - [x] TypeScript 컴파일 오류 수정 완료
+    - `marketSignals` 타입 수정: `number[]` → `Record<string, number>`
+    - `totalAcquisition` 속성 참조 제거 (존재하지 않는 속성)
+  - [x] 모든 필드가 올바르게 매핑되는지 확인
+
+#### 4.1.6 테스트 및 검증
+
+- [x] 코드 구조 검증 완료
+  - [x] 엔진 호출 위치 확인: 4곳 (입찰 결과 계산, 권리분석 요약, 권리분석 리포트, 경매분석 리포트)
+  - [x] 매핑 함수 호출 확인: 모든 엔진 호출 후 적절한 매핑 함수 사용
+  - [x] 로그 추가 확인: 모든 엔진 실행 및 매핑 단계에 로그 추가됨
+  - [x] 타입 안전성 확인: TypeScript 컴파일 오류 없음
+- [ ] 입찰가 입력 → 계산 결과 표시 테스트 (실제 브라우저 테스트 필요)
+  - [ ] 입찰가 입력 시 엔진 실행 확인 (콘솔 로그 확인)
+  - [ ] 계산 결과가 UI에 올바르게 표시되는지 확인
+  - [ ] 권리분석 결과 (총 인수금액, 안전마진, 임차보증금) 표시 확인
+  - [ ] 수익 분석 결과 (ROI, 순수익, 손익분기점) 표시 확인
+- [ ] 안전마진 카드 표시 테스트 (실제 브라우저 테스트 필요)
+  - [ ] FMV 기준 안전마진 표시 확인 (`output.profit.marginVsFMV`)
+  - [ ] Exit 기준 안전마진 표시 확인 (`output.profit.marginVsExit`)
+  - [ ] 사용자 입찰가 기준 마진 표시 확인 (`safetyMarginArray`의 USER 항목)
+  - [ ] 안전마진 배열이 올바르게 생성되는지 확인 (콘솔 로그 확인)
+- [ ] 리포트 모달 동작 테스트 (실제 브라우저 테스트 필요)
+  - [ ] 권리분석 리포트 모달 열기/데이터 표시 확인
+  - [ ] 경매분석 리포트 모달 열기/데이터 표시 확인
+  - [ ] 리포트 내부 데이터 정확성 확인 (엔진 결과와 일치하는지)
+  - [ ] 모달 열기 시 엔진 실행 로그 확인
+
+**참고**: 실제 브라우저 테스트는 개발 서버 실행 후 수동으로 진행해야 합니다.
+
+- `pnpm run dev` 실행
+- 매물 상세 페이지에서 입찰 모달 열기
+- 입찰가 입력 후 제출 버튼 클릭
+- 콘솔 로그에서 엔진 실행 및 매핑 로그 확인
+- UI에서 계산 결과 표시 확인
+
+### 4.2 property/[id]/page.tsx 교체 (예상 시간: 1.5-2시간)
+
+#### 4.2.1 Import 문 교체 및 준비
 
 - [ ] 기존 import 제거
-- [ ] `auctionEngine()` 사용하도록 변경
-- [ ] `analyzeRights()` 대신 엔진 결과 사용
-- [ ] 테스트: 매물 상세 정보 표시
-- [ ] 테스트: 권리분석 리포트 표시
-- [ ] 테스트: 경매분석 리포트 표시
+  - [ ] `analyzeRights` from `@/lib/rights-analysis-engine` 제거
+  - [ ] `calculateRightsAmount`, `mapPropertyTypeToUse`, `calcAcquisitionAndMoS`, `TaxInput`, `RiskLevel` from `@/lib/auction-cost` 제거
+  - [ ] `evaluateAuction`, `AuctionEvalInput` from `@/lib/auction-engine` 제거
+- [ ] 새 import 추가
+  - [ ] `auctionEngine` from `@/lib/auction-engine` 추가
+  - [ ] `mapSimulationToSnapshot` from `@/lib/auction/mappers` 추가
+  - [ ] `mapEngineOutputToRightsAnalysisResult` from `@/lib/auction/mappers` 추가
+  - [ ] `mapSimulationToPropertyDetailV2` 대체 방법 검토 (필요 시)
 
-### 4.3 기타 컴포넌트 교체
+#### 4.2.2 매물 상세 정보 로드 로직 교체 (loadPropertyDetail 함수)
 
-- [ ] `src/components/ProfitCalculator.tsx` 교체
-- [ ] `src/lib/point-calculator.ts` 교체
-- [ ] `src/app/actions/generate-simulation.ts` 교체
-- [ ] `src/app/actions/generate-property.ts` 교체
-- [ ] 각 교체 후 개별 테스트 진행
+- [ ] 캐시된 시나리오 로드 로직 교체
+  - [ ] 기존 `calculateRightsAmount()`, `evaluateAuction()` 호출 제거 (라인 407-444)
+  - [ ] `mapSimulationToSnapshot(cachedScenario)` 호출
+  - [ ] `auctionEngine()` 호출:
+    - `snapshot`: PropertySnapshot
+    - `userBidPrice`: `minimumBidPrice`
+    - `options`: `{ devMode: false }`
+  - [ ] `mapEngineOutputToRightsAnalysisResult(output, cachedScenario)` 호출
+  - [ ] `mapSimulationToPropertyDetailV2()` 대체 방법 검토:
+    - 옵션 1: `mapSimulationToPropertyDetailV2()` 내부에서 `auctionEngine()` 사용하도록 수정
+    - 옵션 2: 새로운 매핑 함수 생성 (`mapSimulationToPropertyDetailV3()`)
+    - 옵션 3: 기존 함수 유지하되 `auctionEngine` 결과를 활용
+  - [ ] `data` 설정 로직 유지 (기존 UI 호환성)
+- [ ] 교육용 매물 로드 로직 교체
+  - [ ] 기존 `calculateRightsAmount()`, `evaluateAuction()` 호출 제거 (라인 476-513)
+  - [ ] 위와 동일한 로직 적용
+
+#### 4.2.3 리포트 모달 데이터 전달 교체
+
+- [ ] RightsAnalysisReportModal 데이터 교체
+  - [ ] 기존 `analyzeRights(scenario)` 호출 제거 (라인 1085)
+  - [ ] 모달 열기 전에 `auctionEngine()` 실행
+  - [ ] `mapEngineOutputToRightsAnalysisResult(output, scenario)` 호출
+  - [ ] `analysis` prop에 필요한 데이터 구성:
+    - `safetyMargin`: `rightsAnalysisResult.safetyMargin`
+    - `totalAssumedAmount`: `rightsAnalysisResult.totalAssumedAmount`
+    - `extinguishedRights`: `rightsAnalysisResult.extinguishedRights.map(...)`
+    - `assumedRights`: `rightsAnalysisResult.assumedRights.map(...)`
+    - `malsoBaseRight`: `rightsAnalysisResult.malsoBaseRight`
+    - `advancedSafetyMargin`: `rightsAnalysisResult.advancedSafetyMargin`
+- [ ] AuctionAnalysisReportModal 데이터 교체
+  - [ ] 기존 `analyzeRights(scenario)` 호출 제거 (라인 1157)
+  - [ ] 모달 열기 전에 `auctionEngine()` 실행
+  - [ ] `mapEngineOutputToRightsAnalysisResult(output, scenario)` 호출
+  - [ ] `analysis` prop에 필요한 데이터 구성:
+    - `safetyMargin`: `rightsAnalysisResult.safetyMargin`
+    - `totalAssumedAmount`: `rightsAnalysisResult.totalAssumedAmount`
+    - `marketValue`: `rightsAnalysisResult.marketValue`
+
+#### 4.2.4 로그 추가 및 검증
+
+- [ ] 로그 추가 (규칙 준수: 🧠 [ENGINE] 형식)
+  - [ ] 매물 상세 정보 로드 시 엔진 실행 로그
+  - [ ] 리포트 모달 데이터 준비 로그
+- [ ] 타입 안전성 확인
+  - [ ] TypeScript 컴파일 오류 없음 확인
+  - [ ] 모든 필드가 올바르게 매핑되는지 확인
+
+#### 4.2.5 테스트 및 검증
+
+- [ ] 매물 상세 정보 표시 테스트
+  - [ ] 매물 정보가 올바르게 표시되는지 확인
+  - [ ] 권리/임차인 정보 표시 확인
+- [ ] 권리분석 리포트 표시 테스트
+  - [ ] 리포트 모달 열기/데이터 표시 확인
+  - [ ] 리포트 내부 데이터 정확성 확인
+- [ ] 경매분석 리포트 표시 테스트
+  - [ ] 리포트 모달 열기/데이터 표시 확인
+  - [ ] 리포트 내부 데이터 정확성 확인
+
+### 4.3 point-calculator.ts 교체 (예상 시간: 30분-1시간)
+
+#### 4.3.1 Import 문 교체 및 준비
+
+- [ ] 기존 import 제거
+  - [ ] `analyzeRights` from `@/lib/rights-analysis-engine` 제거
+- [ ] 새 import 추가
+  - [ ] `auctionEngine` from `@/lib/auction-engine` 추가
+  - [ ] `mapSimulationToSnapshot` from `@/lib/auction/mappers` 추가
+  - [ ] `mapEngineOutputToRightsAnalysisResult` from `@/lib/auction/mappers` 추가
+
+#### 4.3.2 calculatePoints 함수 수정
+
+- [ ] `calculatePoints` 함수 내부 수정
+  - [ ] `rightsAnalysisResult` 파라미터가 `recommendedRange`를 포함하는지 확인
+  - [ ] `recommendedRange`가 없으면 `auctionEngine()` 호출로 생성:
+    - `snapshot`: `mapSimulationToSnapshot(input.scenario)`
+    - `userBidPrice`: `input.userBidPrice`
+    - `options`: `{ devMode: false }`
+    - `mapEngineOutputToRightsAnalysisResult(output, input.scenario)` 호출
+    - `rightsAnalysisResult.recommendedBidRange` 추출
+  - [ ] 기존 로직 유지 (포인트 계산, 난이도 계수 적용 등)
+
+#### 4.3.3 로그 추가 및 검증
+
+- [ ] 로그 추가 (규칙 준수: ⭐ [포인트 계산] 형식)
+  - [ ] `recommendedRange` 생성 시 엔진 실행 로그
+- [ ] 타입 안전성 확인
+  - [ ] TypeScript 컴파일 오류 없음 확인
+
+### 4.4 generate-simulation.ts 교체 (예상 시간: 30분-1시간)
+
+#### 4.4.1 Import 문 교체 및 준비
+
+- [ ] 기존 import 제거
+  - [ ] `analyzeRights`, `validateScenario` from `@/lib/rights-analysis-engine` 제거
+- [ ] 새 import 추가
+  - [ ] `auctionEngine` from `@/lib/auction-engine` 추가
+  - [ ] `mapSimulationToSnapshot` from `@/lib/auction/mappers` 추가
+  - [ ] `mapEngineOutputToRightsAnalysisResult` from `@/lib/auction/mappers` 추가
+  - [ ] `validateScenario` 함수는 별도로 유지하거나 새 엔진 기반으로 재구현
+
+#### 4.4.2 generateSimulation 함수 수정
+
+- [ ] 권리분석 실행 로직 교체
+  - [ ] 기존 `analyzeRights(scenario)` 호출 제거 (라인 44)
+  - [ ] `mapSimulationToSnapshot(scenario)` 호출
+  - [ ] `auctionEngine()` 호출:
+    - `snapshot`: PropertySnapshot
+    - `userBidPrice`: `scenario.basicInfo.minimumBidPrice`
+    - `options`: `{ devMode: false }`
+  - [ ] `mapEngineOutputToRightsAnalysisResult(output, scenario)` 호출
+  - [ ] `analysisResult`에서 권리/임차인 분석 결과 추출
+- [ ] 시나리오 반영 로직 유지
+  - [ ] 기존 로직 유지 (라인 47-59):
+    - `scenario.rights`에 분석 결과 반영
+    - `scenario.tenants`에 분석 결과 반영
+
+#### 4.4.3 generateMultipleProperties 함수 수정
+
+- [ ] 각 매물 생성 시 위와 동일한 로직 적용
+
+#### 4.4.4 로그 추가 및 검증
+
+- [ ] 로그 추가 (규칙 준수: 🏠 [매물 생성] 형식)
+  - [ ] 권리분석 실행 시 엔진 실행 로그
+- [ ] 타입 안전성 확인
+  - [ ] TypeScript 컴파일 오류 없음 확인
+
+### 4.5 generate-property.ts 교체 (예상 시간: 30분-1시간)
+
+#### 4.5.1 Import 문 교체 및 준비
+
+- [ ] 기존 import 제거
+  - [ ] `analyzeRights`, `validateScenario` from `@/lib/rights-analysis-engine` 제거
+- [ ] 새 import 추가
+  - [ ] `auctionEngine` from `@/lib/auction-engine` 추가
+  - [ ] `mapSimulationToSnapshot` from `@/lib/auction/mappers` 추가
+  - [ ] `mapEngineOutputToRightsAnalysisResult` from `@/lib/auction/mappers` 추가
+
+#### 4.5.2 generateProperty 함수 수정
+
+- [ ] 권리분석 실행 로직 교체
+  - [ ] 기존 `analyzeRights(scenario)` 호출 제거 (라인 69)
+  - [ ] `mapSimulationToSnapshot(scenario)` 호출
+  - [ ] `auctionEngine()` 호출:
+    - `snapshot`: PropertySnapshot
+    - `userBidPrice`: `scenario.basicInfo.minimumBidPrice`
+    - `options`: `{ devMode: false }`
+  - [ ] `mapEngineOutputToRightsAnalysisResult(output, scenario)` 호출
+  - [ ] `analysisResult`에서 권리/임차인 분석 결과 추출
+- [ ] 시나리오 반영 로직 유지
+  - [ ] 기존 로직 유지 (라인 72-84):
+    - `scenario.rights`에 분석 결과 반영
+    - `scenario.tenants`에 분석 결과 반영
+
+#### 4.5.3 로그 추가 및 검증
+
+- [ ] 로그 추가 (규칙 준수: 🏠 [매물 생성] 형식)
+  - [ ] 권리분석 실행 시 엔진 실행 로그
+- [ ] 타입 안전성 확인
+  - [ ] TypeScript 컴파일 오류 없음 확인
+
+### 4.6 ProfitCalculator.tsx 검토 (예상 시간: 30분)
+
+#### 4.6.1 교체 필요성 검토
+
+- [ ] `ProfitCalculator.tsx` 사용 위치 확인
+  - [ ] 어디서 사용되는지 확인 (`grep -r "ProfitCalculator"`)
+  - [ ] 별도 페이지인지 확인
+- [ ] 교체 전략 결정
+  - [ ] 옵션 1: 새 엔진 기반으로 교체 (추천)
+    - [ ] `auctionEngine()` 결과를 활용하여 수익 계산
+    - [ ] `output.profit` 사용
+  - [ ] 옵션 2: 기존 함수 유지 (별도 계산기이므로)
+    - [ ] `calculateProfit()` 함수는 별도 계산기로 유지
+    - [ ] 새 엔진과 병행 사용
+- [ ] 결정에 따라 교체 또는 문서화
+
+### 4.7 통합 테스트 및 검증 (예상 시간: 1시간)
+
+#### 4.7.1 전체 플로우 테스트
+
+- [ ] 매물 생성 → 상세 페이지 → 입찰 모달 → 리포트 전체 플로우 테스트
+  - [ ] 매물 생성 시 엔진 실행 확인
+  - [ ] 상세 페이지 로드 시 엔진 실행 확인
+  - [ ] 입찰 모달에서 입찰가 입력 시 엔진 실행 확인
+  - [ ] 리포트 모달 열기 시 데이터 정확성 확인
+- [ ] 데이터 일관성 검증
+  - [ ] 동일 시나리오에 대해 여러 컴포넌트에서 동일한 결과가 나오는지 확인
+  - [ ] 엔진 결과와 매핑 결과가 일치하는지 확인
+
+#### 4.7.2 성능 테스트
+
+- [ ] 엔진 실행 시간 측정
+  - [ ] 각 컴포넌트에서 엔진 실행 시간 확인
+  - [ ] 불필요한 중복 실행 방지 (메모이제이션 고려)
+- [ ] 최적화 검토
+  - [ ] 동일 시나리오에 대해 엔진을 여러 번 실행하는 경우 최적화 필요 여부 확인
+  - [ ] useMemo 또는 useCallback 활용 검토
+
+#### 4.7.3 에러 처리 테스트
+
+- [ ] 엔진 실행 실패 시 에러 처리 확인
+- [ ] 매핑 함수 실패 시 에러 처리 확인
+- [ ] UI에서 에러 메시지 표시 확인
+
+#### 4.7.4 TypeScript 컴파일 검증
+
+- [ ] 전체 프로젝트 타입 체크 (`pnpm exec tsc --noEmit`)
+  - [ ] 모든 타입 오류 수정
+  - [ ] Phase 4 관련 타입 오류 없음 확인
 
 ---
 

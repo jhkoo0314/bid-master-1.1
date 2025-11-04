@@ -10,19 +10,17 @@ import { WaitlistModal } from "./WaitlistModal";
 import { CircularProgressChart } from "./CircularProgressChart";
 import { AuctionAnalysisModal } from "./AuctionAnalysisModal";
 import { calculatePoints, calculateAccuracy } from "@/lib/point-calculator";
-import { analyzeRights } from "@/lib/rights-analysis-engine";
-import { calculateProfit, type ProfitInput } from "@/lib/profit-calculator";
 import { useSimulationStore } from "@/store/simulation-store";
-import {
-  calcAcquisitionAndMoS,
-  calcTaxes,
-  mapPropertyTypeToUse,
-  type TaxInput,
-} from "@/lib/auction-cost";
 import { mapSimulationToPropertyDetail } from "@/lib/property/formatters";
 import { mapSimulationToPropertyDetailV2 } from "@/lib/property/formatters_v2";
-import { calculateRightsAmount } from "@/lib/auction-cost";
-import { evaluateAuction, type AuctionEvalInput } from "@/lib/auction-engine";
+import { auctionEngine } from "@/lib/auction-engine";
+import {
+  mapSimulationToSnapshot,
+  mapEngineOutputToRightsAnalysisResult,
+  mapCostBreakdownToAcquisitionBreakdown,
+  mapProfitResultToSafetyMargin,
+} from "@/lib/auction/mappers";
+import type { EngineInput, EngineOutput } from "@/types/auction";
 import { SaleSpecificationModal } from "./property/CourtDocumentModal";
 import RightsAnalysisReportModal from "./property/RightsAnalysisReportModal";
 import {
@@ -73,6 +71,7 @@ interface BiddingResult {
   }>;
   rightsAnalysis: {
     totalAssumedAmount: number;
+    totalAcquisition?: number; // ✅ 전체 총인수금액 (입찰가 + 권리 + 세금 + 명도비 등)
     safetyMargin: number;
     recommendedRange: {
       min: number;
@@ -376,13 +375,71 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
         (winningBid / property.basicInfo.appraisalValue) * 100
       );
 
-      // 권리분석 결과 (더 정확한 분석 사용)
-      const rightsAnalysisResult = analyzeRights(property);
+      // AI 시세 중립값 계산 (ROI 계산용 - 경매가 가이드, 엔진 입력에 사용)
+      const aiMarketValueNeutral = Math.floor(
+        (aiMarketPriceResult.min + aiMarketPriceResult.max) / 2
+      );
+      const marketValue = aiMarketValueNeutral; // ROI 계산용 (입찰가 가이드)
+
+      // 🧠 [ENGINE] 새 경매 엔진 실행
+      console.log("🧠 [ENGINE] 경매 엔진 실행 시작");
+      const snapshot = mapSimulationToSnapshot(property);
+      
+      // AI 시세 신호 객체 생성 (marketSignals: 1.0 기준)
+      const marketSignals: Record<string, number> = {
+        minPrice: aiMarketPriceResult.min / aiMarketPriceResult.fairCenter, // 최저가 신호
+        maxPrice: aiMarketPriceResult.max / aiMarketPriceResult.fairCenter, // 최고가 신호
+        confidence: aiMarketPriceResult.confidence, // 신뢰도 신호
+      };
+
+      // 엔진 입력 구성
+      const engineInput: EngineInput = {
+        snapshot,
+        userBidPrice: winningBid,
+        exitPriceHint: marketValue, // AI 시세 중립값
+        valuationInput: {
+          appraisal: property.basicInfo.appraisalValue,
+          minBid: property.basicInfo.minimumBidPrice,
+          fmvHint: aiMarketPriceResult.fairCenter,
+          marketSignals,
+        },
+        options: {
+          devMode: devMode?.isDevMode ?? false,
+          logPrefix: "🧠 [ENGINE]",
+        },
+      };
+
+      // 엔진 실행
+      const output: EngineOutput = auctionEngine(engineInput);
+      console.log("🧠 [ENGINE] 경매 엔진 실행 완료");
+
+      // 🔄 [매핑] 권리분석 결과 매핑 (기존 UI 호환성 유지)
+      console.log("🔄 [매핑] EngineOutput → RightsAnalysisResult 변환 시작");
+      const rightsAnalysisResult = mapEngineOutputToRightsAnalysisResult(
+        output,
+        property
+      );
+      console.log("🔄 [매핑] 권리분석 결과 매핑 완료");
+      
+      // 🧠 [ENGINE] 디버그 - 권리 분석 결과 확인
+      console.log("🧠 [ENGINE] 디버그 - 권리 분석 결과", {
+        assumedRightsCount: rightsAnalysisResult.assumedRights.length,
+        totalAssumedAmount: rightsAnalysisResult.totalAssumedAmount,
+        assumedRights: rightsAnalysisResult.assumedRights.map((r) => ({
+          id: r.id,
+          type: r.rightType,
+          claimAmount: r.claimAmount,
+        })),
+        engineAssumedRightsAmount: output.rights.assumedRightsAmount,
+        totalAcquisition: output.costs.totalAcquisition,
+      });
+      
       const recommendedRange = rightsAnalysisResult.recommendedBidRange;
       const totalAssumedAmount = rightsAnalysisResult.totalAssumedAmount;
       const safetyMargin = rightsAnalysisResult.safetyMargin;
       const totalTenantDeposit = rightsAnalysisResult.totalTenantDeposit;
 
+      // 📊 [결과 변환] 권리분석 결과 추출 및 검증
       console.log("💰 [입찰결과] 권리분석 결과 추출");
       console.log(
         `  - 총 인수금액(권리만): ${totalAssumedAmount.toLocaleString()}원`
@@ -391,45 +448,25 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
         `  - 임차보증금 총액: ${totalTenantDeposit.toLocaleString()}원`
       );
       console.log(`  - 안전마진(V-A): ${safetyMargin.toLocaleString()}원`);
+      console.log("📊 [결과 변환] 권리분석 결과 추출 완료", {
+        권장범위: recommendedRange
+          ? `${recommendedRange.min.toLocaleString()}원 ~ ${recommendedRange.max.toLocaleString()}원`
+          : "없음",
+        총인수금액: totalAssumedAmount,
+        안전마진: safetyMargin,
+        임차보증금: totalTenantDeposit,
+      });
 
       // recommendedRange가 undefined인 경우 기본값 제공
       if (!recommendedRange) {
         console.log("⚠️ [입찰결과] 권장 범위가 없어 기본값 사용");
       }
 
-      // 총인수금액 계산 (세금 포함)
-      const propertyType =
-        property.propertyDetails?.usage ||
-        property.basicInfo.propertyType ||
-        "아파트";
-      const propertyUse = mapPropertyTypeToUse(propertyType);
-
-      console.log("💰 [입찰결과] 총인수금액 계산 시작");
-      console.log(`  - 매물 유형: ${propertyType}`);
-      console.log(`  - 세금 용도: ${propertyUse}`);
-
-      // 세금 계산 입력 준비
-      const taxInput: TaxInput = {
-        use: propertyUse,
-        price: winningBid,
-      };
-
-      // 총인수금액 계산: A = B(입찰가) + R(인수권리) + T(세금) + C(수리비) + E(명도비) + K(보유비) + U(예비비)
-      const capex = 5000000; // 수리비 (예시: 500만원)
-      const eviction = 2000000; // 명도비 (예시: 200만원)
-      const carrying = 0; // 보유비 (보유 기간 없음)
-      const contingency = 1000000; // 예비비 (예시: 100만원)
       console.log(
         `🤖 [AI 시세 연동] AI 시세 예측 적용 → 범위: ${aiMarketPriceResult.min.toLocaleString()}원 ~ ${aiMarketPriceResult.max.toLocaleString()}원 (신뢰도: ${(
           aiMarketPriceResult.confidence * 100
         ).toFixed(1)}%)`
       );
-
-      // AI 시세 중립값 계산 (ROI 계산용 - 경매가 가이드)
-      const aiMarketValueNeutral = Math.floor(
-        (aiMarketPriceResult.min + aiMarketPriceResult.max) / 2
-      );
-      const marketValue = aiMarketValueNeutral; // ROI 계산용 (입찰가 가이드)
 
       console.log("💰 [입찰결과] 시세 확인");
       console.log(
@@ -445,70 +482,58 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
         `  - 경매가 가이드 중심값: ${aiMarketPriceResult.auctionCenter.toLocaleString()}원`
       );
 
-      const acquisitionResult = calcAcquisitionAndMoS({
-        bidPrice: winningBid,
-        rights: totalAssumedAmount + totalTenantDeposit, // R: 인수권리 + 임차보증금
-        capex,
-        eviction,
-        carrying,
-        contingency,
-        fairMarketValue: aiMarketPriceResult.fairCenter, // ✅ FMV: MoS 계산에 사용
-        marketPriceRange: {
-          min: aiMarketPriceResult.min,
-          max: aiMarketPriceResult.max,
-        }, // 입찰가 가이드용 (MoS에는 사용하지 않음)
-        marketPriceScenario: "neutral",
-        minimumBidPrice: property.basicInfo.minimumBidPrice,
-        taxInput,
-      });
-
-      // 💰 [수익 계산기] 업데이트된 calculateProfit 함수 사용
-      console.log("💰 [입찰결과] 수익 계산기로 ROI 계산 시작");
-
-      // 수익 계산기 입력값 준비
-      const bankLoanRatio = 0.7; // 기본 은행대출 비율 70%
-      const loanInterestRate = 4.0; // 기본 대출 이자율 4%
-      const holdingPeriod = 4; // 기본 보유 기간 4개월
-
-      // 은행대출 금액 계산
-      const bankLoanAmount = Math.round(winningBid * bankLoanRatio);
-
-      // 월별 현금흐름 계산 (간단 추정)
-      // 대출 이자 = 대출금액 × 월 이자율
-      const monthlyInterest = Math.round(
-        bankLoanAmount * (loanInterestRate / 100 / 12)
+      // 💰 [비용계산] 새 엔진의 총인수금액 사용 및 매핑
+      console.log("💰 [입찰결과] 총인수금액 계산 (엔진 결과 사용)");
+      console.log("🔄 [매핑] CostBreakdown → AcquisitionBreakdown 변환 시작");
+      const acquisitionBreakdown = mapCostBreakdownToAcquisitionBreakdown(
+        output.costs,
+        winningBid,
+        output.rights.assumedRightsAmount
       );
-      // 월별 지출 = 대출 이자 + 관리비 등 (기본값)
-      const monthlyExpenses = monthlyInterest + 200000; // 이자 + 관리비 20만원
-      // 월별 수입 (임대수입이 있는 경우)
-      const monthlyIncome = 500000; // 기본 월세 50만원 (실제로는 매물 정보에서 추출 가능)
-
-      // 법무비 및 중개수수료 (간단 추정)
-      const legalFees = Math.round(winningBid * 0.001); // 낙찰가의 0.1%
-      const brokerageFees = Math.round(marketValue * 0.009); // 매도가의 0.9% (중개수수료)
-
-      const profitInput: ProfitInput = {
-        appraisalValue: property.basicInfo.appraisalValue,
-        minimumBidPrice: property.basicInfo.minimumBidPrice,
-        expectedBidPrice: winningBid,
-        bankLoanRatio,
-        bankLoanAmount,
-        loanInterestRate,
-        rightsToAssume: totalAssumedAmount, // 인수 권리 금액
-        evictionCost: eviction, // 명도비
-        remodelingCost: capex, // 수리비
-        legalFees, // 법무비
-        brokerageFees, // 중개수수료 (매도 시)
-        holdingPeriod,
-        monthlyExpenses,
-        monthlyIncome,
-        expectedSalePrice: marketValue, // AI 시세 중립값을 매도가로 사용
-        otherIncome: 0, // 기타수입
+      console.log("🔄 [매핑] 총인수금액 매핑 완료");
+      
+      // 기존 UI 호환성을 위한 acquisitionResult 객체 구성
+      const acquisitionResult = {
+        totalAcquisition: output.costs.totalAcquisition,
+        tax: {
+          totalTaxesAndFees: output.costs.taxes.totalTax,
+          acquisitionTax: output.costs.taxes.acquisitionTax,
+          educationTax: output.costs.taxes.educationTax,
+          specialTax: output.costs.taxes.specialTax,
+        },
+        marginAmount: output.profit.marginVsFMV,
+        marginRate: output.profit.marginRateVsFMV,
       };
 
-      // 수익 계산 실행
-      const profitResult = calculateProfit(profitInput);
-      const tempRoi = profitResult.roi;
+      // 📊 [수익분석] 새 엔진의 수익 결과 사용
+      console.log("📊 [입찰결과] 수익 분석 (엔진 결과 사용)");
+      
+      // Exit 기준 마진률을 ROI로 사용 (기존 UI 호환성)
+      const tempRoi = output.profit.marginRateVsExit * 100;
+
+      // 기존 UI 호환성을 위한 profitResult 객체 구성
+      // (기존 profitResult는 많은 필드를 가지고 있지만, 새 엔진은 간소화되어 있음)
+      const profitResult = {
+        actualInvestment: output.costs.totalAcquisition,
+        totalInvestmentBeforeSale: output.costs.totalAcquisition,
+        netProfit: output.profit.marginVsExit,
+        roi: tempRoi,
+        annualizedRoi: tempRoi * 3, // 보유 기간 4개월 기준 연환산 (간단 추정)
+        breakEvenPrice: output.profit.bePoint,
+      };
+
+      // 🧯 [안전마진] SafetyMargin 배열 생성
+      console.log("🔄 [매핑] ProfitResult → SafetyMargin[] 변환 시작");
+      const safetyMarginArray = mapProfitResultToSafetyMargin(
+        output.profit,
+        output.valuation,
+        marketValue, // exitPrice
+        winningBid // userBidPrice
+      );
+      console.log("🔄 [매핑] 안전마진 배열 매핑 완료", {
+        배열길이: safetyMarginArray.length,
+        기준: safetyMarginArray.map((m) => m.label).join(", "),
+      });
 
       console.log("💰 [입찰결과] 총인수금액 계산 완료:");
       console.log(
@@ -518,8 +543,13 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
         `  - 세금 및 수수료: ${acquisitionResult.tax.totalTaxesAndFees.toLocaleString()}원`
       );
       console.log(
-        `  - 안전마진: ${acquisitionResult.marginAmount.toLocaleString()}원 (${(
-          acquisitionResult.marginRate * 100
+        `  - 안전마진 (FMV 기준): ${output.profit.marginVsFMV.toLocaleString()}원 (${(
+          output.profit.marginRateVsFMV * 100
+        ).toFixed(2)}%)`
+      );
+      console.log(
+        `  - 안전마진 (Exit 기준): ${output.profit.marginVsExit.toLocaleString()}원 (${(
+          output.profit.marginRateVsExit * 100
         ).toFixed(2)}%)`
       );
       console.log("💰 [입찰결과] 업데이트된 수익 계산 결과:");
@@ -681,6 +711,7 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
         virtualBidders,
         rightsAnalysis: {
           totalAssumedAmount: rightsAnalysisResult.totalAssumedAmount,
+          totalAcquisition: output.costs.totalAcquisition, // ✅ 전체 총인수금액 추가
           safetyMargin: rightsAnalysisResult.safetyMargin,
           recommendedRange: recommendedRange || {
             min: property.basicInfo.minimumBidPrice,
@@ -841,8 +872,32 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
       rightsAnalysis;
     const { minimumBidPrice, appraisalValue } = property.basicInfo;
 
-    // 실제 권리분석 엔진을 사용하여 정확한 결과 계산
-    const actualRightsAnalysis = analyzeRights(property);
+    // 🧠 [ENGINE] 새 경매 엔진을 사용하여 정확한 결과 계산
+    console.log("🧠 [ENGINE] 권리분석 요약 생성을 위한 엔진 실행");
+    const snapshot = mapSimulationToSnapshot(property);
+    
+    // 엔진 입력 구성
+    const engineInput: EngineInput = {
+      snapshot,
+      userBidPrice: minimumBidPrice, // 기본 입찰가
+      options: {
+        devMode: false,
+        logPrefix: "🧠 [ENGINE]",
+      },
+    };
+
+    // 엔진 실행
+    const output: EngineOutput = auctionEngine(engineInput);
+    console.log("🧠 [ENGINE] 권리분석 요약 생성을 위한 엔진 실행 완료");
+    
+    // 🔄 [매핑] 권리분석 결과 매핑
+    console.log("🔄 [매핑] EngineOutput → RightsAnalysisResult 변환 시작");
+    const actualRightsAnalysis = mapEngineOutputToRightsAnalysisResult(
+      output,
+      property
+    );
+    console.log("🔄 [매핑] 권리분석 결과 매핑 완료");
+    
     const actualSafetyMargin = actualRightsAnalysis.safetyMargin;
     const actualTotalAssumedAmount = actualRightsAnalysis.totalAssumedAmount;
     const actualAssumedRights = actualRightsAnalysis.assumedRights.length;
@@ -1995,82 +2050,141 @@ export function BiddingModal({ property, isOpen, onClose }: BiddingModalProps) {
       />
 
       {/* 권리분석 상세 리포트 공문서 모달 */}
-      {showRightsReportModal && property && (
-        <RightsAnalysisReportModal
-          isOpen={showRightsReportModal}
-          onClose={() => setShowRightsReportModal(false)}
-          data={mapSimulationToPropertyDetail(property)}
-          analysis={analyzeRights(property)}
-        />
-      )}
+      {showRightsReportModal && property && (() => {
+        // 🧠 [ENGINE] 권리분석 리포트 모달을 위한 엔진 실행
+        console.log("🧠 [ENGINE] 권리분석 리포트 모달 데이터 준비");
+        const snapshot = mapSimulationToSnapshot(property);
+        
+        const engineInput: EngineInput = {
+          snapshot,
+          userBidPrice: property.basicInfo.minimumBidPrice,
+          options: {
+            devMode: devMode?.isDevMode ?? false,
+            logPrefix: "🧠 [ENGINE]",
+          },
+        };
+
+        const output: EngineOutput = auctionEngine(engineInput);
+        console.log("🧠 [ENGINE] 권리분석 리포트 모달 엔진 실행 완료");
+        
+        // 🔄 [매핑] 권리분석 결과 매핑
+        console.log("🔄 [매핑] EngineOutput → RightsAnalysisResult 변환 시작");
+        const rightsAnalysisResult = mapEngineOutputToRightsAnalysisResult(
+          output,
+          property
+        );
+        console.log("🔄 [매핑] 권리분석 결과 매핑 완료");
+        
+        console.log("🧠 [ENGINE] 권리분석 리포트 모달 데이터 준비 완료");
+        
+        return (
+          <RightsAnalysisReportModal
+            isOpen={showRightsReportModal}
+            onClose={() => setShowRightsReportModal(false)}
+            data={mapSimulationToPropertyDetail(property)}
+            analysis={rightsAnalysisResult}
+          />
+        );
+      })()}
       {showAuctionReportModal &&
         property &&
         (() => {
-          const rightsAnalysis = analyzeRights(property);
-          // v1.2 매핑을 위해 evaluateAuction 실행
-          const propertyType = property.basicInfo.propertyType || "기타";
-          const appraisalValue = property.basicInfo.appraisalValue || 0;
+          // 🧠 [ENGINE] 경매분석 리포트 모달을 위한 엔진 실행
+          console.log("🧠 [ENGINE] 경매분석 리포트 모달 데이터 준비");
+          const snapshot = mapSimulationToSnapshot(property);
           const minimumBidPrice =
             property.basicInfo.minimumBidPrice ||
-            Math.floor(appraisalValue * 0.7);
-          const baseMapped = mapSimulationToPropertyDetail(property);
-          const assumedAmount = calculateRightsAmount(
-            baseMapped.rights || [],
-            appraisalValue,
-            propertyType,
-            baseMapped.payout?.rows
-          );
-          const propertyUse = mapPropertyTypeToUse(propertyType);
-          const auctionEvalInput: AuctionEvalInput = {
-            cost: {
-              bidPrice: minimumBidPrice,
-              rights: assumedAmount,
-              capex: 5_000_000,
-              eviction: 2_000_000,
-              carrying: 0,
-              contingency: 1_000_000,
-              taxInput: { use: propertyUse, price: minimumBidPrice },
+            Math.floor((property.basicInfo.appraisalValue || 0) * 0.7);
+          
+          const engineInput: EngineInput = {
+            snapshot,
+            userBidPrice: minimumBidPrice,
+            options: {
+              devMode: devMode?.isDevMode ?? false,
+              logPrefix: "🧠 [ENGINE]",
             },
-            market: {
-              appraised: appraisalValue,
-              area:
-                property.propertyDetails?.buildingArea ||
-                property.propertyDetails?.landArea,
-              regionCode:
-                (property.regionalAnalysis as any)?.regionCode ||
-                property.basicInfo.location,
-              propertyType: mapPropertyTypeToAIMarketPriceType(propertyType),
-              yearBuilt: (property.propertyDetails as any)?.yearBuilt,
-              minimumBidPrice,
-            },
-            exit: {
-              holdingMonths: 6,
-              annualAppreciation: 0.04,
-              rehabUplift: 5_000_000,
-              sellCostRate: 0.015,
-            },
-            debug: false,
           };
-          const auctionEvalResult = evaluateAuction(auctionEvalInput);
-          console.log("💰 [입찰 모달] v1.2 매핑을 위한 evaluateAuction 완료");
-          const mapped = mapSimulationToPropertyDetailV2(
-            property,
-            auctionEvalResult,
-            6
+
+          const output: EngineOutput = auctionEngine(engineInput);
+          console.log("🧠 [ENGINE] 경매분석 리포트 모달 엔진 실행 완료");
+          
+          // 🔄 [매핑] 권리분석 결과 매핑
+          console.log("🔄 [매핑] EngineOutput → RightsAnalysisResult 변환 시작");
+          const rightsAnalysisResult = mapEngineOutputToRightsAnalysisResult(
+            output,
+            property
           );
-          // baseMapped의 rights 정보를 유지
-          mapped.rights = baseMapped.rights;
-          mapped.payout = baseMapped.payout;
+          console.log("🔄 [매핑] 권리분석 결과 매핑 완료");
+          
+          // 🔄 [매핑] 총인수금액 계산을 위한 매핑
+          console.log("🔄 [매핑] CostBreakdown → AcquisitionBreakdown 변환 시작");
+          const acquisitionBreakdown = mapCostBreakdownToAcquisitionBreakdown(
+            output.costs,
+            minimumBidPrice,
+            output.rights.assumedRightsAmount
+          );
+          console.log("🔄 [매핑] 총인수금액 매핑 완료");
+          
+          console.log("🧠 [ENGINE] 경매분석 리포트 모달 데이터 준비 완료");
+          
+          // 기존 UI 호환성을 위한 data 매핑 (간소화)
+          const baseMapped = mapSimulationToPropertyDetail(property);
+          
+          // v1.2 호환성을 위한 간소화된 매핑 (필요시 추가 구현)
+          // 현재는 기본 매핑만 사용
+          const mapped = baseMapped;
+          
+          // Exit 가격 계산 (엔진 입력의 exitPriceHint 또는 FMV 사용)
+          const exitPrice = engineInput.exitPriceHint ?? output.valuation.fmv;
+          
           return (
             <AuctionAnalysisReportModal
               isOpen={showAuctionReportModal}
               onClose={() => setShowAuctionReportModal(false)}
               data={mapped}
               analysis={{
-                safetyMargin: rightsAnalysis.safetyMargin,
-                totalAssumedAmount: rightsAnalysis.totalAssumedAmount,
-                marketValue: rightsAnalysis.marketValue,
-                advancedSafetyMargin: rightsAnalysis.advancedSafetyMargin,
+                safetyMargin: output.profit.marginVsFMV,
+                totalAssumedAmount: output.rights.assumedRightsAmount,
+                marketValue: {
+                  fairMarketValue: output.valuation.fmv,
+                  auctionCenter: output.valuation.fmv,
+                  center: output.valuation.fmv,
+                },
+                advancedSafetyMargin: rightsAnalysisResult.advancedSafetyMargin,
+                // 🧯 [안전마진] auctionEval 객체 추가 (안전마진 카드 표시용)
+                auctionEval: {
+                  mos_fmv: output.profit.marginVsFMV, // 즉시 안전마진 (FMV 기준)
+                  mos_exit: output.profit.marginVsExit, // 실전 안전마진 (ExitPrice 기준)
+                  exitPrice: exitPrice, // 미래 매각가
+                  roi_exit: output.profit.marginRateVsExit, // 실전 수익률
+                  strategy: [
+                    {
+                      stage: "conservative" as const,
+                      label: "보수적" as const,
+                      value: output.valuation.minBid || minimumBidPrice,
+                    },
+                    {
+                      stage: "neutral" as const,
+                      label: "중립" as const,
+                      value: Math.round(output.valuation.fmv * 0.95),
+                    },
+                    {
+                      stage: "aggressive" as const,
+                      label: "공격적" as const,
+                      value: Math.round(output.valuation.fmv * 1.1),
+                    },
+                  ],
+                  costBreakdown: {
+                    bidPrice: minimumBidPrice,
+                    rights: output.rights.assumedRightsAmount,
+                    taxes: output.costs.taxes.totalTax,
+                    capex: output.costs.miscCost, // 간소화: 기타비용으로 대체
+                    eviction: output.costs.evictionCost,
+                    carrying: 0, // v0.1에서는 간소화
+                    contingency: 0, // v0.1에서는 간소화
+                    total: output.costs.totalAcquisition,
+                  },
+                },
               }}
             />
           );
