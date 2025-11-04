@@ -807,6 +807,47 @@ console.log(out.safety, out.riskFlags, out.costs);
 
 ---
 
+
+
+---
+
+## 12) 인수추정액 0원 방지 레이어 (Zero-Assumption Safety Layer)
+
+### ❗️배경
+v0.1까지는 `assumedRightsAmount`(총 인수추정액)가 `0원`이 될 수 있었다.  
+이는 **권리금액 없음 + 임차인 없음 + fallback 계산 실패**라는 3조건이 동시에 발생할 경우이며,  
+UI·리포트·통합 비용 계산이 모두 무효화되는 치명적 결함이었다.
+
+v0.2부터는 **"0원"을 엔진 출력값으로 허용하지 않음**을 규칙으로 선언한다.
+
+---
+
+### ✅ 엔진 내부 처리 규칙
+
+```ts
+// src/lib/rights/rights-engine.ts 내부 (v0.2 신규 포함)
+
+const assumedRightsAmountRaw = rightsSum + tenantsSum;
+
+// ✅ 0원 방지 레이어
+let assumedRightsAmount = assumedRightsAmountRaw;
+if (assumedRightsAmountRaw === 0) {
+  const fallbackMin = Math.max(
+    Math.round((snapshot.appraisal ?? 0) * 0.01), // 감정가 1%
+    3_000_000 // 최소 300만원
+  );
+
+  console.warn(
+    "⚠️ [ENGINE WARNING] assumedRightsAmount === 0 → fallback 적용",
+    { fallbackMin }
+  );
+
+  assumedRightsAmount = fallbackMin;
+  notes.push(
+    `권리/임차 인수금액이 0원 → 보수적 최소 인수금액 ${fallbackMin.toLocaleString()}원 적용`
+  );
+}
+
 이로써 **v0.2 통합 엔진**이 완성되었습니다.
 우선 v0.1을 먼저 빌드해 정상 동작을 확인하신 뒤, 상기 파일들을 적용하시면 **유형/권리 확장판**으로 즉시 전환 가능합니다.
 다음 단계로 **테스트 케이스(3~5종)** 와 **UI 배지 디자인 가이드**가 필요하시면 이어서 제공해 드리겠습니다.

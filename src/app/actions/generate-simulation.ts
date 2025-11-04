@@ -6,8 +6,13 @@
 
 import { SimulationScenario, DifficultyLevel } from "@/types/simulation";
 import { generateSimulationProperty } from "@/lib/openai-client";
-import { analyzeRights, validateScenario } from "@/lib/rights-analysis-engine";
+import { validateScenario } from "@/lib/rights-analysis-engine";
 import { generateRegionalAnalysis } from "@/lib/regional-analysis";
+import { auctionEngine } from "@/lib/auction-engine";
+import {
+  mapSimulationToSnapshot,
+  mapEngineOutputToRightsAnalysisResult,
+} from "@/lib/auction/mappers";
 
 // 필터 옵션 타입 정의
 interface PropertyFilterOptions {
@@ -40,8 +45,23 @@ export async function generateSimulation(): Promise<SimulationScenario> {
       scenario = await generateSimulationProperty();
     }
 
-    // 3. 권리분석 실행
-    const analysisResult = analyzeRights(scenario);
+    // 3. 권리분석 실행 (새 엔진 사용)
+    console.log("🏠 [매물 생성] 권리분석 엔진 실행 시작");
+    const snapshot = mapSimulationToSnapshot(scenario);
+    const engineOutput = auctionEngine({
+      snapshot,
+      userBidPrice: scenario.basicInfo.minimumBidPrice,
+      options: { devMode: false },
+    });
+    const analysisResult = mapEngineOutputToRightsAnalysisResult(
+      engineOutput,
+      scenario
+    );
+    console.log("🏠 [매물 생성] 권리분석 엔진 실행 완료", {
+      assumedRightsCount: analysisResult.assumedRights.length,
+      extinguishedRightsCount: analysisResult.extinguishedRights.length,
+      assumedTenantsCount: analysisResult.assumedTenants.length,
+    });
 
     // 4. 분석 결과를 시나리오에 반영
     scenario.rights = scenario.rights.map((right) => {
@@ -107,8 +127,60 @@ export async function generateMultipleProperties(
       );
 
       try {
-        // generateSimulationProperty를 직접 호출하여 매물 생성
-        const property = await generateSimulationProperty();
+        // 1. OpenAI로 매물 생성
+        let property = await generateSimulationProperty();
+
+        // 2. 권리분석 엔진으로 검증
+        const validation = validateScenario(property);
+        if (!validation.isValid) {
+          console.warn(
+            `⚠️ [서버 액션] 매물 ${i + 1} 시나리오 검증 실패, 재생성 시도`
+          );
+          console.warn("  검증 오류:", validation.errors);
+
+          // 재생성 시도 (최대 1회)
+          property = await generateSimulationProperty();
+        }
+
+        // 3. 권리분석 실행 (새 엔진 사용)
+        console.log(`🏠 [매물 생성] 매물 ${i + 1} 권리분석 엔진 실행 시작`);
+        const snapshot = mapSimulationToSnapshot(property);
+        const engineOutput = auctionEngine({
+          snapshot,
+          userBidPrice: property.basicInfo.minimumBidPrice,
+          options: { devMode: false },
+        });
+        const analysisResult = mapEngineOutputToRightsAnalysisResult(
+          engineOutput,
+          property
+        );
+        console.log(`🏠 [매물 생성] 매물 ${i + 1} 권리분석 엔진 실행 완료`, {
+          assumedRightsCount: analysisResult.assumedRights.length,
+          extinguishedRightsCount: analysisResult.extinguishedRights.length,
+          assumedTenantsCount: analysisResult.assumedTenants.length,
+        });
+
+        // 4. 분석 결과를 시나리오에 반영
+        property.rights = property.rights.map((right) => {
+          const analyzed =
+            analysisResult.assumedRights.find((r) => r.id === right.id) ||
+            analysisResult.extinguishedRights.find((r) => r.id === right.id) ||
+            right;
+          return analyzed;
+        });
+
+        property.tenants = property.tenants.map((tenant) => {
+          const analyzed =
+            analysisResult.assumedTenants.find((t) => t.id === tenant.id) ||
+            tenant;
+          return analyzed;
+        });
+
+        // 5. 지역분석 생성
+        property.regionalAnalysis = generateRegionalAnalysis(
+          property.basicInfo.location
+        );
+
         properties.push(property);
 
         console.log(`✅ [서버 액션] 매물 ${i + 1} 생성 완료`);

@@ -10,7 +10,11 @@ import {
   DifficultyLevel,
   PropertyType,
 } from "@/types/simulation";
-import { analyzeRights } from "./rights-analysis-engine";
+import { auctionEngine } from "./auction-engine";
+import {
+  mapSimulationToSnapshot,
+  mapEngineOutputToRightsAnalysisResult,
+} from "./auction/mappers";
 
 /**
  * 포인트 계산 입력 데이터
@@ -126,6 +130,28 @@ export function calculatePoints(
   console.log(`  - 사용자 입찰가: ${input.userBidPrice.toLocaleString()}원`);
   console.log(`  - 낙찰가: ${input.winningBidPrice.toLocaleString()}원`);
   console.log(`  - 낙찰 성공: ${input.isSuccess ? "예" : "아니오"}`);
+
+  // recommendedRange가 없으면 새 엔진으로 생성
+  let recommendedRange = input.rightsAnalysisResult?.recommendedRange;
+  if (!recommendedRange) {
+    console.log("🔄 [매핑] 권장 입찰가 범위 생성 중...");
+    const snapshot = mapSimulationToSnapshot(input.scenario);
+    const engineOutput = auctionEngine({
+      snapshot,
+      userBidPrice: input.userBidPrice,
+      options: { devMode: false },
+    });
+    const rightsAnalysisResult = mapEngineOutputToRightsAnalysisResult(
+      engineOutput,
+      input.scenario
+    );
+    recommendedRange = rightsAnalysisResult.recommendedBidRange;
+    console.log("🔄 [매핑] 권장 입찰가 범위 생성 완료:", {
+      min: recommendedRange?.min,
+      max: recommendedRange?.max,
+      optimal: recommendedRange?.optimal,
+    });
+  }
 
   const difficulty = input.scenario.educationalContent?.difficulty || "초급";
   const hasResponded = input.hasResponded ?? true; // 기본값: true

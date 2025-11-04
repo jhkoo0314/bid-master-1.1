@@ -6,8 +6,12 @@
 
 import { SimulationScenario, DifficultyLevel } from "@/types/simulation";
 import { generateSimulationProperty } from "@/lib/openai-client";
-import { analyzeRights, validateScenario } from "@/lib/rights-analysis-engine";
 import { generateRegionalAnalysis } from "@/lib/regional-analysis";
+import { auctionEngine } from "@/lib/auction-engine";
+import {
+  mapSimulationToSnapshot,
+  mapEngineOutputToRightsAnalysisResult,
+} from "@/lib/auction/mappers";
 
 /**
  * 매물을 생성합니다.
@@ -64,9 +68,23 @@ export async function generateProperty(
     ) {
       scenario.basicInfo.minimumBidPrice = 190000000;
     }
-    // 3. 권리분석 실행
-    console.log("⚖️ [권리분석] 말소기준권리 판단 및 대항력 계산 시작");
-    const analysisResult = analyzeRights(scenario);
+    // 3. 권리분석 실행 (새 엔진 사용)
+    console.log("🏠 [매물 생성] 권리분석 엔진 실행 시작");
+    const snapshot = mapSimulationToSnapshot(scenario);
+    const engineOutput = auctionEngine({
+      snapshot,
+      userBidPrice: scenario.basicInfo.minimumBidPrice,
+      options: { devMode: false },
+    });
+    const analysisResult = mapEngineOutputToRightsAnalysisResult(
+      engineOutput,
+      scenario
+    );
+    console.log("🏠 [매물 생성] 권리분석 엔진 실행 완료", {
+      assumedRightsCount: analysisResult.assumedRights.length,
+      extinguishedRightsCount: analysisResult.extinguishedRights.length,
+      assumedTenantsCount: analysisResult.assumedTenants.length,
+    });
 
     // 4. 분석 결과를 시나리오에 반영
     scenario.rights = scenario.rights.map((right) => {

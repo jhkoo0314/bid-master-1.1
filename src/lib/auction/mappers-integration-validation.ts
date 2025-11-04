@@ -482,8 +482,10 @@ export async function validateAllIntegrationFlows(): Promise<{
 
 /**
  * 테스트용 SimulationScenario 생성
+ * 
+ * @returns 테스트용 시뮬레이션 시나리오
  */
-function createTestScenario(): SimulationScenario {
+export function createTestScenario(): SimulationScenario {
   return {
     id: "test-integration-1",
     type: "simulation",
