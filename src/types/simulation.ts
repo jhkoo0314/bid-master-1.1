@@ -229,7 +229,8 @@ export interface RightsAnalysisResult {
   malsoBaseRight: RightRecord | null; // 말소기준권리
   extinguishedRights: RightRecord[]; // 소멸되는 권리
   assumedRights: RightRecord[]; // 인수해야 할 권리
-  totalAssumedAmount: number; // 총 인수금액(권리만)
+  totalAssumedAmount: number; // 총 인수금액(권리만) - 기존 호환성 유지
+  assumedRightsAmount: number; // ✅ v0.1: 인수권리 + 임차인 보증금 합계 (권리+임차인)
   assumedTenants: TenantRecord[]; // 인수해야 할 임차인
   totalTenantDeposit: number; // 임차보증금 총액
   totalAcquisition: number; // 총인수금액(A) = B + R + T + C + E + K + U (taxlogic.md 기준)

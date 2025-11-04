@@ -556,9 +556,24 @@ export function auctionEngine(input: EngineInput): EngineOutput {
   // ===============================
   log(devMode, logPrefix, "⚖️ Rights 레이어 실행 시작");
   const rights = analyzeRights(snapshot);
+  
+  // ✅ v0.1 핫픽스 — 인수금액 필드명 통합 대응
+  const assumed =
+    rights.assumedRightsAmount ??
+    (rights as any).totalAssumedAmount ?? // 구버전 대응
+    0;
+
+  console.log(
+    "📌 [엔진] assumedRightsAmount 적용값 =",
+    assumed,
+    " (필드원본:",
+    Object.keys(rights),
+    ")"
+  );
+  
   log(devMode, logPrefix, "⚖️ Rights 레이어 완료", {
     malsoBaseRightId: rights.malsoBase?.id || null,
-    assumedRightsAmount: rights.assumedRightsAmount.toLocaleString(),
+    assumedRightsAmount: assumed.toLocaleString(),
     rightsAssumedCount: rights.rightFindings.filter(f => f.assumed).length,
     tenantsAssumedCount: rights.tenantFindings.filter(f => f.assumed).length,
   });
@@ -569,7 +584,7 @@ export function auctionEngine(input: EngineInput): EngineOutput {
   log(devMode, logPrefix, "💰 Costs 레이어 실행 시작");
   const costs = calcCosts({
     bidPrice: userBidPrice,
-    assumedRightsAmount: rights.assumedRightsAmount,
+    assumedRightsAmount: assumed,
     propertyType: snapshot.propertyType,
     regionCode: snapshot.regionCode,
     overrides: valuationInput as any, // 선택: 상위에서 세율/명도/기타 비용 전달

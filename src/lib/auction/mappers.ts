@@ -820,20 +820,52 @@ export function mapEngineOutputToRightsAnalysisResult(
     .map((f) => f.rightId);
   const assumedRights = scenario.rights.filter((r) => assumedRightIds.includes(r.id));
 
-  // totalAssumedAmount: assumedRights의 claimAmount 합계 (등기 권리만)
+  // totalAssumedAmount: rightFindings에서 직접 amountAssumed 합계 계산 (등기 권리만)
   // 주의: output.rights.assumedRightsAmount는 등기 권리 + 임차보증금 합계이므로,
-  //       등기 권리만 계산하려면 assumedRights의 claimAmount 합계 사용
-  const totalAssumedAmount = assumedRights.reduce(
-    (sum, right) => sum + (right.claimAmount || 0),
+  //       등기 권리만 계산하려면 rightFindings의 amountAssumed 합계를 사용
+  // 수정: rightFindings에서 직접 계산하여 ID 매칭 문제 방지 및 엔진 계산 결과 그대로 사용
+  const assumedRightFindings = output.rights.rightFindings.filter((f) => f.assumed);
+  const totalAssumedAmount = assumedRightFindings.reduce(
+    (sum, f) => sum + f.amountAssumed,
     0
   );
+
+  // 🔍 디버깅: 상세 정보 수집
+  const rightFindingsDetail = output.rights.rightFindings.map((f) => ({
+    rightId: f.rightId,
+    assumed: f.assumed,
+    amountAssumed: f.amountAssumed,
+    reason: f.reason,
+  }));
+
+  const assumedRightFindingsDetail = assumedRightFindings.map((f) => ({
+    rightId: f.rightId,
+    amountAssumed: f.amountAssumed,
+    reason: f.reason,
+  }));
 
   console.log("🔄 [브리지] 권리 배열 매핑 완료", {
     malsoBaseRightId: malsoBaseRight?.id || null,
     extinguishedRightsCount: extinguishedRights.length,
     assumedRightsCount: assumedRights.length,
     totalAssumedAmount,
+    totalAssumedAmountFromRightFindings: totalAssumedAmount,
     totalAssumedAmountFromEngine: output.rights.assumedRightsAmount,
+    assumedRightIds,
+    assumedRightIdsCount: assumedRightIds.length,
+    assumedRightsFromScenario: assumedRights.map((r) => ({
+      id: r.id,
+      claimAmount: r.claimAmount,
+    })),
+    // 🔍 디버깅: rightFindings 상세 정보
+    rightFindingsCount: output.rights.rightFindings.length,
+    rightFindingsDetail,
+    assumedRightFindingsCount: assumedRightFindings.length,
+    assumedRightFindingsDetail,
+    // 🔍 디버깅: 총합 검증
+    sumOfAssumedAmountAssumed: assumedRightFindings.reduce((sum, f) => sum + f.amountAssumed, 0),
+    allRightFindingsAssumed: output.rights.rightFindings.every((f) => f.assumed),
+    anyRightFindingsAssumed: output.rights.rightFindings.some((f) => f.assumed),
   });
 
   // Phase 3.6.4 - 임차인 배열 매핑
@@ -983,7 +1015,8 @@ export function mapEngineOutputToRightsAnalysisResult(
     malsoBaseRight,
     extinguishedRights,
     assumedRights,
-    totalAssumedAmount,
+    totalAssumedAmount, // 기존 호환성 유지 (등기 권리만)
+    assumedRightsAmount: output.rights.assumedRightsAmount, // ✅ v0.1: 인수권리 + 임차인 보증금 합계
 
     // Phase 3.6.4에서 구현 완료
     assumedTenants,

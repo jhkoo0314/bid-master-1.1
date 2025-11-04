@@ -16,7 +16,8 @@ interface RightsAnalysisReportModalProps {
   data: PropertyDetail;
   analysis?: {
     safetyMargin: number;
-    totalAssumedAmount: number;
+    totalAssumedAmount: number; // 기존 호환성 유지
+    assumedRightsAmount?: number; // ✅ v0.1: 인수권리 + 임차인 보증금 합계
     trace?: string[];
     advancedSafetyMargin?: {
       minSafetyMargin: number;
@@ -107,9 +108,14 @@ export default function RightsAnalysisReportModal({
     0
   );
 
+  // ✅ v0.1 핫픽스: assumedRightsAmount 필드 우선 확인
+  const assumedAmountFromAnalysis = analysis
+    ? (analysis.assumedRightsAmount ?? analysis.totalAssumedAmount ?? 0)
+    : 0;
+
   const totalAssumedLabel = analysis
-    ? analysis.totalAssumedAmount > 0
-      ? `${analysis.totalAssumedAmount.toLocaleString()}원`
+    ? assumedAmountFromAnalysis > 0
+      ? `${assumedAmountFromAnalysis.toLocaleString()}원`
       : "0원(추정 불가)"
     : totalAssume > 0
     ? `${totalAssume.toLocaleString()}원`
@@ -117,7 +123,10 @@ export default function RightsAnalysisReportModal({
 
   console.log("⚖️ [권리분석] 인수금액 표시", {
     fromAnalysis: !!analysis,
-    amount: analysis?.totalAssumedAmount ?? totalAssume,
+    assumedRightsAmount: analysis?.assumedRightsAmount,
+    totalAssumedAmount: analysis?.totalAssumedAmount,
+    finalAmount: assumedAmountFromAnalysis,
+    fallbackAmount: totalAssume,
     label: totalAssumedLabel,
   });
 

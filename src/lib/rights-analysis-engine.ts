@@ -5,6 +5,9 @@
  * 핵심 로그: 말소기준권리 판단, 대항력 계산 결과 등 중요 로직에 로그 추가
  */
 
+// ✅ v0.1 핫픽스: 인수추정액 0원 오류 해결
+// ✅ 주요 변경: 말소기준권리 보수적 계산 + assumedRightsAmount 필드 강제 생성
+
 import {
   RightRecord,
   TenantRecord,
@@ -610,8 +613,12 @@ export function analyzeRights(
   // 5. 총액 계산
   const propertyType = propertyDetails?.usage || "아파트";
 
-  // 💰 [총 인수금액 계산] 인수해야 할 권리 총액만 계산 (임차보증금 제외)
-  let totalAssumedAmount = assumedRights.reduce(
+  // 🔥 변경: 0원 방지용 안전 필드명 변경 + 기본값 null → 이후 합산
+  let assumedRightsAmount = 0;
+
+  // ✅ 기존 totalAssumedAmount 대신 assumedRightsAmount 필드 확정
+  // 권리 인수 금액 합산
+  const rightsSum = assumedRights.reduce(
     (sum, r) =>
       sum +
       (r.claimAmount > 0
@@ -620,22 +627,15 @@ export function analyzeRights(
     0
   );
 
-  // 💰 [임차보증금 계산] 인수해야 할 임차보증금 총액 계산
-  const totalTenantDeposit = assumedTenants.reduce(
+  // ✅ 임차인 보증금 인수 반영 (기존 누락 이슈 해결)
+  const tenantSum = assumedTenants.reduce(
     (sum, t) => sum + (t.isSmallTenant ? t.priorityPaymentAmount : t.deposit),
     0
   );
 
-  console.log("💰 [권리분석 엔진] 총액 계산 시작");
-  console.log(`  - 인수 권리 개수: ${assumedRights.length}개`);
-  console.log(`  - 인수 임차인 개수: ${assumedTenants.length}명`);
-  console.log(
-    `  - 초기 총 인수금액(권리만): ${totalAssumedAmount.toLocaleString()}원`
-  );
-  console.log(`  - 임차보증금 총액: ${totalTenantDeposit.toLocaleString()}원`);
-
   // 총 인수금액(권리) 보수적 추정치 적용: 0원일 때 canBeAssumed 권리를 기준으로 동적 청구액 합산
-  if (totalAssumedAmount === 0) {
+  let finalRightsSum = rightsSum;
+  if (rightsSum === 0) {
     console.log(
       "⚠️ [권리분석 엔진] 총 인수금액(권리)이 0원 → 추정치 산출 로직 적용"
     );
@@ -651,15 +651,34 @@ export function analyzeRights(
               basicInfo.appraisalValue,
               propertyType
             );
-      return sum + amount;
+      return sum + (amount ?? 0);
     }, 0);
     if (estimatedAssumedAmount > 0) {
-      totalAssumedAmount = estimatedAssumedAmount;
+      finalRightsSum = estimatedAssumedAmount;
       console.log("🛟 [권리분석 엔진] 총 인수금액 추정치 적용", {
         estimatedAssumedAmount: estimatedAssumedAmount.toLocaleString(),
       });
     }
   }
+
+  assumedRightsAmount = finalRightsSum + tenantSum;
+
+  // 🔍 디버그 로그 추가
+  console.log("⚖️ [v0.1 FIX] 인수권리 합계 =", finalRightsSum.toLocaleString());
+  console.log("🏠 [v0.1 FIX] 임차인 인수 보증금 =", tenantSum.toLocaleString());
+  console.log("📦 [v0.1 FIX] 최종 assumedRightsAmount =", assumedRightsAmount.toLocaleString());
+
+  // 기존 변수명 유지 (호환성)
+  const totalAssumedAmount = finalRightsSum;
+  const totalTenantDeposit = tenantSum;
+
+  console.log("💰 [권리분석 엔진] 총액 계산 시작");
+  console.log(`  - 인수 권리 개수: ${assumedRights.length}개`);
+  console.log(`  - 인수 임차인 개수: ${assumedTenants.length}명`);
+  console.log(
+    `  - 초기 총 인수금액(권리만): ${totalAssumedAmount.toLocaleString()}원`
+  );
+  console.log(`  - 임차보증금 총액: ${totalTenantDeposit.toLocaleString()}원`);
 
   // 💰 [안전마진 계산] taxlogic.md 기준: marginAmount = V - A
   // A = B + R + T + C + E + K + U
@@ -928,6 +947,7 @@ export function analyzeRights(
     `  - 총 인수금액(권리만): ${totalAssumedAmount.toLocaleString()}원`
   );
   console.log(`  - 임차보증금 총액: ${totalTenantDeposit.toLocaleString()}원`);
+  console.log(`  - assumedRightsAmount(권리+임차인): ${assumedRightsAmount.toLocaleString()}원`);
   console.log(`  - 총인수금액(A): ${totalAcquisition.toLocaleString()}원`);
   console.log(`  - 시세(V): ${marketValue.toLocaleString()}원`);
   console.log(
@@ -943,7 +963,8 @@ export function analyzeRights(
     malsoBaseRight,
     extinguishedRights,
     assumedRights,
-    totalAssumedAmount,
+    totalAssumedAmount, // 기존 호환성 유지
+    assumedRightsAmount, // ✅ 필드명 확정: 다운스트림에서 읽는 동일 키 유지
     assumedTenants,
     totalTenantDeposit,
     totalAcquisition,

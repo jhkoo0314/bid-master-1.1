@@ -1071,7 +1071,8 @@ export default function PropertyPage({ params }: PageProps) {
               data={data}
               analysis={{
                 safetyMargin: rightsAnalysisResult.safetyMargin,
-                totalAssumedAmount: rightsAnalysisResult.totalAssumedAmount,
+                totalAssumedAmount: rightsAnalysisResult.totalAssumedAmount, // 기존 호환성 유지
+                assumedRightsAmount: rightsAnalysisResult.assumedRightsAmount, // ✅ v0.1: 인수권리 + 임차인 보증금 합계
                 advancedSafetyMargin: rightsAnalysisResult.advancedSafetyMargin,
                 extinguishedRights: rightsAnalysisResult.extinguishedRights.map(
                   (r) => ({
