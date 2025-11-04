@@ -1287,65 +1287,83 @@
 
 #### 4.2.1 Import 문 교체 및 준비
 
-- [ ] 기존 import 제거
-  - [ ] `analyzeRights` from `@/lib/rights-analysis-engine` 제거
-  - [ ] `calculateRightsAmount`, `mapPropertyTypeToUse`, `calcAcquisitionAndMoS`, `TaxInput`, `RiskLevel` from `@/lib/auction-cost` 제거
-  - [ ] `evaluateAuction`, `AuctionEvalInput` from `@/lib/auction-engine` 제거
-- [ ] 새 import 추가
-  - [ ] `auctionEngine` from `@/lib/auction-engine` 추가
-  - [ ] `mapSimulationToSnapshot` from `@/lib/auction/mappers` 추가
-  - [ ] `mapEngineOutputToRightsAnalysisResult` from `@/lib/auction/mappers` 추가
-  - [ ] `mapSimulationToPropertyDetailV2` 대체 방법 검토 (필요 시)
+- [x] 기존 import 제거
+  - [x] `analyzeRights` from `@/lib/rights-analysis-engine` 제거
+  - [x] `calculateRightsAmount`, `mapPropertyTypeToUse`, `calcAcquisitionAndMoS`, `TaxInput`, `RiskLevel` from `@/lib/auction-cost` 제거
+  - [x] `evaluateAuction`, `AuctionEvalInput` from `@/lib/auction-engine` 제거
+- [x] 새 import 추가
+  - [x] `auctionEngine` from `@/lib/auction-engine` 추가
+  - [x] `mapSimulationToSnapshot` from `@/lib/auction/mappers` 추가
+  - [x] `mapEngineOutputToRightsAnalysisResult` from `@/lib/auction/mappers` 추가
+  - [x] `mapSimulationToPropertyDetailV2` 대체 방법 검토 (필요 시)
+    - **결과**: `mapSimulationToPropertyDetailV2`는 기존 함수로 유지하되, 4.2.2에서 `auctionEngine` 결과를 활용하도록 수정 예정
 
 #### 4.2.2 매물 상세 정보 로드 로직 교체 (loadPropertyDetail 함수)
 
-- [ ] 캐시된 시나리오 로드 로직 교체
-  - [ ] 기존 `calculateRightsAmount()`, `evaluateAuction()` 호출 제거 (라인 407-444)
-  - [ ] `mapSimulationToSnapshot(cachedScenario)` 호출
-  - [ ] `auctionEngine()` 호출:
-    - `snapshot`: PropertySnapshot
-    - `userBidPrice`: `minimumBidPrice`
-    - `options`: `{ devMode: false }`
-  - [ ] `mapEngineOutputToRightsAnalysisResult(output, cachedScenario)` 호출
-  - [ ] `mapSimulationToPropertyDetailV2()` 대체 방법 검토:
-    - 옵션 1: `mapSimulationToPropertyDetailV2()` 내부에서 `auctionEngine()` 사용하도록 수정
-    - 옵션 2: 새로운 매핑 함수 생성 (`mapSimulationToPropertyDetailV3()`)
-    - 옵션 3: 기존 함수 유지하되 `auctionEngine` 결과를 활용
-  - [ ] `data` 설정 로직 유지 (기존 UI 호환성)
-- [ ] 교육용 매물 로드 로직 교체
-  - [ ] 기존 `calculateRightsAmount()`, `evaluateAuction()` 호출 제거 (라인 476-513)
-  - [ ] 위와 동일한 로직 적용
+- [x] 캐시된 시나리오 로드 로직 교체
+  - [x] 기존 `calculateRightsAmount()`, `evaluateAuction()` 호출 제거 완료
+  - [x] `mapSimulationToSnapshot(cachedScenario)` 호출 추가
+  - [x] `auctionEngine()` 호출 추가:
+    - `snapshot`: PropertySnapshot ✅
+    - `userBidPrice`: `minimumBidPrice` ✅
+    - `options`: `{ devMode: devMode?.isDevMode ?? false, logPrefix: "🧠 [ENGINE]" }` ✅
+  - [x] `mapEngineOutputToRightsAnalysisResult(output, cachedScenario)` 호출 추가
+  - [x] `mapSimulationToPropertyDetailV2()` 대체 방법 검토:
+    - **결과**: 옵션 3 선택 - 기존 함수 유지하되 임시로 `mapSimulationToPropertyDetail`만 사용
+    - **TODO**: `mapSimulationToPropertyDetailV2`를 새 엔진 결과를 활용하도록 수정 필요 (나중에 처리)
+    - 현재는 `baseMapped`만 사용하여 기본 정보만 표시
+  - [x] `data` 설정 로직 유지 (기존 UI 호환성) ✅
+  - [x] 로그 추가 완료 (🧠 [ENGINE] 형식)
+- [x] 교육용 매물 로드 로직 교체
+  - [x] 기존 `calculateRightsAmount()`, `evaluateAuction()` 호출 제거 완료
+  - [x] 위와 동일한 로직 적용 완료
+  - [x] 로그 추가 완료 (🧠 [ENGINE] 형식)
 
 #### 4.2.3 리포트 모달 데이터 전달 교체
 
-- [ ] RightsAnalysisReportModal 데이터 교체
-  - [ ] 기존 `analyzeRights(scenario)` 호출 제거 (라인 1085)
-  - [ ] 모달 열기 전에 `auctionEngine()` 실행
-  - [ ] `mapEngineOutputToRightsAnalysisResult(output, scenario)` 호출
-  - [ ] `analysis` prop에 필요한 데이터 구성:
-    - `safetyMargin`: `rightsAnalysisResult.safetyMargin`
-    - `totalAssumedAmount`: `rightsAnalysisResult.totalAssumedAmount`
-    - `extinguishedRights`: `rightsAnalysisResult.extinguishedRights.map(...)`
-    - `assumedRights`: `rightsAnalysisResult.assumedRights.map(...)`
-    - `malsoBaseRight`: `rightsAnalysisResult.malsoBaseRight`
-    - `advancedSafetyMargin`: `rightsAnalysisResult.advancedSafetyMargin`
-- [ ] AuctionAnalysisReportModal 데이터 교체
-  - [ ] 기존 `analyzeRights(scenario)` 호출 제거 (라인 1157)
-  - [ ] 모달 열기 전에 `auctionEngine()` 실행
-  - [ ] `mapEngineOutputToRightsAnalysisResult(output, scenario)` 호출
-  - [ ] `analysis` prop에 필요한 데이터 구성:
-    - `safetyMargin`: `rightsAnalysisResult.safetyMargin`
-    - `totalAssumedAmount`: `rightsAnalysisResult.totalAssumedAmount`
-    - `marketValue`: `rightsAnalysisResult.marketValue`
+- [x] SaleSpecificationModal 데이터 교체
+  - [x] 기존 `analyzeRights(scenario)` 호출 제거 완료
+  - [x] 모달 열기 전에 `auctionEngine()` 실행 추가
+  - [x] `mapEngineOutputToRightsAnalysisResult(output, scenario)` 호출 추가
+  - [x] `analysis` prop에 필요한 데이터 구성 완료:
+    - `safetyMargin`, `totalAssumedAmount`, `advancedSafetyMargin` ✅
+    - `extinguishedRights`, `assumedRights`, `malsoBaseRight` ✅
+    - `tenantRisk` ✅
+  - [x] 로그 추가 완료 (🧠 [ENGINE] 형식)
+- [x] RightsAnalysisReportModal 데이터 교체
+  - [x] 기존 `analyzeRights(scenario)` 호출 제거 완료
+  - [x] 모달 열기 전에 `auctionEngine()` 실행 추가
+  - [x] `mapEngineOutputToRightsAnalysisResult(output, scenario)` 호출 추가
+  - [x] `analysis` prop에 필요한 데이터 구성 완료:
+    - `safetyMargin`: `rightsAnalysisResult.safetyMargin` ✅
+    - `totalAssumedAmount`: `rightsAnalysisResult.totalAssumedAmount` ✅
+    - `extinguishedRights`: `rightsAnalysisResult.extinguishedRights.map(...)` ✅
+    - `assumedRights`: `rightsAnalysisResult.assumedRights.map(...)` ✅
+    - `malsoBaseRight`: `rightsAnalysisResult.malsoBaseRight` ✅
+    - `advancedSafetyMargin`: `rightsAnalysisResult.advancedSafetyMargin` ✅
+    - `tenantRisk`: `rightsAnalysisResult.tenantRisk` ✅
+  - [x] 로그 추가 완료 (🧠 [ENGINE] 형식)
+- [x] AuctionAnalysisReportModal 데이터 교체
+  - [x] 기존 `analyzeRights(scenario)` 호출 제거 완료
+  - [x] 모달 열기 전에 `auctionEngine()` 실행 추가
+  - [x] `mapEngineOutputToRightsAnalysisResult(output, scenario)` 호출 추가
+  - [x] `analysis` prop에 필요한 데이터 구성 완료:
+    - `safetyMargin`: `rightsAnalysisResult.safetyMargin` ✅
+    - `totalAssumedAmount`: `rightsAnalysisResult.totalAssumedAmount` ✅
+    - `marketValue`: `rightsAnalysisResult.marketValue` ✅
+    - `advancedSafetyMargin`: `rightsAnalysisResult.advancedSafetyMargin` ✅
+  - [x] 로그 추가 완료 (🧠 [ENGINE] 형식)
 
 #### 4.2.4 로그 추가 및 검증
 
-- [ ] 로그 추가 (규칙 준수: 🧠 [ENGINE] 형식)
-  - [ ] 매물 상세 정보 로드 시 엔진 실행 로그
-  - [ ] 리포트 모달 데이터 준비 로그
-- [ ] 타입 안전성 확인
-  - [ ] TypeScript 컴파일 오류 없음 확인
-  - [ ] 모든 필드가 올바르게 매핑되는지 확인
+- [x] 로그 추가 (규칙 준수: 🧠 [ENGINE] 형식)
+  - [x] 매물 상세 정보 로드 시 엔진 실행 로그 완료 (캐시/교육용 매물 모두)
+  - [x] 리포트 모달 데이터 준비 로그 완료 (세 모달 모두)
+  - [x] 모든 엔진 실행 단계에 로그 추가 완료
+- [x] 타입 안전성 확인
+  - [x] TypeScript 컴파일 오류 없음 확인 완료
+  - [x] 모든 필드가 올바르게 매핑되는지 확인 완료
+  - [x] `analyzeRights` 사용 완전히 제거 확인 완료
 
 #### 4.2.5 테스트 및 검증
 

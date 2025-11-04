@@ -26,14 +26,6 @@ import { SimulationScenario } from "@/types/simulation";
 import { useSimulationStore } from "@/store/simulation-store";
 import { mapSimulationToPropertyDetail } from "@/lib/property/formatters";
 import { mapSimulationToPropertyDetailV2 } from "@/lib/property/formatters_v2";
-import { analyzeRights } from "@/lib/rights-analysis-engine";
-import {
-  calculateRightsAmount,
-  mapPropertyTypeToUse,
-  calcAcquisitionAndMoS,
-  type TaxInput,
-  type RiskLevel,
-} from "@/lib/auction-cost";
 import { generateSimilarCases } from "@/lib/property/generateSimilarCases";
 import {
   estimateMarketPrice,
@@ -41,7 +33,11 @@ import {
   mapPropertyTypeToAIMarketPriceType,
   type AIMarketPriceParams,
 } from "@/lib/property/market-price";
-import { evaluateAuction, type AuctionEvalInput } from "@/lib/auction-engine";
+import { auctionEngine } from "@/lib/auction-engine";
+import {
+  mapSimulationToSnapshot,
+  mapEngineOutputToRightsAnalysisResult,
+} from "@/lib/auction/mappers";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -76,13 +72,39 @@ export default function PropertyPage({ params }: PageProps) {
         "low"
       );
 
-      // taxlogic.md 기준: marginAmount = V - A
-      const propertyType = data.meta?.type || "기타";
-      const appraisalValue = data.price?.appraised || 0;
+      // 🧠 [ENGINE] 새 엔진을 사용하여 분석 결과 계산
+      console.log("🧠 [ENGINE] analysis useMemo를 위한 엔진 실행 시작");
+      
+      const snapshot = mapSimulationToSnapshot(scenario);
+      const appraisalValue = scenario.basicInfo.appraisalValue || 0;
       const minimumBidPrice =
-        data.price?.lowest || Math.floor(appraisalValue * 0.7);
+        scenario.basicInfo.minimumBidPrice ||
+        Math.floor(appraisalValue * 0.7);
 
-      // 🤖 AI 시세 예측 적용
+      // auctionEngine 실행
+      const engineOutput = auctionEngine({
+        snapshot,
+        userBidPrice: minimumBidPrice,
+        options: {
+          devMode: devMode?.isDevMode ?? false,
+          logPrefix: "🧠 [ENGINE]",
+        },
+      });
+
+      console.log("🧠 [ENGINE] analysis useMemo를 위한 엔진 실행 완료", {
+        fmv: engineOutput.valuation.fmv,
+        totalAcquisition: engineOutput.costs.totalAcquisition,
+        safetyMargin: engineOutput.profit.marginVsFMV,
+      });
+
+      // RightsAnalysisResult 변환
+      const rightsAnalysisResult = mapEngineOutputToRightsAnalysisResult(
+        engineOutput,
+        scenario
+      );
+
+      // 🤖 AI 시세 예측 적용 (기존 로직 유지)
+      const propertyType = data.meta?.type || "기타";
       const aiMarketPriceParams: AIMarketPriceParams = {
         appraised: appraisalValue,
         area:
@@ -103,99 +125,33 @@ export default function PropertyPage({ params }: PageProps) {
         `  - fairCenter(FMV, MoS용): ${aiMarketPriceResult.fairCenter.toLocaleString()}원`
       );
 
-      // 권리유형별 인수금액 계산 (배당 정보 포함 가능)
-      // 배당 정보가 있으면 임차권 미배당 잔액 계산에 활용
-      const assumedAmount = calculateRightsAmount(
-        data.rights || [],
-        appraisalValue,
-        propertyType,
-        data.payout?.rows // 배당 정보 전달 (선택)
-      );
-
-      // taxlogic.md 기준으로 안전마진 계산
-      const propertyUse = mapPropertyTypeToUse(propertyType);
-      const capex = 5_000_000; // 수리비
-      const eviction = 2_000_000; // 명도비
-      const carrying = 0; // 보유비
-      const contingency = 1_000_000; // 예비비
-
-      const taxInput: TaxInput = {
-        use: propertyUse,
-        price: minimumBidPrice,
-      };
-
-      // calcAcquisitionAndMoS 함수 실행 (FMV 사용)
-      console.log("💰 [프로퍼티 페이지] calcAcquisitionAndMoS 호출 (FMV 사용)");
-
-      const acquisitionResult = calcAcquisitionAndMoS({
-        bidPrice: minimumBidPrice,
-        rights: assumedAmount, // 권리만 (임차보증금은 별도로 계산되지 않음)
-        capex,
-        eviction,
-        carrying,
-        contingency,
-        fairMarketValue: aiMarketPriceResult.fairCenter, // ✅ FMV: MoS 계산에 사용
-        minimumBidPrice,
-        taxInput,
-      });
-
-      // auction-engine.ts v1.2 통합 계산 엔진 호출
-      console.log("💰 [프로퍼티 페이지] evaluateAuction 호출 시작");
-      const auctionEvalInput: AuctionEvalInput = {
-        cost: {
-          bidPrice: minimumBidPrice,
-          rights: assumedAmount,
-          capex,
-          eviction,
-          carrying,
-          contingency,
-          taxInput,
-        },
-        market: {
-          appraised: appraisalValue,
-          area:
-            scenario?.propertyDetails?.buildingArea ||
-            scenario?.propertyDetails?.landArea,
-          regionCode:
-            scenario?.regionalAnalysis?.regionCode ||
-            scenario?.basicInfo?.location,
-          propertyType: mapPropertyTypeToAIMarketPriceType(propertyType),
-          yearBuilt: scenario?.propertyDetails?.yearBuilt,
-          minimumBidPrice,
-        },
-        exit: {
-          holdingMonths: 6,
-          annualAppreciation: 0.04, // 연 4% 상승률 가정
-          rehabUplift: capex, // 수리비를 리노베 가산으로 사용
-          sellCostRate: 0.015, // 매도비용 1.5%
-        },
-        debug: false,
-      };
-
-      const auctionEvalResult = evaluateAuction(auctionEvalInput);
-      console.log("💰 [프로퍼티 페이지] evaluateAuction 완료", {
-        mos_fmv: auctionEvalResult.margin.mos_fmv,
-        mos_exit: auctionEvalResult.margin.mos_exit,
-        exitPrice: auctionEvalResult.margin.exitPrice,
-        roi_exit: auctionEvalResult.margin.roi_exit,
-      });
+      // Exit 가격 계산 (엔진 결과 기반)
+      const exitPrice = engineOutput.profit.marginVsExit + engineOutput.costs.totalAcquisition;
 
       return {
-        safetyMargin: acquisitionResult.marginAmount,
-        totalAssumedAmount: assumedAmount,
+        safetyMargin: rightsAnalysisResult.safetyMargin,
+        totalAssumedAmount: rightsAnalysisResult.totalAssumedAmount,
         trace: [],
         marketValue: {
-          fairMarketValue: aiMarketPriceResult.fairCenter,
+          fairMarketValue: engineOutput.valuation.fmv, // 엔진 결과 사용
           auctionCenter: aiMarketPriceResult.auctionCenter,
           center: aiMarketPriceResult.center,
         },
         auctionEval: {
-          mos_fmv: auctionEvalResult.margin.mos_fmv,
-          mos_exit: auctionEvalResult.margin.mos_exit,
-          exitPrice: auctionEvalResult.margin.exitPrice,
-          roi_exit: auctionEvalResult.margin.roi_exit,
-          strategy: auctionEvalResult.strategy,
-          costBreakdown: auctionEvalResult.costBreakdown,
+          mos_fmv: engineOutput.profit.marginVsFMV,
+          mos_exit: engineOutput.profit.marginVsExit,
+          exitPrice: exitPrice,
+          roi_exit: engineOutput.profit.marginRateVsExit * 100, // 퍼센트로 변환
+          strategy: [], // v0.1에서는 간소화
+          costBreakdown: {
+            bidPrice: minimumBidPrice,
+            rights: engineOutput.rights.assumedRightsAmount,
+            taxes: engineOutput.costs.taxes.totalTax,
+            capex: 0, // v0.1에서는 간소화
+            eviction: engineOutput.costs.evictionCost,
+            carrying: 0,
+            contingency: engineOutput.costs.miscCost,
+          },
         },
       };
     } catch (e) {
@@ -205,7 +161,7 @@ export default function PropertyPage({ params }: PageProps) {
       );
       return undefined;
     }
-  }, [scenario, data]);
+  }, [scenario, data, devMode?.isDevMode]);
 
   // 권장 입찰가 범위 계산
   const bidRange = useMemo(() => {
@@ -396,63 +352,51 @@ export default function PropertyPage({ params }: PageProps) {
         const cachedScenario = getPropertyFromCache(caseId);
         if (cachedScenario) {
           console.log(`💾 [캐시] 매물 데이터 조회 성공: ${caseId}`);
-          // 먼저 기본 매핑으로 rights 정보 포함
-          const baseMapped = mapSimulationToPropertyDetail(cachedScenario);
-          // v1.2 매핑을 위해 evaluateAuction 실행
-          const propertyType = cachedScenario.basicInfo.propertyType || "기타";
+          // 🧠 [ENGINE] 새 엔진을 사용하여 매물 상세 정보 계산
+          console.log("🧠 [ENGINE] 매물 상세 정보 로드를 위한 엔진 실행 시작");
+          
+          // PropertySnapshot 생성
+          const snapshot = mapSimulationToSnapshot(cachedScenario);
+          
+          // 최저가 설정
           const appraisalValue = cachedScenario.basicInfo.appraisalValue || 0;
           const minimumBidPrice =
             cachedScenario.basicInfo.minimumBidPrice ||
             Math.floor(appraisalValue * 0.7);
-          const assumedAmount = calculateRightsAmount(
-            baseMapped.rights || [],
-            appraisalValue,
-            propertyType,
-            baseMapped.payout?.rows
+          
+          // auctionEngine 실행
+          const engineOutput = auctionEngine({
+            snapshot,
+            userBidPrice: minimumBidPrice,
+            options: {
+              devMode: devMode?.isDevMode ?? false,
+              logPrefix: "🧠 [ENGINE]",
+            },
+          });
+          
+          console.log("🧠 [ENGINE] 매물 상세 정보 로드를 위한 엔진 실행 완료", {
+            fmv: engineOutput.valuation.fmv,
+            totalAcquisition: engineOutput.costs.totalAcquisition,
+            safetyMargin: engineOutput.profit.marginVsFMV,
+          });
+          
+          // RightsAnalysisResult 변환 (나중에 리포트 모달에서 사용)
+          const rightsAnalysisResult = mapEngineOutputToRightsAnalysisResult(
+            engineOutput,
+            cachedScenario
           );
-          const propertyUse = mapPropertyTypeToUse(propertyType);
-          const auctionEvalInput: AuctionEvalInput = {
-            cost: {
-              bidPrice: minimumBidPrice,
-              rights: assumedAmount,
-              capex: 5_000_000,
-              eviction: 2_000_000,
-              carrying: 0,
-              contingency: 1_000_000,
-              taxInput: { use: propertyUse, price: minimumBidPrice },
-            },
-            market: {
-              appraised: appraisalValue,
-              area:
-                cachedScenario.propertyDetails?.buildingArea ||
-                cachedScenario.propertyDetails?.landArea,
-              regionCode:
-                cachedScenario.regionalAnalysis?.regionCode ||
-                cachedScenario.basicInfo.location,
-              propertyType: mapPropertyTypeToAIMarketPriceType(propertyType),
-              yearBuilt: cachedScenario.propertyDetails?.yearBuilt,
-              minimumBidPrice,
-            },
-            exit: {
-              holdingMonths: 6,
-              annualAppreciation: 0.04,
-              rehabUplift: 5_000_000,
-              sellCostRate: 0.015,
-            },
-            debug: false,
+          
+          // 기본 매핑으로 PropertyDetail 생성
+          // TODO: mapSimulationToPropertyDetailV2를 새 엔진 결과를 활용하도록 수정 필요
+          const baseMapped = mapSimulationToPropertyDetail(cachedScenario);
+          
+          // 엔진 결과를 PropertyDetail에 반영 (간단한 버전)
+          // 나중에 mapSimulationToPropertyDetailV2를 수정하여 전체 엔진 결과 활용
+          const mapped: PropertyDetail = {
+            ...baseMapped,
+            // 엔진 결과에서 계산된 정보는 나중에 통합
           };
-          const auctionEvalResult = evaluateAuction(auctionEvalInput);
-          console.log(
-            "💰 [프로퍼티 페이지] v1.2 매핑을 위한 evaluateAuction 완료"
-          );
-          const mapped = mapSimulationToPropertyDetailV2(
-            cachedScenario,
-            auctionEvalResult,
-            6
-          );
-          // baseMapped의 rights 정보를 유지
-          mapped.rights = baseMapped.rights;
-          mapped.payout = baseMapped.payout;
+          
           setData(mapped);
           setScenario(cachedScenario); // 👈 원본 시나리오 저장
           setIsLoading(false);
@@ -465,63 +409,51 @@ export default function PropertyPage({ params }: PageProps) {
         );
         if (foundScenario) {
           console.log(`📚 [교육용] 매물 데이터 조회 성공: ${caseId}`);
-          // 먼저 기본 매핑으로 rights 정보 포함
-          const baseMapped = mapSimulationToPropertyDetail(foundScenario);
-          // v1.2 매핑을 위해 evaluateAuction 실행
-          const propertyType = foundScenario.basicInfo.propertyType || "기타";
+          // 🧠 [ENGINE] 새 엔진을 사용하여 매물 상세 정보 계산
+          console.log("🧠 [ENGINE] 교육용 매물 상세 정보 로드를 위한 엔진 실행 시작");
+          
+          // PropertySnapshot 생성
+          const snapshot = mapSimulationToSnapshot(foundScenario);
+          
+          // 최저가 설정
           const appraisalValue = foundScenario.basicInfo.appraisalValue || 0;
           const minimumBidPrice =
             foundScenario.basicInfo.minimumBidPrice ||
             Math.floor(appraisalValue * 0.7);
-          const assumedAmount = calculateRightsAmount(
-            baseMapped.rights || [],
-            appraisalValue,
-            propertyType,
-            baseMapped.payout?.rows
+          
+          // auctionEngine 실행
+          const engineOutput = auctionEngine({
+            snapshot,
+            userBidPrice: minimumBidPrice,
+            options: {
+              devMode: devMode?.isDevMode ?? false,
+              logPrefix: "🧠 [ENGINE]",
+            },
+          });
+          
+          console.log("🧠 [ENGINE] 교육용 매물 상세 정보 로드를 위한 엔진 실행 완료", {
+            fmv: engineOutput.valuation.fmv,
+            totalAcquisition: engineOutput.costs.totalAcquisition,
+            safetyMargin: engineOutput.profit.marginVsFMV,
+          });
+          
+          // RightsAnalysisResult 변환 (나중에 리포트 모달에서 사용)
+          const rightsAnalysisResult = mapEngineOutputToRightsAnalysisResult(
+            engineOutput,
+            foundScenario
           );
-          const propertyUse = mapPropertyTypeToUse(propertyType);
-          const auctionEvalInput: AuctionEvalInput = {
-            cost: {
-              bidPrice: minimumBidPrice,
-              rights: assumedAmount,
-              capex: 5_000_000,
-              eviction: 2_000_000,
-              carrying: 0,
-              contingency: 1_000_000,
-              taxInput: { use: propertyUse, price: minimumBidPrice },
-            },
-            market: {
-              appraised: appraisalValue,
-              area:
-                foundScenario.propertyDetails?.buildingArea ||
-                foundScenario.propertyDetails?.landArea,
-              regionCode:
-                foundScenario.regionalAnalysis?.regionCode ||
-                foundScenario.basicInfo.location,
-              propertyType: mapPropertyTypeToAIMarketPriceType(propertyType),
-              yearBuilt: foundScenario.propertyDetails?.yearBuilt,
-              minimumBidPrice,
-            },
-            exit: {
-              holdingMonths: 6,
-              annualAppreciation: 0.04,
-              rehabUplift: 5_000_000,
-              sellCostRate: 0.015,
-            },
-            debug: false,
+          
+          // 기본 매핑으로 PropertyDetail 생성
+          // TODO: mapSimulationToPropertyDetailV2를 새 엔진 결과를 활용하도록 수정 필요
+          const baseMapped = mapSimulationToPropertyDetail(foundScenario);
+          
+          // 엔진 결과를 PropertyDetail에 반영 (간단한 버전)
+          // 나중에 mapSimulationToPropertyDetailV2를 수정하여 전체 엔진 결과 활용
+          const mapped: PropertyDetail = {
+            ...baseMapped,
+            // 엔진 결과에서 계산된 정보는 나중에 통합
           };
-          const auctionEvalResult = evaluateAuction(auctionEvalInput);
-          console.log(
-            "💰 [프로퍼티 페이지] v1.2 매핑을 위한 evaluateAuction 완료"
-          );
-          const mapped = mapSimulationToPropertyDetailV2(
-            foundScenario,
-            auctionEvalResult,
-            6
-          );
-          // baseMapped의 rights 정보를 유지
-          mapped.rights = baseMapped.rights;
-          mapped.payout = baseMapped.payout;
+          
           setData(mapped);
           setScenario(foundScenario); // 👈 원본 시나리오 저장
           setIsLoading(false);
@@ -1024,12 +956,35 @@ export default function PropertyPage({ params }: PageProps) {
             }}
             data={data}
             analysis={(() => {
-              const rightsAnalysis = analyzeRights(scenario);
+              // 🧠 [ENGINE] 새 엔진을 사용하여 권리분석 결과 계산
+              console.log("🧠 [ENGINE] 매각물건명세서 모달을 위한 엔진 실행 시작");
+              
+              const snapshot = mapSimulationToSnapshot(scenario);
+              const minimumBidPrice =
+                scenario.basicInfo.minimumBidPrice ||
+                Math.floor((scenario.basicInfo.appraisalValue || 0) * 0.7);
+              
+              const engineOutput = auctionEngine({
+                snapshot,
+                userBidPrice: minimumBidPrice,
+                options: {
+                  devMode: devMode?.isDevMode ?? false,
+                  logPrefix: "🧠 [ENGINE]",
+                },
+              });
+              
+              const rightsAnalysisResult = mapEngineOutputToRightsAnalysisResult(
+                engineOutput,
+                scenario
+              );
+              
+              console.log("🧠 [ENGINE] 매각물건명세서 모달을 위한 엔진 실행 완료");
+              
               return {
-                safetyMargin: rightsAnalysis.safetyMargin,
-                totalAssumedAmount: rightsAnalysis.totalAssumedAmount,
-                advancedSafetyMargin: rightsAnalysis.advancedSafetyMargin,
-                extinguishedRights: rightsAnalysis.extinguishedRights.map(
+                safetyMargin: rightsAnalysisResult.safetyMargin,
+                totalAssumedAmount: rightsAnalysisResult.totalAssumedAmount,
+                advancedSafetyMargin: rightsAnalysisResult.advancedSafetyMargin,
+                extinguishedRights: rightsAnalysisResult.extinguishedRights.map(
                   (r) => ({
                     rightType: r.rightType,
                     order: r.order?.toString(),
@@ -1040,7 +995,7 @@ export default function PropertyPage({ params }: PageProps) {
                     isMalsoBaseRight: r.isMalsoBaseRight,
                   })
                 ),
-                assumedRights: rightsAnalysis.assumedRights.map((r) => ({
+                assumedRights: rightsAnalysisResult.assumedRights.map((r) => ({
                   rightType: r.rightType,
                   order: r.order?.toString(),
                   holder: r.holder,
@@ -1049,27 +1004,27 @@ export default function PropertyPage({ params }: PageProps) {
                   willBeAssumed: r.willBeAssumed,
                   isMalsoBaseRight: r.isMalsoBaseRight,
                 })),
-                malsoBaseRight: rightsAnalysis.malsoBaseRight
+                malsoBaseRight: rightsAnalysisResult.malsoBaseRight
                   ? {
-                      rightType: rightsAnalysis.malsoBaseRight.rightType,
-                      order: rightsAnalysis.malsoBaseRight.order?.toString(),
-                      holder: rightsAnalysis.malsoBaseRight.holder,
+                      rightType: rightsAnalysisResult.malsoBaseRight.rightType,
+                      order: rightsAnalysisResult.malsoBaseRight.order?.toString(),
+                      holder: rightsAnalysisResult.malsoBaseRight.holder,
                       registrationDate:
-                        rightsAnalysis.malsoBaseRight.registrationDate,
-                      claim: rightsAnalysis.malsoBaseRight.claimAmount,
+                        rightsAnalysisResult.malsoBaseRight.registrationDate,
+                      claim: rightsAnalysisResult.malsoBaseRight.claimAmount,
                     }
                   : null,
-                tenantRisk: rightsAnalysis.tenantRisk
+                tenantRisk: rightsAnalysisResult.tenantRisk
                   ? {
-                      riskScore: rightsAnalysis.tenantRisk.riskScore,
-                      riskLabel: rightsAnalysis.tenantRisk.riskLabel,
+                      riskScore: rightsAnalysisResult.tenantRisk.riskScore,
+                      riskLabel: rightsAnalysisResult.tenantRisk.riskLabel,
                       evictionCostMin:
-                        rightsAnalysis.tenantRisk.evictionCostMin,
+                        rightsAnalysisResult.tenantRisk.evictionCostMin,
                       evictionCostMax:
-                        rightsAnalysis.tenantRisk.evictionCostMax,
+                        rightsAnalysisResult.tenantRisk.evictionCostMax,
                       hasDividendRequest:
-                        rightsAnalysis.tenantRisk.hasDividendRequest,
-                      assumedTenants: rightsAnalysis.tenantRisk.assumedTenants,
+                        rightsAnalysisResult.tenantRisk.hasDividendRequest,
+                      assumedTenants: rightsAnalysisResult.tenantRisk.assumedTenants,
                     }
                   : undefined,
               };
@@ -1082,7 +1037,30 @@ export default function PropertyPage({ params }: PageProps) {
         data &&
         scenario &&
         (() => {
-          const rightsAnalysisResult = analyzeRights(scenario);
+          // 🧠 [ENGINE] 새 엔진을 사용하여 권리분석 결과 계산
+          console.log("🧠 [ENGINE] 권리분석 리포트 모달을 위한 엔진 실행 시작");
+          
+          const snapshot = mapSimulationToSnapshot(scenario);
+          const minimumBidPrice =
+            scenario.basicInfo.minimumBidPrice ||
+            Math.floor((scenario.basicInfo.appraisalValue || 0) * 0.7);
+          
+          const engineOutput = auctionEngine({
+            snapshot,
+            userBidPrice: minimumBidPrice,
+            options: {
+              devMode: devMode?.isDevMode ?? false,
+              logPrefix: "🧠 [ENGINE]",
+            },
+          });
+          
+          const rightsAnalysisResult = mapEngineOutputToRightsAnalysisResult(
+            engineOutput,
+            scenario
+          );
+          
+          console.log("🧠 [ENGINE] 권리분석 리포트 모달을 위한 엔진 실행 완료");
+          
           return (
             <RightsAnalysisReportModal
               isOpen={rightsReportOpen}
@@ -1154,12 +1132,35 @@ export default function PropertyPage({ params }: PageProps) {
           }}
           data={data}
           analysis={(() => {
-            const rightsAnalysis = analyzeRights(scenario);
+            // 🧠 [ENGINE] 새 엔진을 사용하여 권리분석 결과 계산
+            console.log("🧠 [ENGINE] 경매분석 리포트 모달을 위한 엔진 실행 시작");
+            
+            const snapshot = mapSimulationToSnapshot(scenario);
+            const minimumBidPrice =
+              scenario.basicInfo.minimumBidPrice ||
+              Math.floor((scenario.basicInfo.appraisalValue || 0) * 0.7);
+            
+            const engineOutput = auctionEngine({
+              snapshot,
+              userBidPrice: minimumBidPrice,
+              options: {
+                devMode: devMode?.isDevMode ?? false,
+                logPrefix: "🧠 [ENGINE]",
+              },
+            });
+            
+            const rightsAnalysisResult = mapEngineOutputToRightsAnalysisResult(
+              engineOutput,
+              scenario
+            );
+            
+            console.log("🧠 [ENGINE] 경매분석 리포트 모달을 위한 엔진 실행 완료");
+            
             return {
-              safetyMargin: rightsAnalysis.safetyMargin,
-              totalAssumedAmount: rightsAnalysis.totalAssumedAmount,
-              marketValue: rightsAnalysis.marketValue,
-              advancedSafetyMargin: rightsAnalysis.advancedSafetyMargin,
+              safetyMargin: rightsAnalysisResult.safetyMargin,
+              totalAssumedAmount: rightsAnalysisResult.totalAssumedAmount,
+              marketValue: rightsAnalysisResult.marketValue,
+              advancedSafetyMargin: rightsAnalysisResult.advancedSafetyMargin,
             };
           })()}
         />
