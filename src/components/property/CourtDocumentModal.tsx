@@ -2,7 +2,6 @@
 import React from "react";
 import { useSimulationStore } from "@/store/simulation-store";
 import type { PropertyDetail, RightRow } from "@/types/property";
-import SafetyMarginComparison from "@/components/report/SafetyMarginComparison";
 import FMVDisplay from "@/components/common/FMVDisplay";
 import {
   getTerminologyExplanation,
@@ -233,80 +232,6 @@ export function SaleSpecificationModal({
         </div>
         {/* 본문 */}
         <div className="p-0 divide-y divide-gray-200">
-          {/* 00. 분석 요약 섹션 추가 */}
-          <section className="px-6 py-4 bg-yellow-50 border-b border-yellow-200">
-            <h3 className="font-semibold mb-2 text-sm text-yellow-900">
-              🛡️ 권리분석 요약
-            </h3>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                안전마진:{" "}
-                {analysis ? `${analysis.safetyMargin.toLocaleString()}원` : "-"}
-              </div>
-              <div>
-                인수금액:{" "}
-                {analysis
-                  ? `${analysis.totalAssumedAmount.toLocaleString()}원`
-                  : "-"}
-              </div>
-            </div>
-            {/* 고도화 안전마진 정보 추가 */}
-            {analysis?.advancedSafetyMargin && (
-              <div className="mt-3 pt-3 border-t border-yellow-300 grid grid-cols-2 gap-4 text-sm">
-                <div className="text-green-800">
-                  최소 안전마진 (고도화):{" "}
-                  <span className="font-semibold">
-                    {analysis.advancedSafetyMargin.minSafetyMargin.toLocaleString()}
-                    원
-                  </span>
-                </div>
-              </div>
-            )}
-            {/* ✅ FMV 표시 추가 */}
-            {(data as any)?.analysisV12?.fmv?.fairMarketValue && (
-              <div className="mt-3 pt-3 border-t border-yellow-300">
-                <FMVDisplay
-                  fairMarketValue={(data as any).analysisV12.fmv.fairMarketValue}
-                  min={(data as any).analysisV12.fmv.fairMarketValue * 0.95}
-                  max={(data as any).analysisV12.fmv.fairMarketValue * 1.05}
-                  auctionCenter={(data as any).analysisV12.fmv.auctionCenter}
-                  showRange={true}
-                  compact={true}
-                />
-              </div>
-            )}
-          </section>
-
-          {/* ✅ 안전마진 비교 섹션 추가 (v1.2) */}
-          {(data as any)?.analysisV12 && (
-            <section className="px-6 py-4 bg-white border-b border-gray-200">
-              <SafetyMarginComparison
-                fmv={{
-                  amount: (data as any).analysisV12.fmv.mosAmount,
-                  pct: (data as any).analysisV12.fmv.mosRate ?? 0,
-                  referencePrice: (data as any).analysisV12.fmv.fairMarketValue,
-                }}
-                exit={{
-                  amount: (data as any).analysisV12.exit.mosAmount,
-                  pct: (data as any).analysisV12.exit.mosRate ?? 0,
-                  referencePrice: (data as any).analysisV12.exit.exitPrice,
-                }}
-                user={{
-                  amount:
-                    (data as any).analysisV12.fmv.fairMarketValue -
-                    (data as any).analysisV12.acquisition.parts.bidPrice,
-                  pct:
-                    (data as any).analysisV12.fmv.fairMarketValue > 0
-                      ? ((data as any).analysisV12.fmv.fairMarketValue -
-                          (data as any).analysisV12.acquisition.parts.bidPrice) /
-                        (data as any).analysisV12.fmv.fairMarketValue
-                      : 0,
-                  referencePrice: (data as any).analysisV12.fmv.fairMarketValue,
-                  bidPrice: (data as any).analysisV12.acquisition.parts.bidPrice,
-                }}
-              />
-            </section>
-          )}
 
           {/* 01. 사건/매물 기본정보 */}
           <section className="px-6 py-4">
@@ -574,45 +499,6 @@ export function SaleSpecificationModal({
                 "red"
               )}
           </section>
-          {/* ✅ 점유 및 명도 리스크 섹션 */}
-          {analysis?.tenantRisk && (
-            <section className="px-6 py-4 bg-orange-50 border-t border-orange-200">
-              <h3 className="font-semibold mb-3 text-sm text-orange-900">
-                ③-1. 점유 및 명도 리스크 분석
-              </h3>
-              <div className="grid gap-3 grid-cols-1 md:grid-cols-2 text-xs mb-3">
-                <div className="p-2 bg-white border border-orange-300 rounded">
-                  <div className="text-orange-700 mb-1">AI 예측 점유 위험도</div>
-                  <div className="font-semibold text-orange-900 text-sm">
-                    {analysis.tenantRisk.riskScore}% ({analysis.tenantRisk.riskLabel})
-                  </div>
-                </div>
-                <div className="p-2 bg-white border border-orange-300 rounded">
-                  <div className="text-orange-700 mb-1">예상 명도 비용</div>
-                  <div className="font-semibold text-orange-900 text-sm">
-                    {analysis.tenantRisk.evictionCostMin.toLocaleString()}원 ~{" "}
-                    {analysis.tenantRisk.evictionCostMax.toLocaleString()}원
-                  </div>
-                </div>
-              </div>
-              <div className="p-2 bg-yellow-50 border border-yellow-300 rounded text-xs">
-                <div className="mb-1">
-                  <strong>배당요구:</strong>{" "}
-                  {analysis.tenantRisk.hasDividendRequest
-                    ? "있음"
-                    : "없음 (보증금 인수 가능성 있음)"}
-                </div>
-                <div className="text-red-700 font-medium mt-1">
-                  ⚠️ 실제 점유 상태 확인 필요 (명도 소송 가능성 있음)
-                </div>
-                {analysis.tenantRisk.assumedTenants > 0 && (
-                  <div className="mt-1 text-gray-700">
-                    인수 대상 임차인: {analysis.tenantRisk.assumedTenants}명
-                  </div>
-                )}
-              </div>
-            </section>
-          )}
           {/* 03. 점유·임차현황·배당 */}
           <section className="px-6 py-4 bg-gray-50">
             <h3 className="font-semibold mb-2 mt-1 text-sm text-gray-700">
