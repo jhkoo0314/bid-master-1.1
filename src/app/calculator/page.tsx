@@ -4,7 +4,7 @@
 
 "use client";
 
-import { ProfitCalculator } from "@/components/ProfitCalculator";
+import { ProfitCalculatorLegacy } from "@/components/ProfitCalculator";
 import Link from "next/link";
 
 export default function CalculatorPage() {
@@ -36,7 +36,7 @@ export default function CalculatorPage() {
               <p className="text-gray-600">입찰가와 예상 수익을 계산해보세요</p>
             </div>
 
-            <ProfitCalculator />
+            <ProfitCalculatorLegacy />
           </div>
         </div>
       </section>

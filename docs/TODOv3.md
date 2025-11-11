@@ -543,3 +543,261 @@ Auction Engine v3는 분산된 계산 로직을 단일 엔진으로 통합하여
 - `docs/auction-engine-v0.2.md`: 기존 v0.2 문서
 - `src/lib/auction-engine.ts`: 기존 v0.2 구현
 - `src/types/auction.ts`: 기존 v0.2 타입
+
+---
+
+## 🚀 서비스 무중단 마이그레이션 우선순위 (Phase 0)
+
+> **목표**: 기존 서비스를 중단하지 않으면서 v3 엔진을 점진적으로 구축  
+> **원칙**: 기존 코드 변경 최소화, 독립적 테스트 가능, Feature Flag로 완전 격리
+
+### Phase 0.1: 기반 구조 구축 (기존 코드 영향 없음) ⭐ 최우선
+
+**리스크**: 없음 (기존 코드 변경 없음)  
+**예상 소요**: 1-2일
+
+**작업 내용:**
+
+1. **폴더 구조 생성**
+
+   - [ ] `src/lib/engines/` 폴더 생성
+   - [ ] 빈 파일 스캐폴딩 (모든 엔진 파일 생성, export만 추가)
+
+2. **타입 시스템 정의** (`src/lib/engines/types.ts`)
+
+   - [ ] PropertySeed, Property 타입 정의
+   - [ ] ValuationInput, Valuation 타입 정의
+   - [ ] CourtDocsInput, CourtDocs 타입 정의
+   - [ ] RightsInput, Rights 타입 정의
+   - [ ] CostInput, Costs 타입 정의
+   - [ ] CompetitorInput, Competition 타입 정의
+   - [ ] ProfitInput, Profit 타입 정의
+   - [ ] RunInput, AuctionAnalysisResult 타입 정의
+   - [ ] PropertyType, RightType enum 및 Label Map 정의
+   - [ ] **기존 v0.2 타입과의 매핑 헬퍼 타입 정의** (중요!)
+
+3. **Policy 시스템 구축** (`src/lib/engines/policy.ts`)
+   - [ ] 기본 Policy 타입 정의
+   - [ ] defaultPolicy 객체 구현 (기존 값 기반)
+   - [ ] Policy 병합 유틸리티 함수
+
+**완료 기준:**
+
+- ✅ 모든 타입이 TypeScript 컴파일 통과
+- ✅ 기존 코드 import 오류 없음
+- ✅ 빈 파일로도 빌드 성공
+
+---
+
+### Phase 0.2: Feature Flag 시스템 구축 ⭐ 최우선
+
+**리스크**: 매우 낮음 (환경 변수만 추가)  
+**예상 소요**: 0.5일
+
+**작업 내용:**
+
+1. **환경 변수 설정**
+
+   - [ ] `.env.example`에 `ENGINE_V3=false` 추가
+   - [ ] 환경 변수 읽기 유틸리티 함수 생성
+
+2. **래퍼 함수 구현** (`src/lib/engines/wrapper.ts`)
+
+   - [ ] `runAuctionAnalysisV3()` 함수 스캐폴딩 (더미 구현)
+   - [ ] `runAuctionAnalysisV0()` 함수 (기존 `auctionEngine()` 래핑)
+   - [ ] `runAuctionAnalysis()` 메인 함수:
+     ```ts
+     if (ENGINE_V3 === "true") {
+       return runAuctionAnalysisV3(input);
+     } else {
+       return runAuctionAnalysisV0(input);
+     }
+     ```
+   - [ ] v0.2 결과를 v3 타입으로 변환하는 임시 매퍼 추가
+
+3. **디버그 화면 추가** (선택)
+   - [ ] 개발자 모드에서 v0.2/v3 비교 표시 (임시)
+
+**완료 기준:**
+
+- ✅ `ENGINE_V3=false`일 때 기존 동작 100% 유지
+- ✅ `ENGINE_V3=true`일 때 에러 없이 더미 결과 반환
+- ✅ 기존 호출부(`PropertyPage`, `BiddingModal`) 변경 없음
+
+---
+
+### Phase 0.3: 마이그레이션 브리지 함수 구현 ⭐ 중요
+
+**리스크**: 낮음 (독립적 테스트 가능)  
+**예상 소요**: 1일
+
+**작업 내용:**
+
+1. **매퍼 함수 구현** (`src/lib/engines/mappers.ts`)
+   - [ ] `mapSimulationToPropertySeed()`: SimulationScenario → PropertySeed
+   - [ ] `mapEngineOutputToAuctionAnalysisResult()`: EngineOutput (v0.2) → AuctionAnalysisResult (v3)
+   - [ ] `mapAuctionAnalysisResultToEngineOutput()`: AuctionAnalysisResult (v3) → EngineOutput (v0.2) - 역변환
+   - [ ] `mapAuctionAnalysisResultToRightsAnalysisResult()`: v3 → 리포트용 타입
+   - [ ] 각 매퍼 함수 단위 테스트 작성
+
+**왜 중요한가:**
+
+- v0.2와 v3를 병행 운영하면서 점진적 전환 가능
+- 기존 리포트/UI는 v0.2 타입을 그대로 사용 가능
+- v3 엔진 완성 전에도 인프라 테스트 가능
+
+**완료 기준:**
+
+- ✅ v0.2 → v3 → v0.2 왕복 변환 시 핵심 값 일치 (스냅샷 테스트)
+- ✅ 모든 매퍼 함수 단위 테스트 통과
+
+---
+
+### Phase 0.4: 최소 엔진 구현 + 스냅샷 테스트 인프라 ⭐ 중요
+
+**리스크**: 낮음 (Feature Flag로 격리)  
+**예상 소요**: 2일
+
+**작업 내용:**
+
+1. **PropertyEngine 최소 구현**
+
+   - [ ] `normalize()` 함수 구현 (기본 검증만)
+   - [ ] 단위 테스트 3개 케이스
+
+2. **ValuationEngine 최소 구현**
+
+   - [ ] `evaluate()` 함수 구현 (기존 로직 기반)
+   - [ ] 단위 테스트 3개 케이스
+
+3. **오케스트레이터 스캐폴딩**
+
+   - [ ] `runAuctionAnalysisV3()` 기본 구조 구현
+   - [ ] PropertyEngine, ValuationEngine만 연결 (나머지는 더미)
+   - [ ] 에러 처리 및 로깅
+
+4. **스냅샷 테스트 인프라**
+   - [ ] 3개 통합 케이스 준비 (아파트/오피스텔/근린)
+   - [ ] v0.2 출력 JSON 저장
+   - [ ] v3 출력 JSON 저장
+   - [ ] diff 비교 스크립트
+
+**완료 기준:**
+
+- ✅ `ENGINE_V3=true`로 설정 시 최소 기능 작동
+- ✅ 스냅샷 테스트로 v0.2와 v3 핵심 값 비교 가능
+- ✅ 테스트 실패 시 자동으로 diff 리포트 생성
+
+---
+
+### Phase 0.5: 점진적 엔진 완성 (본격 구현 시작)
+
+**리스크**: 중간 (Feature Flag로 격리)  
+**예상 소요**: 각 엔진당 2-3일
+
+**작업 순서:**
+
+1. **CourtDocsLayer 구현** (가장 단순, 의존성 없음)
+2. **RightsEngine 구현** (CourtDocs 의존)
+3. **CostEngine 구현** (Rights 의존)
+4. **CompetitorEngine 구현** (독립적)
+5. **ProfitEngine 구현** (Costs 의존)
+6. **PayloadBuilder 구현** (모든 엔진 완료 후)
+
+**각 엔진 완료 시:**
+
+- ✅ 단위 테스트 작성 및 통과
+- ✅ 통합 스냅샷 테스트 업데이트
+- ✅ v0.2와 결과 비교 및 문서화
+
+---
+
+### Phase 0.6: UI 연결 준비 (선택적)
+
+**리스크**: 중간 (Feature Flag로 격리)  
+**예상 소요**: 2일
+
+**작업 내용:**
+
+1. **리포트 컴포넌트 분석**
+
+   - [ ] `RightsAnalysisReportModal` 현재 데이터 소스 확인
+   - [ ] `AuctionAnalysisReportModal` 현재 데이터 소스 확인
+   - [ ] v3 데이터로 표시 가능한지 확인
+
+2. **새 리포트 컴포넌트 생성** (기존 유지, 새로 추가)
+   - [ ] `RightsAnalysisReportModalV3` 생성 (v3 전용)
+   - [ ] `AuctionAnalysisReportModalV3` 생성 (v3 전용)
+   - [ ] Feature Flag로 v0.2/v3 선택 가능
+
+**완료 기준:**
+
+- ✅ 기존 리포트는 영향 없음
+- ✅ v3 리포트는 Feature Flag로 접근 가능
+- ✅ 두 버전 병행 비교 가능
+
+---
+
+## 📋 Phase 0 완료 체크리스트
+
+### 필수 완료 (서비스 영향 없음)
+
+- [ ] Phase 0.1: 기반 구조 구축 완료
+- [ ] Phase 0.2: Feature Flag 시스템 구축 완료
+- [ ] Phase 0.3: 마이그레이션 브리지 함수 구현 완료
+- [ ] Phase 0.4: 최소 엔진 구현 + 스냅샷 테스트 인프라 완료
+
+### 선택 완료 (Feature Flag로 안전하게 진행 가능)
+
+- [ ] Phase 0.5: 점진적 엔진 완성 진행
+- [ ] Phase 0.6: UI 연결 준비
+
+---
+
+## 🎯 Phase 0 이후 진행 전략
+
+### Phase 0 완료 후:
+
+1. **검증 단계** (1주)
+
+   - v3 엔진으로 10개 케이스 실행
+   - v0.2와 결과 비교 및 차이점 문서화
+   - 계산 로직 차이 확인 및 승인
+
+2. **점진적 전환** (2-3주)
+
+   - 개발자 모드에서만 v3 활성화
+   - 사용자 피드백 수집
+   - 버그 수정 및 개선
+
+3. **전면 전환** (1주)
+   - 프로덕션에서 v3 활성화
+   - v0.2 레거시 제거 준비
+
+---
+
+## ⚠️ 주의사항 (Phase 0)
+
+1. **기존 코드 변경 금지**: Phase 0.1~0.4는 기존 코드 import/export만 사용
+2. **계산 로직 변경 시 승인**: Phase 0.5부터는 계산 로직 변경 시 개발자 승인 필요
+3. **Feature Flag 필수**: 모든 v3 기능은 `ENGINE_V3` 환경 변수로 제어
+4. **스냅샷 테스트 필수**: 각 엔진 완성 시마다 v0.2와 비교
+5. **롤백 가능성**: 언제든지 `ENGINE_V3=false`로 즉시 복구 가능
+
+---
+
+## 📊 예상 타임라인
+
+| Phase    | 작업         | 예상 소요   | 리스크    |
+| -------- | ------------ | ----------- | --------- |
+| 0.1      | 기반 구조    | 1-2일       | 없음      |
+| 0.2      | Feature Flag | 0.5일       | 매우 낮음 |
+| 0.3      | 브리지 함수  | 1일         | 낮음      |
+| 0.4      | 최소 엔진    | 2일         | 낮음      |
+| 0.5      | 점진적 완성  | 10-15일     | 중간      |
+| 0.6      | UI 준비      | 2일         | 중간      |
+| **총합** |              | **16-22일** |           |
+
+---
+
+**✅ Phase 0 완료 후 Phase 1-7 진행 가능**
